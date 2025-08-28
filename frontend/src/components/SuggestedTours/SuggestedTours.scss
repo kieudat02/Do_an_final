@@ -1,0 +1,156 @@
+.suggested-tours {
+  @media (max-width: 768px) {
+    margin-top: 40px;
+    padding-top: 30px;
+  }
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+
+    @media (max-width: 768px) {
+      margin-bottom: 30px;
+    }
+  }
+
+  &__title {
+    font-size: 26px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0;
+    text-align: left;
+
+    @media (max-width: 768px) {
+      font-size: 24px;
+    }
+  }
+
+  &__navigation {
+    display: flex;
+    gap: 12px;
+
+    @media (max-width: 768px) {
+      display: none;
+    }
+  }
+
+  &__nav-btn {
+    width: 48px;
+    height: 48px;
+    border: 2px solid #e5e7eb;
+    border-radius: 50%;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: #6b7280;
+
+    &:hover {
+      border-color: #1f50ea;
+      color: #1f50ea;
+      background: #f8faff;
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  &__slider {
+    position: relative;
+    width: 100%;
+
+    .swiper {
+      overflow: hidden;
+      padding: 30px 0;
+    }
+
+    .swiper-slide {
+      height: auto;
+      display: flex;
+      justify-content: center;
+    }
+  }
+
+  // Override TourCard styles for slider context
+  .tour-card {
+    width: 100%;
+    max-width: 100%;
+    min-width: auto;
+
+    // Giảm kích thước hình ảnh cho phù hợp
+    &__image {
+      height: 180px;
+
+      @media (max-width: 768px) {
+        height: 160px;
+      }
+    }
+
+    // Điều chỉnh padding content
+    &__content {
+      padding: 1.25rem;
+
+      @media (max-width: 768px) {
+        padding: 1rem;
+      }
+    }
+
+    // Điều chỉnh title
+    &__title h3 {
+      font-size: 1.3rem;
+      height: auto;
+      min-height: 2.6rem;
+      text-align: left;
+
+      @media (max-width: 768px) {
+        font-size: 1.2rem;
+        min-height: 2.4rem;
+      }
+    }
+
+    // Hover effect nhẹ hơn
+    &:hover {
+      transform: translateY(-4px);
+    }
+  }
+}
+
+// Variant cho Success page
+.suggested-tours--success {
+  .tour-card {
+    max-width: 320px;
+
+    &__image {
+      height: 160px;
+
+      @media (max-width: 768px) {
+        height: 140px;
+      }
+    }
+  }
+}
+
+// Variant cho Home page
+.suggested-tours--home {
+  margin-top: 80px;
+  padding-top: 0;
+  border-top: none;
+
+  .suggested-tours__title {
+    font-size: 32px;
+  }
+
+  .suggested-tours__header {
+    margin-bottom: 50px;
+  }
+}

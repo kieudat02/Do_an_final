@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="vi">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Quản lý tour</title>
+        <!-- Embed Font -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+            rel="stylesheet"
+        />
+        <!-- Bootstrap CSS -->
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+        />
+        <!-- Font Awesome -->
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+        <!-- Select2 CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+        <!-- CSS -->
+        <link rel="stylesheet" href="/css/main.css" />
+    </head>
+    <body>
+        <div class="dashboard">
+            <div class="container_fuild">
+                <div class="dashboard__inner">
+                    <%- include('partials/sidebar') %>
+                    <div class="tour" style="margin-left: 220px;">
+                        <div class="tour__header">
+                            <h2 class="tour__title">Quản lý tour</h2>
+                            <div class="tour__actions">
+                                <% if (userPermissions && userPermissions.includes('CREATE_TOUR')) { %>
+                                    <a href="/tour/add" class="tour__btn tour__btn--primary tour__btn--add">
+                                        <i class="fas fa-plus me-2"></i>Thêm tour mới
+                                    </a>
+                                <% } else { %>
+                                    <a class="tour__btn tour__btn--primary tour__btn--add disabled" style="pointer-events:none; opacity:0.5;">
+                                        <i class="fas fa-plus me-2"></i>Thêm tour mới
+                                    </a>
+                                <% } %>
+                            </div>
+                        </div>
+
+                        <!-- Advanced Search and Filter Section -->
+                        <div class="tour__search-section">
+                            <div class="card border-0 shadow-sm py-2">
+                                <div class="card-header bg-light border-0">
+                                    <div class="d-flex justify-content-between align-items-center py-3">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-filter me-2"></i>Bộ lọc tìm kiếm
+                                            <span class="badge bg-primary ms-2" id="filterCountBadge" style="display: none;">0</span>
+                                        </h6>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleAdvancedFilter()">
+                                            <i class="fas fa-chevron-down" id="filterToggleIcon"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body" id="advancedFilterContent" style="display: none;">
+                                    <form method="GET" id="tourFilterForm">
+                                        <!-- Row 1: Main Search -->
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <label class="form-label">
+                                                    <i class="fas fa-search me-2"></i>Tìm kiếm tên tour
+                                                </label>
+                                                <div class="input-group">
+                                                    <input
+                                                        type="text"
+                                                        class="form-control"
+                                                        placeholder="Nhập tên tour..."
+                                                        name="q"
+                                                        value="<%= query.q || '' %>"
+                                                    />
+                                                    <button class="btn btn-primary" type="submit">
+                                                        <i class="fas fa-search"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">
+                                                    <i class="fas fa-calendar me-2"></i>Ngày đi
+                                                </label>
+                                                <input
+                                                    type="date"
+                                                    class="form-control"
+                                                    name="startDate"
+                                                    value="<%= query.startDate || '' %>"
+                                                    onchange="this.form.submit()"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <!-- Row 2: Location Filters -->
+                                        <div class="row mb-3">
+                                            <div class="col-md-4">
+                                                <label class="form-label">
+                                                    <i class="fas fa-map-marker-alt me-2"></i>Điểm đến
+                                                </label>
+                                                <select class="form-select select2" name="destination">
+                                                    <option value="">-- Chọn điểm đến --</option>
+                                                    <% if (destinations) { %>
+                                                        <% destinations.forEach(destination => { %>
+                                                            <option value="<%= destination._id %>" <%= query.destination === destination._id.toString() ? 'selected' : '' %>>
+                                                                <%= destination.name %>
+                                                            </option>
+                                                        <% }); %>
+                                                    <% } %>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">
+                                                    <i class="fas fa-plane-departure me-2"></i>Điểm khởi hành
+                                                </label>
+                                                <select class="form-select select2" name="departure">
+                                                    <option value="">-- Chọn điểm khởi hành --</option>
+                                                    <% if (departures) { %>
+                                                        <% departures.forEach(departure => { %>
+                                                            <option value="<%= departure._id %>" <%= query.departure === departure._id.toString() ? 'selected' : '' %>>
+                                                                <%= departure.name %>
+                                                            </option>
+                                                        <% }); %>
+                                                    <% } %>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">
+                                                    <i class="fas fa-car me-2"></i>Loại phương tiện
+                                                </label>
+                                                <select class="form-select select2" name="transportation">
+                                                    <option value="">-- Chọn phương tiện --</option>
+                                                    <% if (transportations) { %>
+                                                        <% transportations.forEach(transportation => { %>
+                                                            <option value="<%= transportation._id %>" <%= query.transportation === transportation._id.toString() ? 'selected' : '' %>>
+                                                                <%= transportation.title %>
+                                                            </option>
+                                                        <% }); %>
+                                                    <% } %>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <!-- Row 3: Category and Status -->
+                                        <div class="row mb-3">
+                                            <div class="col-md-3">
+                                                <label class="form-label">
+                                                    <i class="fas fa-tags me-2"></i>Danh mục
+                                                </label>
+                                                <select class="form-select select2" name="category">
+                                                    <option value="">-- Chọn danh mục --</option>
+                                                    <% if (categories) { %>
+                                                        <% categories.forEach(category => { %>
+                                                            <option value="<%= category._id %>" <%= query.category === category._id.toString() ? 'selected' : '' %>>
+                                                                <%= category.name %>
+                                                            </option>
+                                                        <% }); %>
+                                                    <% } %>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label">
+                                                    <i class="fas fa-toggle-on me-2"></i>Trạng thái
+                                                </label>
+                                                <select class="form-select select2" name="status">
+                                                    <option value="">-- Chọn trạng thái --</option>
+                                                    <option value="true" <%= query.status === 'true' ? 'selected' : '' %>>Hoạt động</option>
+                                                    <option value="false" <%= query.status === 'false' ? 'selected' : '' %>>Tạm dừng</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label">
+                                                    <i class="fas fa-star me-2"></i>Nổi bật
+                                                </label>
+                                                <select class="form-select select2" name="highlight">
+                                                    <option value="">-- Chọn nổi bật --</option>
+                                                    <option value="true" <%= query.highlight === 'true' ? 'selected' : '' %>>Nổi bật</option>
+                                                    <option value="false" <%= query.highlight === 'false' ? 'selected' : '' %>>Không nổi bật</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label">
+                                                    <i class="fas fa-sort-amount-down me-2"></i>Sắp xếp giá
+                                                </label>
+                                                <select class="form-select select2" name="sortPrice">
+                                                    <option value="">-- Sắp xếp theo giá --</option>
+                                                    <option value="asc" <%= query.sortPrice === 'asc' ? 'selected' : '' %>>Giá thấp → cao</option>
+                                                    <option value="desc" <%= query.sortPrice === 'desc' ? 'selected' : '' %>>Giá cao → thấp</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <!-- Quick Filter Buttons -->
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <label class="form-label">
+                                                    <i class="fas fa-bolt me-2"></i>Lọc nhanh
+                                                </label>
+                                                <div class="d-flex flex-wrap gap-3 quick-filter-buttons">
+                                                    <button type="submit" class="btn btn-outline-primary btn-lg filter-btn filter-btn--apply" name="quickFilter" value="apply">
+                                                        Áp dụng bộ lọc
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-warning filter-btn filter-btn--expiring" onclick="setQuickFilter('expiring')">
+                                                        Tour sắp hết hạn
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-danger filter-btn filter-btn--expired" onclick="setQuickFilter('expired')">
+                                                        Tour hết hạn
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-info filter-btn filter-btn--featured" onclick="setQuickFilter('featured')">
+                                                        Tour nổi bật
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-success filter-btn filter-btn--active" onclick="setQuickFilter('active')">
+                                                        Tour đang hoạt động
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-secondary filter-btn filter-btn--clear" onclick="clearAllFilters()">
+                                                        Xóa tất cả bộ lọc
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Notification Messages -->
+                        <% if (typeof message !== 'undefined' && message && message.length > 0) { %>
+                        <div class="modal-notify modal-notify--active modal-notify--success">
+                            <div class="modal-notify__content">
+                                <span class="modal-notify__message">
+                                    <%= message[0] %>
+                                </span>
+                                <button class="modal-notify__close" onclick="hideToastNotification(this.closest('.modal-notify'))">
+                                    ×
+                                </button>
+                            </div>
+                        </div>
+                        <% } %> 
+                        <% if (typeof error !== 'undefined' && error && error.length > 0) { %>
+                        <div class="modal-notify modal-notify--active modal-notify--error">
+                            <div class="modal-notify__content">
+                                <span class="modal-notify__message">
+                                    <%= error[0] %>
+                                </span>
+                                <button class="modal-notify__close" onclick="hideToastNotification(this.closest('.modal-notify'))">
+                                    ×
+                                </button>
+                            </div>
+                        </div>
+                        <% } %>
+
+                        <!-- Table Actions -->
+                        <div class="d-flex justify-content-end align-items-center py-3">
+                            <div class="tour__items-per-page d-flex align-items-center">
+                                <label class="form-label me-2 mb-0">Hiển thị:</label>
+                                <select class="form-select form-select-sm" style="width: auto;" id="itemsPerPage" onchange="changeItemsPerPage()">
+                                    <option value="3" <%= limit == 3 ? 'selected' : '' %>>3</option>
+                                    <option value="5" <%= limit == 5 ? 'selected' : '' %>>5</option>
+                                    <option value="10" <%= limit == 10 ? 'selected' : '' %>>10</option>
+                                    <option value="20" <%= limit == 20 ? 'selected' : '' %>>20</option>
+                                    <option value="50" <%= limit == 50 ? 'selected' : '' %>>50</option>
+                                </select>
+                                <span class="ms-2 text-muted">tour/trang</span>
+                            </div>
+                        </div>
+
+                        <div class="tour__table--wrapper">
+                            <table class="table table-striped tour__table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 60px;">STT</th>
+                                        <th style="width: 250px;">Tên tour</th>
+                                        <th style="width: 100px;">Ảnh</th>
+                                        <th style="width: 120px;">Mã tour</th>
+                                        <th style="width: 100px;">Trạng thái</th>
+                                        <th style="width: 100px;">Nổi bật</th>
+                                        <th style="width: 120px;">Giá</th>
+                                        <th style="width: 120px;">Danh mục</th>
+                                        <th style="width: 130px;">Khởi hành</th>
+                                        <th style="width: 130px;">Điểm đến</th>
+                                        <th style="width: 120px;">Phương tiện</th>
+                                        <th style="width: 120px;">Ngày khởi hành</th>
+                                        <th style="width: 120px;">Ngày trở lại</th>
+                                        <th style="width: 140px;">Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% if (tours && tours.length > 0) { %>
+                                        <% tours.forEach((tour, index) => { %>
+                                            <tr class="tour-row" data-id="<%= tour._id %>">
+                                                <td>
+                                                    <span class="text-muted"><%= (currentPage - 1) * limit + index + 1 %></span>
+                                                </td>
+                                                <td style="text-align: left;">
+                                                    <strong class="tour-title"><%= tour.title %></strong>
+                                                </td>
+                                                <td style="text-align: center;">
+                                                    <% if (tour.images && tour.images.length > 0) { %>
+                                                        <img src="<%= tour.images[0] %>" alt="<%= tour.title %>" class="tour-image">
+                                                    <% } else if (tour.image) { %>
+                                                        <img src="<%= tour.image %>" alt="<%= tour.title %>" class="tour-image">
+                                                    <% } else { %>
+                                                        <div class="tour-image-placeholder">
+                                                            <i class="fas fa-image"></i>
+                                                        </div>
+                                                    <% } %>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-secondary"><%= tour.code %></span>
+                                                </td>
+                                                <td style="width: 100px; text-align: center;">
+                                                    <% if (userPermissions && userPermissions.includes('UPDATE_TOUR')) { %>
+                                                        <button
+                                                            class="btn btn-sm <%= tour.status ? 'btn-success' : 'btn-secondary' %> tour__status-toggle"
+                                                            onclick="toggleStatus(this)"
+                                                            data-id="<%= tour._id %>"
+                                                            data-status="<%= tour.status %>"
+                                                            title="Click để thay đổi trạng thái"
+                                                        >
+                                                            <%= tour.status ? 'Hoạt động' : 'Tạm dừng' %>
+                                                        </button>
+                                                    <% } else { %>
+                                                        <span class="tour__badge tour__badge--<%= tour.status ? 'success' : 'inactive' %>" style="opacity:0.5;">
+                                                            <%= tour.status ? 'Hoạt động' : 'Tạm dừng' %>
+                                                        </span>
+                                                    <% } %>
+                                                </td>
+                                                <td style="width: 100px; text-align: center;">
+                                                    <% if (userPermissions && userPermissions.includes('UPDATE_TOUR')) { %>
+                                                        <button
+                                                            class="btn btn-sm <%= tour.highlight ? 'btn-warning' : 'btn-outline-warning' %> tour__highlight-toggle"
+                                                            onclick="toggleHighlight(this)"
+                                                            data-id="<%= tour._id %>"
+                                                            data-highlight="<%= tour.highlight %>"
+                                                            title="Click để thay đổi nổi bật"
+                                                        >
+                                                            <%= tour.highlight ? 'Nổi bật' : 'Bình thường' %>
+                                                        </button>
+                                                    <% } else { %>
+                                                         <span class="tour__badge tour__badge--<%= tour.highlight ? 'success' : 'inactive' %>" style="opacity:0.5; background: #e3f2fd; color: #2c3e50;">
+                                                            <%= tour.highlight ? 'Nổi bật' : 'Bình thường' %>
+                                                        </span>
+                                                    <% } %>
+                                                </td>
+                                                <td>
+                                                    <% if (tour.hasMultiplePrices) { %>
+                                                        <div class="price-info">
+                                                            <strong class="text-primary">Từ <%= tour.minPrice.toLocaleString() %> VNĐ</strong>
+                                                            <% if (tour.maxPrice > tour.minPrice) { %>
+                                                                <small class="text-muted">đến <%= tour.maxPrice.toLocaleString() %> VNĐ</small>
+                                                            <% } %>
+                                                        </div>
+                                                    <% } else if (tour.minPrice > 0) { %>
+                                                        <strong class="text-primary"><%= tour.minPrice.toLocaleString() %> VNĐ</strong>
+                                                    <% } else { %>
+                                                        <strong class="text-warning">Chưa có giá</strong>
+                                                    <% } %>
+                                                    <% if (tour.tourDetails && tour.tourDetails.length > 0) { %>
+                                                        <small class="text-info">
+                                                            <i class="fas fa-info-circle me-1"></i>
+                                                            <%= tour.tourDetails.length %> lịch trình
+                                                        </small>
+                                                    <% } %>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-info"><%= tour.category?.name || 'Chưa có' %></span>
+                                                </td>
+                                                <td>
+                                                    <small class="text-muted"><%= tour.departure?.name || 'Chưa có' %></small>
+                                                </td>
+                                                <td>
+                                                    <small class="text-muted"><%= tour.destination?.name || 'Chưa có' %></small>
+                                                </td>
+                                                <td>
+                                                    <small class="text-muted"><%= tour.transportation?.title || 'Chưa có' %></small>
+                                                </td>
+                                                <td>
+                                                    <small class="text-muted"><%= tour.startDate ? new Date(tour.startDate).toLocaleDateString('vi-VN') : 'Chưa có' %></small>
+                                                </td>
+                                                <td>
+                                                    <small class="text-muted"><%= tour.endDate ? new Date(tour.endDate).toLocaleDateString('vi-VN') : 'Chưa có' %></small>
+                                                </td>
+                                                <td>
+                                                    <div class="btn-group">
+                                                        <% if (tour.slug) { %>
+                                                            <a href="/tour/detail/<%= tour.slug %>" class="btn btn-sm btn-outline-info btn__detail" title="Xem chi tiết">
+                                                                <i class="fas fa-eye"></i>
+                                                            </a>
+                                                        <% } %>
+                                                        <% if (userPermissions && userPermissions.includes('UPDATE_TOUR')) { %>
+                                                            <a href="/tour/edit/<%= tour._id %>" class="btn btn-sm btn-outline-primary btn__edit" title="Chỉnh sửa">
+                                                                <i class="fas fa-edit"></i>
+                                                            </a>
+                                                        <% } else { %>
+                                                            <a class="btn btn-sm btn-outline-primary btn__edit disabled" style="pointer-events:none; opacity:0.5; margin-right: 5px;" title="Bạn không có quyền chỉnh sửa">
+                                                                <i class="fas fa-edit"></i>
+                                                            </a>
+                                                        <% } %>
+                                                        <% if (userPermissions && userPermissions.includes('DELETE_TOUR')) { %>
+                                                            <form class="d-inline tour__form--delete" method="POST" action="/tour/delete/<%= tour._id %>">
+                                                                <%- include('partials/csrf-token') %>
+                                                                <button type="button" class="btn btn-sm btn-outline-danger btn__delete" onclick="showDeleteModal('<%= tour.title %>', this.closest('form'), this.closest('tr'))" title="Xóa">
+                                                                    <i class="fas fa-trash"></i>
+                                                                </button>
+                                                            </form>
+                                                        <% } else { %>
+                                                            <button class="btn btn-sm btn-outline-danger btn__delete disabled" style="pointer-events:none; opacity:0.5; margin-right: 5px;" title="Bạn không có quyền xóa">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        <% } %>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        <% }); %>
+                                    <% } else { %>
+                                        <tr>
+                                            <td colspan="14" class="text-center py-4">
+                                                <div class="empty-state py-5 my-5">
+                                                    <i class="fas fa-route fa-3x text-muted mb-3"></i>
+                                                    <h5 class="text-muted">Chưa có tour nào</h5>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination Section -->
+                        <% if (tours && tours.length > 0) { %>
+                        <div class="tour__pagination">
+                            <nav aria-label="Phân trang tour">
+                                <ul class="pagination justify-content-center">
+                                    <!-- Previous Button -->
+                                    <li class="page-item <%= currentPage <= 1 ? 'disabled' : '' %>">
+                                        <% if (currentPage > 1) { %>
+                                            <a class="page-link" href="?page=<%= currentPage - 1 %><%= Object.keys(query).filter(k => k !== 'page').map(k => `&${k}=${query[k]}`).join('') %>" aria-label="Trang trước">
+                                                &laquo;
+                                            </a>
+                                        <% } else { %>
+                                            <span class="page-link text-muted">
+                                                &laquo;
+                                            </span>
+                                        <% } %>
+                                    </li>
+                                    
+                                    <!-- Page Numbers -->
+                                    <% for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) { %>
+                                        <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+                                            <a class="page-link" href="?page=<%= i %><%= Object.keys(query).filter(k => k !== 'page').map(k => `&${k}=${query[k]}`).join('') %>">
+                                                <%= i %>
+                                            </a>
+                                        </li>
+                                    <% } %>
+                                    
+                                    <!-- Next Button -->
+                                    <li class="page-item <%= currentPage >= totalPages ? 'disabled' : '' %>">
+                                        <% if (currentPage < totalPages) { %>
+                                            <a class="page-link" href="?page=<%= currentPage + 1 %><%= Object.keys(query).filter(k => k !== 'page').map(k => `&${k}=${query[k]}`).join('') %>" aria-label="Trang sau">
+                                                &raquo;
+                                            </a>
+                                        <% } else { %>
+                                            <span class="page-link text-muted">
+                                                &raquo;
+                                            </span>
+                                        <% } %>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Confirmation Modal -->
+        <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title" id="deleteModalLabel">
+                            Xóa tour
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-3">Bạn có chắc chắn muốn xóa tour <strong id="tourNameToDelete"></strong>?</p>
+                        <div class="alert alert-warning d-flex align-items-center">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <small>Hành động này không thể hoàn tác!</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-2"></i>Hủy
+                        </button>
+                        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                            <i class="fas fa-trash me-2"></i>Xóa
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- jQuery -->
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <!-- Select2 JS -->
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+        <!-- Bootstrap JS -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="/js/toast-auto-hide.js?v=<%= Date.now() %>"></script>
+        <script src="/js/tour.js?v=<%= Date.now() %>"></script>
+        <script src="/js/select2.js?v=<%= Date.now() %>"></script>
+        
+
+
+
+
+
+        
+        <!-- Thêm CSRF token cho JavaScript -->
+        <script>
+            window.csrfToken = '<%= csrfToken %>';
+        </script>
+        
+        <!-- Session Security -->
+        <script src="/js/session-security.js?v=<%= Date.now() %>"></script>
+    </body>
+</html>

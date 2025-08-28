@@ -1,0 +1,213 @@
+.modal-notify {
+    position: fixed;
+    top: 35px;
+    right: 20px;
+    z-index: 9999;
+    min-width: 320px;
+    max-width: 400px;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+
+    &--active {
+        opacity: 1 !important;
+        transform: translateX(0) !important;
+        pointer-events: all;
+    }
+
+    // Toast variants based on status
+    &--success {
+        .modal-notify__content {
+            border-left-color: #28a745;
+        }
+    }
+
+    &--error {
+        .modal-notify__content {
+            border-left-color: #dc3545;
+        }
+    }
+
+    &--warning {
+        .modal-notify__content {
+            border-left-color: #ffc107;
+        }
+    }
+
+    &--info {
+        .modal-notify__content {
+            border-left-color: #3498db;
+        }
+    }
+
+    // Main content container
+    &__content {
+        background: #ffffff;
+        border-radius: 6px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e9ecef;
+        border-left: 3px solid #dee2e6; 
+        padding: 8px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        min-height: 40px;
+        transition: all 0.2s ease;
+
+        &:hover {
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.12), 0 3px 8px rgba(0, 0, 0, 0.08);
+            transform: translateY(-1px);
+        }
+    }
+
+    // Message text styling
+    &__message {
+        flex: 1;
+        font-size: 10px;
+        font-weight: 500;
+        line-height: 1.4;
+        color: #2c3e50;
+        margin: 0;
+        padding: 0;
+        word-wrap: break-word;
+        text-align: left;
+
+        // Remove any icon spacing if icons are accidentally included
+        i {
+            display: none;
+        }
+    }
+
+    // Close button styling
+    &__close {
+        background: transparent;
+        border: none;
+        color: #6c757d;
+        cursor: pointer;
+        padding: 0;
+        margin: 0 0 0 8px;
+        border-radius: 3px;
+        transition: all 0.2s ease;
+        font-size: 10px;
+        line-height: 1;
+        font-weight: 400;
+        width: 20px;
+        height: 20px;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-family: Arial, sans-serif;
+        
+        // Always show the × character using CSS
+        &::before {
+            content: "×";
+            display: block !important;
+            font-size: 16px;
+            line-height: 1;
+            color: #6c757d;
+        }
+
+        &:hover {
+            background-color: #f8f9fa;
+            
+            &::before {
+                color: #495057;
+            }
+        }
+
+        &:focus {
+            outline: 2px solid #3498db;
+            outline-offset: 1px;
+            background-color: #f8f9fa;
+        }
+
+        &:active {
+            transform: scale(0.9);
+        }
+
+        // Hide any text content inside the button (rely on ::before)
+        font-size: 0;
+        
+        // Hide any FontAwesome icons if they accidentally get included
+        i {
+            display: none !important;
+        }
+    }
+
+    // Animation for hiding
+    &--hiding {
+        opacity: 0 !important;
+        transform: translateX(100%) !important;
+        pointer-events: none;
+    }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+    .modal-notify {
+        right: 16px;
+        left: 16px;
+        min-width: auto;
+        max-width: none;
+        width: auto;
+
+        &__content {
+            padding: 8px 10px;
+            min-height: 32px;
+        }
+
+        &__message {
+            font-size: 12px;
+        }
+
+        &__close {
+            width: 18px;
+            height: 18px;
+            
+            &::before {
+                font-size: 14px;
+            }
+        }
+    }
+}
+
+// High contrast mode support
+@media (prefers-contrast: high) {
+    .modal-notify {
+        &__content {
+            border-width: 2px;
+            border-left-width: 3px;
+        }
+
+        &__message {
+            font-weight: 600;
+        }
+    }
+}
+
+// Dark mode support (if needed in future)
+@media (prefers-color-scheme: dark) {
+    .modal-notify {
+        &__content {
+            background: #2c3e50;
+            border-color: #495057;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        &__message {
+            color: #ffffff;
+        }
+
+        &__close {
+            color: #adb5bd;
+
+            &:hover {
+                background-color: #495057;
+                color: #ffffff;
+            }
+        }
+    }
+}

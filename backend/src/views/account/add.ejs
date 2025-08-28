@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="vi">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Thêm tài khoản mới</title>
+        <!-- Embed Font -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+            rel="stylesheet"
+        />
+        <!-- Bootstrap CSS -->
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+        />
+        <!-- Font Awesome -->
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+        <!-- Select2 CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+        <!-- CSS -->
+        <link rel="stylesheet" href="/css/main.css" />
+    </head>
+    <body>
+        <div class="dashboard">
+            <div class="container_fuild">
+                <div class="dashboard__inner">
+                    <%- include('../partials/sidebar') %>
+                    <div class="destination">
+                        <div class="row justify-content-center">
+                            <div class="col-md-12">
+                                <div class="destination-form">
+                                    <div class="destination-form__header">
+                                        <h3>Thêm tài khoản mới</h3>
+                                    </div>
+                                    
+                                    <!-- Notification Messages -->
+                                    <% if (message && message.length > 0) { %>
+                                    <div class="modal-notify modal-notify--active modal-notify--success">
+                                        <div class="modal-notify__content">
+                                            <span class="modal-notify__message">
+                                                <i class="fas fa-check-circle me-2"></i><%= message[0] %>
+                                            </span>
+                                            <button class="modal-notify__close">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <% } %> 
+                                    <% if (error && error.length > 0) { %>
+                                    <div class="modal-notify modal-notify--active modal-notify--error">
+                                        <div class="modal-notify__content">
+                                            <span class="modal-notify__message">
+                                                <i class="fas fa-exclamation-circle me-2"></i><%= error[0] %>
+                                            </span>
+                                            <button class="modal-notify__close">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <% } %>
+                                    
+                                    <div class="destination-form__body">
+                                        <form
+                                            method="POST"
+                                            action="/account/add"
+                                            enctype="multipart/form-data"
+                                        >
+                                            <%- include('../partials/csrf-token') %>
+                                            <div class="mb-4">
+                                                <label for="fullName" class="form-label">
+                                                    Họ tên
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    class="form-control <%= validationErrors && validationErrors.fullName ? 'is-invalid' : '' %>"
+                                                    id="fullName"
+                                                    name="fullName"
+                                                    placeholder="Nhập họ tên..."
+                                                    value="<%= user && user.fullName ? user.fullName : '' %>"
+                                                    required
+                                                />
+                                                <% if (validationErrors && validationErrors.fullName) { %>
+                                                    <div class="invalid-feedback"><%= validationErrors.fullName %></div>
+                                                <% } %>
+                                            </div>
+                                            <div class="mb-4">
+                                                <label for="email" class="form-label">
+                                                    Email
+                                                </label>
+                                                <input
+                                                    type="email"
+                                                    class="form-control <%= validationErrors && validationErrors.email ? 'is-invalid' : '' %>"
+                                                    id="email"
+                                                    name="email"
+                                                    placeholder="Nhập email..."
+                                                    value="<%= user && user.email ? user.email : '' %>"
+                                                    required
+                                                />
+                                                <% if (validationErrors && validationErrors.email) { %>
+                                                    <div class="invalid-feedback"><%= validationErrors.email %></div>
+                                                <% } %>
+                                            </div>
+                                            <div class="mb-4">
+                                                <label for="username" class="form-label">
+                                                    Tên đăng nhập <small class="text-muted">(không bắt buộc)</small>
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    class="form-control <%= validationErrors && validationErrors.username ? 'is-invalid' : '' %>"
+                                                    id="username"
+                                                    name="username"
+                                                    placeholder="Nhập tên đăng nhập (nếu cần)..."
+                                                    value="<%= user && user.username ? user.username : '' %>"
+                                                />
+                                                <% if (validationErrors && validationErrors.username) { %>
+                                                    <div class="invalid-feedback"><%= validationErrors.username %></div>
+                                                <% } %>
+                                            </div>
+                                            <div class="mb-4">
+                                                <label for="password" class="form-label">
+                                                    Mật khẩu
+                                                </label>
+                                                <input
+                                                    type="password"
+                                                    class="form-control <%= validationErrors && validationErrors.password ? 'is-invalid' : '' %>"
+                                                    id="password"
+                                                    name="password"
+                                                    placeholder="Nhập mật khẩu (để trống = 123456)"
+                                                />
+                                                <% if (validationErrors && validationErrors.password) { %>
+                                                    <div class="invalid-feedback"><%= validationErrors.password %></div>
+                                                <% } %>
+                                            </div>
+                                            <div class="mb-4">
+                                                <label for="role" class="form-label">
+                                                    Vai trò
+                                                </label>
+                                                <select class="form-select select2 <%= validationErrors && validationErrors.role ? 'is-invalid' : '' %>" id="role" name="role" required>
+                                                    <option value="">-- Chọn vai trò --</option>
+                                                    <% if (roles && roles.length > 0) { %>
+                                                        <% roles.forEach(role => { %>
+                                                            <option value="<%= role.name %>" <%= user && user.role === role.name ? 'selected' : '' %>><%= role.name %></option>
+                                                        <% }); %>
+                                                    <% } else { %>
+                                                        <option value="" disabled>Chưa có vai trò nào</option>
+                                                    <% } %>
+                                                </select>
+                                                <% if (validationErrors && validationErrors.role) { %>
+                                                    <div class="invalid-feedback"><%= validationErrors.role %></div>
+                                                <% } %>
+                                            </div>
+                                            <div class="mb-4">
+                                                <label for="avatar" class="form-label">
+                                                    Ảnh đại diện
+                                                </label>
+                                                <input
+                                                    type="file"
+                                                    class="form-control"
+                                                    id="avatar"
+                                                    name="avatar"
+                                                    accept="image/*"
+                                                    onchange="previewImage(this)"
+                                                />
+                                                <div class="mt-3" id="imagePreview" style="display: none;">
+                                                    <small class="text-muted d-block mb-2">Xem trước:</small>
+                                                    <img id="previewImg" style="width: 80px; height: 80px; object-fit: cover; border-radius: 50%; border: 2px solid #ddd;">
+                                                </div>
+                                            </div>
+                                            <div
+                                                class="d-flex justify-content-between gap-3"
+                                            >
+                                                <a
+                                                    href="/account"
+                                                    class="btn btn-secondary"
+                                                >
+                                                    <i class="fas fa-arrow-left me-2"></i>Quay lại
+                                                </a>
+                                                <button
+                                                    type="submit"
+                                                    class="btn btn-primary"
+                                                >
+                                                    <i class="fas fa-plus me-2"></i>Thêm tài khoản
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- jQuery -->
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <!-- Select2 JS -->
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="/js/toast-auto-hide.js?v=<%= Date.now() %>"></script>
+        <script src="/js/selectAdd.js?v=<%= Date.now() %>"></script>
+        <script>
+            function previewImage(input) {
+                const preview = document.getElementById('imagePreview');
+                const previewImg = document.getElementById('previewImg');
+                
+                if (input.files && input.files[0]) {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        previewImg.src = e.target.result;
+                        preview.style.display = 'block';
+                    }
+                    
+                    reader.readAsDataURL(input.files[0]);
+                } else {
+                    preview.style.display = 'none';
+                }
+            }
+
+            // Ẩn lỗi validation khi người dùng bắt đầu nhập lại
+            document.addEventListener('DOMContentLoaded', function() {
+                // Lấy tất cả input và select có class is-invalid
+                const invalidInputs = document.querySelectorAll('.is-invalid');
+                
+                invalidInputs.forEach(function(input) {
+                    // Xử lý sự kiện input cho text, email, password inputs
+                    input.addEventListener('input', function() {
+                        // Xóa class is-invalid
+                        this.classList.remove('is-invalid');
+                        
+                        // Tìm và ẩn feedback message
+                        const feedback = this.nextElementSibling;
+                        if (feedback && feedback.classList.contains('invalid-feedback')) {
+                            feedback.style.display = 'none';
+                        }
+                    });
+                    
+                    // Xử lý sự kiện change cho select
+                    if (input.tagName === 'SELECT') {
+                        input.addEventListener('change', function() {
+                            // Xóa class is-invalid
+                            this.classList.remove('is-invalid');
+                            
+                            // Tìm và ẩn feedback message
+                            const feedback = this.nextElementSibling;
+                            if (feedback && feedback.classList.contains('invalid-feedback')) {
+                                feedback.style.display = 'none';
+                            }
+                        });
+                    }
+                });
+
+                // Đăng ký event cho tất cả các input để xử lý khi người dùng nhập mới
+                const allInputs = document.querySelectorAll('input, select');
+                allInputs.forEach(function(input) {
+                    if (input.type !== 'file' && input.type !== 'submit') {
+                        input.addEventListener('input', function() {
+                            // Xóa class is-invalid
+                            this.classList.remove('is-invalid');
+                            
+                            // Tìm và ẩn feedback message
+                            const feedback = this.nextElementSibling;
+                            if (feedback && feedback.classList.contains('invalid-feedback')) {
+                                feedback.style.display = 'none';
+                            }
+                        });
+                    }
+                    
+                    // Xử lý sự kiện change cho select
+                    if (input.tagName === 'SELECT') {
+                        input.addEventListener('change', function() {
+                            // Xóa class is-invalid
+                            this.classList.remove('is-invalid');
+                            
+                            // Tìm và ẩn feedback message
+                            const feedback = this.nextElementSibling;
+                            if (feedback && feedback.classList.contains('invalid-feedback')) {
+                                feedback.style.display = 'none';
+                            }
+                        });
+                    }
+                });
+            });
+        </script>
+    </body>
+</html>

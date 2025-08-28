@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="vi">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Quản lý đánh giá</title>
+        <!-- Embed Font -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+            rel="stylesheet"
+        />
+        <!-- Bootstrap CSS -->
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+        />
+        <!-- Font Awesome -->
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+        <!-- Select2 CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+        <!-- CSS -->
+        <link rel="stylesheet" href="/css/main.css" />
+    </head>
+    <body>
+        <div class="dashboard">
+            <div class="container_fuild">
+                <div class="dashboard__inner">
+                    <%- include('partials/sidebar') %>
+                    <div class="review" style="margin-left: 240px;">
+                        <div class="review__header">
+                            <h2 class="review__title">Quản lý đánh giá</h2>
+                            <div class="review__actions">
+                                <div class="d-flex align-items-center gap-3">
+                                    <span class="text-muted">
+                                        Tổng: <%= pagination.totalReviews %> đánh giá
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Search and Filter Section -->
+                        <div class="review__search-section">
+                            <div class="row align-items-center mb-3">
+                                <!-- Search Form -->
+                                <div class="col-md-8">
+                                    <form method="GET" action="/review" class="review__search-form">
+                                        <div class="input-group">
+                                            <input
+                                                type="text"
+                                                name="search"
+                                                class="form-control"
+                                                placeholder="Tìm kiếm theo nội dung đánh giá, tên người dùng hoặc tour..."
+                                                value="<%= query.search || '' %>"
+                                                maxlength="100"
+                                            >
+                                            <button class="btn btn-outline-secondary" type="submit">
+                                                <i class="fas fa-search me-1"></i>Tìm kiếm
+                                            </button>
+                                            <% if (query.search) { %>
+                                            <a href="/review" class="btn btn-outline-danger">
+                                                <i class="fas fa-times"></i>
+                                            </a>
+                                            <% } %>
+                                        </div>
+                                    </form>
+                                </div>
+
+                                <!-- Items per page -->
+                                <div class="col-md-4 text-end">
+                                    <form method="GET" action="/review" class="review__items-per-page-form">
+                                        <% if (query.search) { %>
+                                        <input type="hidden" name="search" value="<%= query.search %>">
+                                        <% } %>
+                                        <% if (query.status) { %>
+                                        <input type="hidden" name="status" value="<%= query.status %>">
+                                        <% } %>
+                                        <% if (query.rating) { %>
+                                        <input type="hidden" name="rating" value="<%= query.rating %>">
+                                        <% } %>
+                                        <% if (query.sortBy) { %>
+                                        <input type="hidden" name="sortBy" value="<%= query.sortBy %>">
+                                        <% } %>
+                                        <% if (query.sortOrder) { %>
+                                        <input type="hidden" name="sortOrder" value="<%= query.sortOrder %>">
+                                        <% } %>
+                                        <div class="input-group" style="max-width: 200px;">
+                                            <span class="input-group-text">
+                                                <i class="fas fa-list"></i>
+                                            </span>
+                                            <select name="limit" class="form-select" onchange="this.form.submit()">
+                                                <option value="5" <%= pagination.limit == 5 ? 'selected' : '' %>>5 / trang</option>
+                                                <option value="10" <%= pagination.limit == 10 ? 'selected' : '' %>>10 / trang</option>
+                                                <option value="20" <%= pagination.limit == 20 ? 'selected' : '' %>>20 / trang</option>
+                                                <option value="50" <%= pagination.limit == 50 ? 'selected' : '' %>>50 / trang</option>
+                                            </select>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <!-- Advanced Filters Row -->
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-3">
+                                    <form method="GET" action="/review" class="review__filter-form">
+                                        <% if (query.search) { %>
+                                        <input type="hidden" name="search" value="<%= query.search %>">
+                                        <% } %>
+                                        <% if (query.rating) { %>
+                                        <input type="hidden" name="rating" value="<%= query.rating %>">
+                                        <% } %>
+                                        <% if (query.sortBy) { %>
+                                        <input type="hidden" name="sortBy" value="<%= query.sortBy %>">
+                                        <% } %>
+                                        <% if (query.sortOrder) { %>
+                                        <input type="hidden" name="sortOrder" value="<%= query.sortOrder %>">
+                                        <% } %>
+                                        <% if (query.limit) { %>
+                                        <input type="hidden" name="limit" value="<%= query.limit %>">
+                                        <% } %>
+                                        <div class="input-group">
+                                            <span class="input-group-text">
+                                                <i class="fas fa-filter"></i>
+                                            </span>
+                                            <select name="status" class="form-select" onchange="this.form.submit()">
+                                                <option value="">Tất cả trạng thái</option>
+                                                <option value="pending" <%= query.status === 'pending' ? 'selected' : '' %>>Chờ duyệt</option>
+                                                <option value="approved" <%= query.status === 'approved' ? 'selected' : '' %>>Đã duyệt</option>
+                                                <option value="rejected" <%= query.status === 'rejected' ? 'selected' : '' %>>Từ chối</option>
+                                                <option value="hidden" <%= query.status === 'hidden' ? 'selected' : '' %>>Đã ẩn</option>
+                                                <option value="deleted" <%= query.status === 'deleted' ? 'selected' : '' %>>Đã xóa</option>
+                                            </select>
+                                        </div>
+                                    </form>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <form method="GET" action="/review" class="review__rating-form">
+                                        <% if (query.search) { %>
+                                        <input type="hidden" name="search" value="<%= query.search %>">
+                                        <% } %>
+                                        <% if (query.status) { %>
+                                        <input type="hidden" name="status" value="<%= query.status %>">
+                                        <% } %>
+                                        <% if (query.sortBy) { %>
+                                        <input type="hidden" name="sortBy" value="<%= query.sortBy %>">
+                                        <% } %>
+                                        <% if (query.sortOrder) { %>
+                                        <input type="hidden" name="sortOrder" value="<%= query.sortOrder %>">
+                                        <% } %>
+                                        <% if (query.limit) { %>
+                                        <input type="hidden" name="limit" value="<%= query.limit %>">
+                                        <% } %>
+                                        <div class="input-group">
+                                            <span class="input-group-text">
+                                                <i class="fas fa-star"></i>
+                                            </span>
+                                            <select name="rating" class="form-select" onchange="this.form.submit()">
+                                                <option value="">Tất cả đánh giá</option>
+                                                <option value="5" <%= query.rating == 5 ? 'selected' : '' %>>5 sao</option>
+                                                <option value="4" <%= query.rating == 4 ? 'selected' : '' %>>4 sao</option>
+                                                <option value="3" <%= query.rating == 3 ? 'selected' : '' %>>3 sao</option>
+                                                <option value="2" <%= query.rating == 2 ? 'selected' : '' %>>2 sao</option>
+                                                <option value="1" <%= query.rating == 1 ? 'selected' : '' %>>1 sao</option>
+                                            </select>
+                                        </div>
+                                    </form>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <form method="GET" action="/review" class="review__sort-form">
+                                        <% if (query.search) { %>
+                                        <input type="hidden" name="search" value="<%= query.search %>">
+                                        <% } %>
+                                        <% if (query.status) { %>
+                                        <input type="hidden" name="status" value="<%= query.status %>">
+                                        <% } %>
+                                        <% if (query.rating) { %>
+                                        <input type="hidden" name="rating" value="<%= query.rating %>">
+                                        <% } %>
+                                        <% if (query.sortOrder) { %>
+                                        <input type="hidden" name="sortOrder" value="<%= query.sortOrder %>">
+                                        <% } %>
+                                        <% if (query.limit) { %>
+                                        <input type="hidden" name="limit" value="<%= query.limit %>">
+                                        <% } %>
+                                        <div class="input-group">
+                                            <span class="input-group-text">
+                                                <i class="fas fa-sort"></i>
+                                            </span>
+                                            <select name="sortBy" class="form-select" onchange="this.form.submit()">
+                                                <option value="createdAt" <%= (!query.sortBy || query.sortBy === 'createdAt') ? 'selected' : '' %>>Ngày tạo</option>
+                                                <option value="rating" <%= query.sortBy === 'rating' ? 'selected' : '' %>>Đánh giá</option>
+                                                <option value="status" <%= query.sortBy === 'status' ? 'selected' : '' %>>Trạng thái</option>
+                                            </select>
+                                        </div>
+                                    </form>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <form method="GET" action="/review" class="review__order-form">
+                                        <% if (query.search) { %>
+                                        <input type="hidden" name="search" value="<%= query.search %>">
+                                        <% } %>
+                                        <% if (query.status) { %>
+                                        <input type="hidden" name="status" value="<%= query.status %>">
+                                        <% } %>
+                                        <% if (query.rating) { %>
+                                        <input type="hidden" name="rating" value="<%= query.rating %>">
+                                        <% } %>
+                                        <% if (query.sortBy) { %>
+                                        <input type="hidden" name="sortBy" value="<%= query.sortBy %>">
+                                        <% } %>
+                                        <% if (query.limit) { %>
+                                        <input type="hidden" name="limit" value="<%= query.limit %>">
+                                        <% } %>
+                                        <div class="input-group">
+                                            <span class="input-group-text">
+                                                <i class="fas fa-sort-amount-down"></i>
+                                            </span>
+                                            <select name="sortOrder" class="form-select" onchange="this.form.submit()">
+                                                <option value="desc" <%= (!query.sortOrder || query.sortOrder === 'desc') ? 'selected' : '' %>>Mới nhất</option>
+                                                <option value="asc" <%= query.sortOrder === 'asc' ? 'selected' : '' %>>Cũ nhất</option>
+                                            </select>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="review__table--wrapper">
+                            <table class="table table-striped review__table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 60px;">STT</th>
+                                        <th style="width: 150px;">Người dùng</th>
+                                        <th style="width: 200px;">Tour</th>
+                                        <th style="width: 100px;">Đánh giá</th>
+                                        <th style="width: 300px;">Nội dung</th>
+                                        <th style="width: 120px;">Trạng thái</th>
+                                        <th style="width: 120px;">Ngày tạo</th>
+                                        <th style="width: 140px;">Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% if (reviews && reviews.length > 0) { %>
+                                        <% reviews.forEach((review, index) => { %>
+                                            <tr class="review-row" data-id="<%= review._id %>">
+                                                <td style="width: 5%;">
+                                                    <span class="text-muted"><%= (pagination.current - 1) * pagination.limit + index + 1 %></span>
+                                                </td>
+                                                <td style="width: 15%">
+                                                    <div class="d-flex align-items-center">
+                                                        <img 
+                                                            src="<%= review.user?.avatar || '/images/circle-user.svg' %>" 
+                                                            alt="Avatar" 
+                                                            class="rounded-circle me-2"
+                                                            style="width: 32px; height: 32px; object-fit: cover;"
+                                                        >
+                                                        <div>
+                                                            <div class="fw-bold">
+                                                                <%= review.user?.fullName || review.customerName || 'Khách hàng ẩn danh' %>
+                                                                <% if (!review.user && review.customerName) { %>
+                                                                    <span class="badge bg-info ms-1" title="Đánh giá từ booking">
+                                                                        <i class="fas fa-ticket-alt"></i>
+                                                                    </span>
+                                                                <% } %>
+                                                            </div>
+                                                            <small class="text-muted">
+                                                                <%= review.user?.email || review.customerEmail || 'Email không có' %>
+                                                            </small>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div>
+                                                        <div class="fw-bold"><%= review.tour?.title || 'N/A' %></div>
+                                                        <small class="text-muted">Mã: <%= review.tour?.code || 'N/A' %></small>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <% for (let i = 1; i <= 5; i++) { %>
+                                                            <i class="fas fa-star <%= i <= review.rating ? 'text-warning' : 'text-muted' %>"></i>
+                                                        <% } %>
+                                                        <span class="ms-2 fw-bold"><%= review.rating %>/5</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="review-comment" style="max-width: 300px;">
+                                                        <p class="mb-0" style="
+                                                            overflow: hidden;
+                                                            text-overflow: ellipsis;
+                                                            display: -webkit-box;
+                                                            -webkit-line-clamp: 3;
+                                                            line-clamp: 3;
+                                                            -webkit-box-orient: vertical;
+                                                            line-height: 1.4;
+                                                        ">
+                                                            "<%= review.comment %>"
+                                                        </p>
+                                                        <% if (review.comment.length > 100) { %>
+                                                            <small class="text-primary" style="cursor: pointer;" onclick="toggleComment(this)">
+                                                                Xem thêm
+                                                            </small>
+                                                        <% } %>
+                                                    </div>
+                                                </td>
+                                                <td style="text-align: center; width: 8%">
+                                                    <% if (userPermissions && userPermissions.includes('UPDATE_REVIEW')) { %>
+                                                        <button
+                                                            class="btn btn-sm
+                                                                <%= review.status === 'approved' ? 'btn-success' :
+                                                                    review.status === 'rejected' ? 'btn-danger' :
+                                                                    review.status === 'hidden' ? 'btn-secondary' :
+                                                                    review.status === 'deleted' ? 'btn-dark' : 'btn-warning' %>
+                                                                review__status-toggle"
+                                                            onclick="toggleReviewStatus(this)"
+                                                            data-id="<%= review._id %>"
+                                                            data-status="<%= review.status %>"
+                                                            title="Click để thay đổi trạng thái"
+                                                        >
+                                                            <%= review.status === 'approved' ? 'Đã duyệt' :
+                                                                review.status === 'rejected' ? 'Từ chối' :
+                                                                review.status === 'hidden' ? 'Đã ẩn' :
+                                                                review.status === 'deleted' ? 'Đã xóa' : 'Chờ duyệt' %>
+                                                        </button>
+                                                    <% } else { %>
+                                                        <span class="badge
+                                                            <%= review.status === 'approved' ? 'bg-success' :
+                                                                review.status === 'rejected' ? 'bg-danger' :
+                                                                review.status === 'hidden' ? 'bg-secondary' :
+                                                                review.status === 'deleted' ? 'bg-dark' : 'bg-warning' %>"
+                                                        >
+                                                            <%= review.status === 'approved' ? 'Đã duyệt' :
+                                                                review.status === 'rejected' ? 'Từ chối' :
+                                                                review.status === 'hidden' ? 'Đã ẩn' :
+                                                                review.status === 'deleted' ? 'Đã xóa' : 'Chờ duyệt' %>
+                                                        </span>
+                                                    <% } %>
+                                                </td>
+                                                <td style="width: 10%">
+                                                    <div>
+                                                        <div><%= new Date(review.createdAt).toLocaleDateString('vi-VN') %></div>
+                                                        <small class="text-muted"><%= new Date(review.createdAt).toLocaleTimeString('vi-VN') %></small>
+                                                    </div>
+                                                </td>
+                                                <td style="width: 8%">
+                                                    <div class="d-flex gap-1 justify-content-center">
+                                                        <% if (userPermissions && userPermissions.includes('UPDATE_REVIEW')) { %>
+                                                            <!-- Approve button -->
+                                                            <% if (review.status !== 'approved') { %>
+                                                                <button
+                                                                    class="btn btn-sm btn-outline-success"
+                                                                    onclick="approveReview('<%= review._id %>')"
+                                                                    title="Phê duyệt"
+                                                                >
+                                                                    <i class="fas fa-check"></i>
+                                                                </button>
+                                                            <% } %>
+
+                                                            <!-- Hide button -->
+                                                            <% if (review.status !== 'hidden' && review.status !== 'deleted') { %>
+                                                                <button
+                                                                    class="btn btn-sm btn-outline-secondary"
+                                                                    onclick="hideReview('<%= review._id %>')"
+                                                                    title="Ẩn đánh giá"
+                                                                >
+                                                                    <i class="fas fa-eye-slash"></i>
+                                                                </button>
+                                                            <% } %>
+
+                                                            <!-- Restore button -->
+                                                            <% if (review.status === 'hidden' || review.status === 'deleted') { %>
+                                                                <button
+                                                                    class="btn btn-sm btn-outline-info"
+                                                                    onclick="restoreReview('<%= review._id %>')"
+                                                                    title="Khôi phục"
+                                                                >
+                                                                    <i class="fas fa-undo"></i>
+                                                                </button>
+                                                            <% } %>
+                                                        <% } %>
+
+                                                        <% if (userPermissions && userPermissions.includes('DELETE_REVIEW')) { %>
+                                                            <button
+                                                                class="btn btn-sm btn-outline-danger"
+                                                                onclick="softDeleteReview('<%= review._id %>')"
+                                                                title="Xóa đánh giá"
+                                                            >
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        <% } %>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        <% }); %>
+                                    <% } else { %>
+                                        <tr>
+                                            <td colspan="8" class="text-center py-4">
+                                                <div class="text-muted">
+                                                    <i class="fas fa-star fa-3x mb-3"></i>
+                                                    <p>Không có đánh giá nào được tìm thấy</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        <% if (pagination.total > 1) { %>
+                        <nav aria-label="Pagination">
+                            <ul class="pagination justify-content-center">
+                                <!-- Previous Page -->
+                                <% if (pagination.hasPrev) { %>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=<%= pagination.current - 1 %>&limit=<%= pagination.limit %>&search=<%= query.search || '' %>&status=<%= query.status || '' %>&rating=<%= query.rating || '' %>&sortBy=<%= query.sortBy || 'createdAt' %>&sortOrder=<%= query.sortOrder || 'desc' %>">
+                                            <i class="fas fa-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                <% } else { %>
+                                    <li class="page-item disabled">
+                                        <span class="page-link"><i class="fas fa-chevron-left"></i></span>
+                                    </li>
+                                <% } %>
+
+                                <!-- Page Numbers -->
+                                <%
+                                const startPage = Math.max(1, pagination.current - 2);
+                                const endPage = Math.min(pagination.total, pagination.current + 2);
+                                %>
+
+                                <% if (startPage > 1) { %>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1&limit=<%= pagination.limit %>&search=<%= query.search || '' %>&status=<%= query.status || '' %>&rating=<%= query.rating || '' %>&sortBy=<%= query.sortBy || 'createdAt' %>&sortOrder=<%= query.sortOrder || 'desc' %>">1</a>
+                                    </li>
+                                    <% if (startPage > 2) { %>
+                                        <li class="page-item disabled">
+                                            <span class="page-link">...</span>
+                                        </li>
+                                    <% } %>
+                                <% } %>
+
+                                <% for (let i = startPage; i <= endPage; i++) { %>
+                                    <li class="page-item <%= i === pagination.current ? 'active' : '' %>">
+                                        <a class="page-link" href="?page=<%= i %>&limit=<%= pagination.limit %>&search=<%= query.search || '' %>&status=<%= query.status || '' %>&rating=<%= query.rating || '' %>&sortBy=<%= query.sortBy || 'createdAt' %>&sortOrder=<%= query.sortOrder || 'desc' %>">
+                                            <%= i %>
+                                        </a>
+                                    </li>
+                                <% } %>
+
+                                <% if (endPage < pagination.total) { %>
+                                    <% if (endPage < pagination.total - 1) { %>
+                                        <li class="page-item disabled">
+                                            <span class="page-link">...</span>
+                                        </li>
+                                    <% } %>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=<%= pagination.total %>&limit=<%= pagination.limit %>&search=<%= query.search || '' %>&status=<%= query.status || '' %>&rating=<%= query.rating || '' %>&sortBy=<%= query.sortBy || 'createdAt' %>&sortOrder=<%= query.sortOrder || 'desc' %>">
+                                            <%= pagination.total %>
+                                        </a>
+                                    </li>
+                                <% } %>
+
+                                <!-- Next Page -->
+                                <% if (pagination.hasNext) { %>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=<%= pagination.current + 1 %>&limit=<%= pagination.limit %>&search=<%= query.search || '' %>&status=<%= query.status || '' %>&rating=<%= query.rating || '' %>&sortBy=<%= query.sortBy || 'createdAt' %>&sortOrder=<%= query.sortOrder || 'desc' %>">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                <% } else { %>
+                                    <li class="page-item disabled">
+                                        <span class="page-link"><i class="fas fa-chevron-right"></i></span>
+                                    </li>
+                                <% } %>
+                            </ul>
+                        </nav>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Approve Review Confirmation Modal -->
+        <div class="modal fade" id="approveModal" tabindex="-1" aria-labelledby="approveModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title" id="approveModalLabel">
+                            <i class="fas fa-check-circle me-2 text-success"></i>Xác nhận phê duyệt
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-3">Bạn có chắc chắn muốn phê duyệt đánh giá này không?</p>
+                        <div class="alert alert-info d-flex align-items-center mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <small>Đánh giá sẽ được hiển thị công khai sau khi phê duyệt.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-2"></i>Hủy
+                        </button>
+                        <button type="button" class="btn btn-success" id="confirmApproveBtn">
+                            <i class="fas fa-check me-2"></i>Phê duyệt
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hide Review Confirmation Modal -->
+        <div class="modal fade" id="hideModal" tabindex="-1" aria-labelledby="hideModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title" id="hideModalLabel">
+                            <i class="fas fa-eye-slash me-2 text-warning"></i>Xác nhận ẩn đánh giá
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-3">Bạn có chắc chắn muốn ẩn đánh giá này không?</p>
+                        <div class="alert alert-warning d-flex align-items-center mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <small>Đánh giá sẽ không hiển thị công khai nhưng vẫn có thể khôi phục.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-2"></i>Hủy
+                        </button>
+                        <button type="button" class="btn btn-warning" id="confirmHideBtn">
+                            <i class="fas fa-eye-slash me-2"></i>Ẩn đánh giá
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Review Confirmation Modal -->
+        <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title" id="deleteModalLabel">
+                            <i class="fas fa-exclamation-triangle me-2 text-danger"></i>Xác nhận xóa
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-3">Bạn có chắc chắn muốn xóa đánh giá này không?</p>
+                        <div class="alert alert-danger d-flex align-items-center mb-0">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <small>Đánh giá sẽ được đánh dấu là đã xóa nhưng vẫn có thể khôi phục.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-2"></i>Hủy
+                        </button>
+                        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                            <i class="fas fa-trash me-2"></i>Xóa đánh giá
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Restore Review Confirmation Modal -->
+        <div class="modal fade" id="restoreModal" tabindex="-1" aria-labelledby="restoreModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title" id="restoreModalLabel">
+                            <i class="fas fa-undo me-2 text-info"></i>Xác nhận khôi phục
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-3">Bạn có chắc chắn muốn khôi phục đánh giá này không?</p>
+                        <div class="alert alert-info d-flex align-items-center mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <small>Đánh giá sẽ được chuyển về trạng thái chờ duyệt.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-2"></i>Hủy
+                        </button>
+                        <button type="button" class="btn btn-info" id="confirmRestoreBtn">
+                            <i class="fas fa-undo me-2"></i>Khôi phục
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <!-- Bootstrap JS -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+        <!-- jQuery -->
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <!-- Select2 JS -->
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+        <!-- Toast Auto Hide JS -->
+        <script src="/js/toast-auto-hide.js"></script>
+
+        <!-- Handle flash messages -->
+        <% if (typeof message !== 'undefined' && message && message.length > 0) { %>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                showToastNotification('<%= message[0] %>', 'success');
+            });
+        </script>
+        <% } %>
+        <% if (typeof error !== 'undefined' && error && error.length > 0) { %>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                showToastNotification('<%= error[0] %>', 'error');
+            });
+        </script>
+        <% } %>
+
+        <script>
+            // Global variables for modal instances and current review ID
+            let currentReviewId = null;
+            let approveModal, hideModal, deleteModal, restoreModal;
+
+            $(document).ready(function() {
+                // Initialize Bootstrap modals
+                approveModal = new bootstrap.Modal(document.getElementById('approveModal'));
+                hideModal = new bootstrap.Modal(document.getElementById('hideModal'));
+                deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+                restoreModal = new bootstrap.Modal(document.getElementById('restoreModal'));
+            });
+
+            // Toggle review status (legacy function - keeping for compatibility)
+            function toggleReviewStatus(button) {
+                const reviewId = button.getAttribute('data-id');
+                const currentStatus = button.getAttribute('data-status');
+
+                // Show loading state
+                const originalText = button.textContent;
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+
+                fetch(`/review/toggle-status/${reviewId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update button
+                        button.setAttribute('data-status', data.data.status);
+                        button.textContent = data.data.statusText;
+                        button.disabled = false;
+
+                        // Update button class
+                        button.className = 'btn btn-sm review__status-toggle ';
+                        if (data.data.status === 'approved') {
+                            button.className += 'btn-success';
+                        } else if (data.data.status === 'rejected') {
+                            button.className += 'btn-danger';
+                        } else if (data.data.status === 'hidden') {
+                            button.className += 'btn-secondary';
+                        } else if (data.data.status === 'deleted') {
+                            button.className += 'btn-dark';
+                        } else {
+                            button.className += 'btn-warning';
+                        }
+
+                        showToastNotification(data.message, 'success');
+                    } else {
+                        button.disabled = false;
+                        button.textContent = originalText;
+                        showToastNotification(data.message || 'Có lỗi xảy ra', 'error');
+                    }
+                })
+                .catch(error => {
+                    button.disabled = false;
+                    button.textContent = originalText;
+                    showToastNotification('Có lỗi xảy ra khi cập nhật trạng thái', 'error');
+                });
+            }
+
+            // Approve review with modal confirmation
+            function approveReview(reviewId) {
+                currentReviewId = reviewId;
+                approveModal.show();
+            }
+
+            // Hide review with modal confirmation
+            function hideReview(reviewId) {
+                currentReviewId = reviewId;
+                hideModal.show();
+            }
+
+            // Soft delete review with modal confirmation
+            function softDeleteReview(reviewId) {
+                currentReviewId = reviewId;
+                deleteModal.show();
+            }
+
+            // Restore review with modal confirmation
+            function restoreReview(reviewId) {
+                currentReviewId = reviewId;
+                restoreModal.show();
+            }
+
+            // Handle approve confirmation
+            document.getElementById('confirmApproveBtn').addEventListener('click', function() {
+                if (!currentReviewId) return;
+
+                const button = this;
+                const originalText = button.innerHTML;
+
+                // Show loading state
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang xử lý...';
+
+                performReviewAction('/api/admin/reviews/' + currentReviewId + '/approve', 'PATCH', 'Đánh giá đã được phê duyệt thành công')
+                    .finally(() => {
+                        button.disabled = false;
+                        button.innerHTML = originalText;
+                        approveModal.hide();
+                    });
+            });
+
+            // Handle hide confirmation
+            document.getElementById('confirmHideBtn').addEventListener('click', function() {
+                if (!currentReviewId) return;
+
+                const button = this;
+                const originalText = button.innerHTML;
+
+                // Show loading state
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang xử lý...';
+
+                performReviewAction('/api/admin/reviews/' + currentReviewId + '/hide', 'PATCH', 'Đánh giá đã được ẩn thành công')
+                    .finally(() => {
+                        button.disabled = false;
+                        button.innerHTML = originalText;
+                        hideModal.hide();
+                    });
+            });
+
+            // Handle delete confirmation
+            document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+                if (!currentReviewId) return;
+
+                const button = this;
+                const originalText = button.innerHTML;
+
+                // Show loading state
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang xử lý...';
+
+                performReviewAction('/api/admin/reviews/' + currentReviewId, 'DELETE', 'Đánh giá đã được xóa thành công')
+                    .finally(() => {
+                        button.disabled = false;
+                        button.innerHTML = originalText;
+                        deleteModal.hide();
+                    });
+            });
+
+            // Handle restore confirmation
+            document.getElementById('confirmRestoreBtn').addEventListener('click', function() {
+                if (!currentReviewId) return;
+
+                const button = this;
+                const originalText = button.innerHTML;
+
+                // Show loading state
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang xử lý...';
+
+                performReviewAction('/api/admin/reviews/' + currentReviewId + '/restore', 'PATCH', 'Đánh giá đã được khôi phục thành công')
+                    .finally(() => {
+                        button.disabled = false;
+                        button.innerHTML = originalText;
+                        restoreModal.hide();
+                    });
+            });
+
+            // Generic function to perform review actions
+            async function performReviewAction(url, method, successMessage) {
+                try {
+                    const response = await fetch(url, {
+                        method: method,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        credentials: 'include'
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        showToastNotification(successMessage, 'success');
+                        // Reload page after a short delay to show the toast
+                        setTimeout(() => {
+                            location.reload();
+                        }, 2000);
+                    } else {
+                        showToastNotification(data.message || 'Có lỗi xảy ra', 'error');
+                    }
+                } catch (error) {
+                    showToastNotification('Có lỗi xảy ra khi thực hiện thao tác', 'error');
+                }
+            }
+
+            // Legacy delete function - redirects to new soft delete
+            function deleteReview(reviewId) {
+                softDeleteReview(reviewId);
+            }
+
+            // Toggle comment display
+            function toggleComment(element) {
+                const commentDiv = element.parentElement;
+                const paragraph = commentDiv.querySelector('p');
+
+                if (element.textContent === 'Xem thêm') {
+                    paragraph.style.webkitLineClamp = 'unset';
+                    paragraph.style.overflow = 'visible';
+                    element.textContent = 'Thu gọn';
+                } else {
+                    paragraph.style.webkitLineClamp = '3';
+                    paragraph.style.overflow = 'hidden';
+                    element.textContent = 'Xem thêm';
+                }
+            }
+        </script>
+
+        <!-- Toast Auto-hide System -->
+        <script src="/js/toast-auto-hide.js?v=<%= Date.now() %>"></script>
+    </body>
+</html>

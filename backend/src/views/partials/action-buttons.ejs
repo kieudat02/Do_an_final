@@ -1,0 +1,51 @@
+<%
+/*
+ * Action Buttons Helper
+ * Hiển thị các nút actions (Add, Edit, Delete) dựa trên quyền hạn của user
+ * 
+ * Parameters:
+ * - module: tên module (tours, categories, accounts, ...)
+ * - actions: array các action cần hiển thị ['add', 'edit', 'delete']
+ * - item: object item cho edit/delete (có _id)
+ * - addUrl: URL cho nút Add
+ * - editUrl: URL pattern cho nút Edit (sẽ thêm item._id)
+ * - deleteUrl: URL pattern cho nút Delete (sẽ thêm item._id)
+ * - addText: Text cho nút Add
+ * - itemName: Tên item để hiển thị trong confirm delete
+ */
+
+const module = locals.module;
+const actions = locals.actions || ['add', 'edit', 'delete'];
+const item = locals.item;
+const addUrl = locals.addUrl;
+const editUrl = locals.editUrl;
+const deleteUrl = locals.deleteUrl;
+const addText = locals.addText || 'Thêm mới';
+const itemName = locals.itemName || (item && item.name) || (item && item.title) || (item && item.fullName) || 'item';
+%>
+
+<!-- Add Button -->
+<% if (actions.includes('add') && addUrl) { %>
+<a href="<%= addUrl %>" class="btn btn-primary">
+    <i class="fas fa-plus me-2"></i><%= addText %>
+</a>
+<% } %>
+
+<!-- Edit Button -->
+<% if (actions.includes('edit') && editUrl && item) { %>
+<a href="<%= editUrl %>/<%= item._id %>" class="btn btn-sm btn-outline-primary" title="Chỉnh sửa">
+    <i class="fas fa-edit"></i>
+</a>
+<% } %>
+
+<!-- Delete Button -->
+<% if (actions.includes('delete') && deleteUrl && item) { %>
+<form class="d-inline" method="POST" action="<%= deleteUrl %>/<%= item._id %>">
+    <%- include('csrf-token') %>
+    <button type="button" class="btn btn-sm btn-outline-danger" 
+            onclick="showDeleteModal('<%= itemName %>', this.closest('form'), this.closest('tr'))" 
+            title="Xóa">
+        <i class="fas fa-trash"></i>
+    </button>
+</form>
+<% } %>

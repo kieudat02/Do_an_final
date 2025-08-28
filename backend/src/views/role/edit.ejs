@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chỉnh sửa vai trò</title>
+    <!-- Embed Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+        rel="stylesheet"
+    />
+    <!-- Bootstrap CSS -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    />
+    <!-- Font Awesome -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />        <!-- Select2 CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+        <!-- CSS -->
+        <link rel="stylesheet" href="/css/main.css" />
+    </head>
+<body>
+    <div class="dashboard">
+        <div class="container_fuild">
+            <div class="dashboard__inner">
+                <%- include('../partials/sidebar') %>
+                    <div class="category">
+                        <div class="row justify-content-center">
+                            <div class="col-md-12">
+                                <!-- Notification Messages -->
+                                <% if (typeof message !== 'undefined' && message && message.length > 0) { %>
+                                <div class="modal-notify modal-notify--active modal-notify--success">
+                                    <div class="modal-notify__content">
+                                        <span class="modal-notify__message">
+                                            <i class="fas fa-check-circle me-2"></i><%= message[0] %>
+                                        </span>
+                                        <button class="modal-notify__close" type="button" aria-label="Đóng thông báo">
+                                            ×
+                                        </button>
+                                    </div>
+                                </div>
+                                <% } %> 
+                                <% if (typeof error !== 'undefined' && error && error.length > 0) { %>
+                                <div class="modal-notify modal-notify--active modal-notify--error">
+                                    <div class="modal-notify__content">
+                                        <span class="modal-notify__message">
+                                            <i class="fas fa-exclamation-circle me-2"></i><%= error[0] %>
+                                        </span>
+                                        <button class="modal-notify__close" type="button" aria-label="Đóng thông báo">
+                                            ×
+                                        </button>
+                                    </div>
+                                </div>
+                                <% } %>
+                                    <div class="category-form">
+                                        <div class="category-form__header">
+                                            <h3>Chỉnh sửa vai trò</h3>
+                                        </div>
+                                    <div class="category-form__body">
+                                    <form method="POST" action="/roles/edit/<%= role._id %>">
+                                        <%- include('../partials/csrf-token') %>
+                                        <div class="mb-4">
+                                            <label for="name" class="form-label">
+                                                Tên vai trò
+                                            </label>
+                                            <input type="text" class="form-control" id="name" name="name" value="<%= role.name %>" placeholder="Nhập tên vai trò..." required>
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="description" class="form-label">
+                                                Mô tả
+                                            </label>
+                                            <textarea class="form-control" id="description" name="description" rows="4" placeholder="Nhập mô tả vai trò..."><%= role.description %></textarea>
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="level" class="form-label">
+                                                Cấp độ quyền
+                                            </label>
+                                            <select
+                                                class="form-control select2"
+                                                id="level"
+                                                name="level"
+                                                required
+                                            >
+                                                <option value="">Chọn cấp độ quyền</option>
+                                                <option value="1" <%= role.level == 1 ? 'selected' : '' %>>1 - Super Admin (Cao nhất)</option>
+                                                <option value="2" <%= role.level == 2 ? 'selected' : '' %>>2 - Admin</option>
+                                                <option value="3" <%= role.level == 3 ? 'selected' : '' %>>3 - Manager</option>
+                                                <option value="4" <%= role.level == 4 ? 'selected' : '' %>>4 - Viewer (Thấp nhất)</option>
+                                            </select>
+                                        </div>
+                                        <div class="d-flex justify-content-between gap-3">
+                                            <a href="/roles" class="btn btn-secondary">
+                                                <i class="fas fa-arrow-left me-2"></i>Quay lại
+                                            </a>
+                                            <button type="submit" class="btn btn-primary">
+                                                Cập nhật
+                                            </button>
+                                        </div>
+                                    </form> 
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/toast-auto-hide.js?v=<%= Date.now() %>"></script>
+    <script src="/js/selectEdit.js?v=<%= Date.now() %>"></script>
+</body>
+</html>

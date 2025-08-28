@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="vi">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Quản lý phân quyền</title>
+        <!-- Embed Font -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+            rel="stylesheet"
+        />
+        <!-- Bootstrap CSS -->
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+        />
+        <!-- Font Awesome -->
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+        <!-- CSS -->
+        <link rel="stylesheet" href="/css/main.css" />
+    </head>
+    <body>
+        <div class="dashboard">
+            <div class="container_fuild">
+                <div class="dashboard__inner">
+                    <%- include('partials/sidebar') %>
+                    <div class="permissions">
+                        <div class="permissions__header">
+                            <h2 class="permissions__title">Quản lý phân quyền</h2>
+                            <% if (userPermissions && userPermissions.includes('UPDATE_PERMISSIONS')) { %>
+                                <button type="submit" form="permissionsForm" class="permissions__btn permissions__btn--primary">
+                                    Cập nhật phân quyền
+                                </button>
+                            <% } else { %>
+                                <button class="permissions__btn permissions__btn--primary disabled" style="pointer-events: none; opacity: 0.5">
+                                    Cập nhật phân quyền
+                                </button>
+                            <% } %>
+                        </div>
+                        <div class="permissions__table--wrapper">
+                            <form method="POST" action="/permissions/update" id="permissionsForm">
+                                <table border="1" cellpadding="8" cellspacing="0" width="100%">
+                                    <thead>
+                                    <tr>
+                                        <th width="300">Phân quyền</th>
+                                        <th width="400">Mô tả</th>
+                                        <% roles.forEach(role => { %>
+                                        <th width="80">
+                                            <%= role.name %>
+                                        </th>   
+                                        <% }) %>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <% 
+                                    // Định nghĩa tên module tiếng Việt
+                                    const moduleNames = {
+                                        'TOUR': 'Quản lý Tour',
+                                        'CATEGORY': 'Danh mục',
+                                        'DEPARTURE': 'Điểm khởi hành',
+                                        'DESTINATION': 'Điểm đến',
+                                        'TRANSPORTATION': 'Phương tiện',
+                                        'ORDER': 'Đơn hàng',
+                                        'REVIEW': 'Đánh giá',
+                                        'ROLES': 'Vai trò',
+                                        'PERMISSIONS': 'Quyền hạn',
+                                        'USERS': 'Tài khoản'
+                                    };
+                                    
+                                    let currentModule = null;
+                                    %>
+                                    
+                                    <% permissions.forEach((permission, index) => { %>
+                                        <tr>
+                                            <td><strong><%= permission.name %></strong></td>
+                                            <td><%= permission.description %></td>
+                                            <% roles.forEach(role => { %>
+                                                <td style="text-align:center;" <% if (role.name === 'Super Admin') { %>class="super-admin-cell"<% } %>>
+                                                    <%
+                                                    // Chỉ disable 2 quyền quan trọng cho Super Admin
+                                                    const isDisabled = !(userPermissions && userPermissions.includes('UPDATE_PERMISSIONS')) ||
+                                                                      (role.name === 'Super Admin' &&
+                                                                       ['READ_PERMISSIONS', 'UPDATE_PERMISSIONS'].includes(permission.name));
+                                                    %>
+                                                    <input type="checkbox"
+                                                            name="permissions[<%= role._id %>][]"
+                                                            value="<%= permission._id %>"
+                                                            <%= mapping[role._id] && mapping[role._id].includes(permission._id.toString()) ? 'checked' : '' %>
+                                                            <%= isDisabled ? 'disabled' : '' %>
+                                                            <% if (role.name === 'Super Admin' && ['READ_PERMISSIONS', 'UPDATE_PERMISSIONS'].includes(permission.name)) { %>
+                                                                checked title="Quyền quan trọng không thể bỏ"
+                                                            <% } %> />
+                                                </td>
+                                            <% }) %>
+                                        </tr>
+                                    <% }) %>
+                                    </tbody>
+                                </table>
+                            </form>
+                        </div>
+
+                            <!-- Notification Messages -->
+                            <% if (message && message.length > 0) { %>
+                            <div
+                                class="modal-notify modal-notify--active modal-notify--success"
+                            >
+                                <div class="modal-notify__content">
+                                    <span class="modal-notify__message">
+                                        <%= message[0] %>
+                                    </span>
+                                    <button
+                                        class="modal-notify__close"
+                                        onclick="hideToastNotification(this.closest('.modal-notify'))"
+                                    >
+                                        ×
+                                    </button>
+                                </div>
+                            </div>
+                            <% } %> 
+                            <% if (error && error.length > 0) { %>
+                            <div
+                                class="modal-notify modal-notify--active modal-notify--error"
+                            >
+                                <div class="modal-notify__content">
+                                    <span class="modal-notify__message">
+                                        <%= error[0] %>
+                                    </span>
+                                    <button
+                                        class="modal-notify__close"
+                                        onclick="hideToastNotification(this.closest('.modal-notify'))"
+                                    >
+                                        ×
+                                    </button>
+                                </div>
+                            </div>
+                            <% } %>
+                    </div>
+                </div>
+            </div>    
+        </div>
+
+        <!-- Permission Update Confirmation Modal -->
+        <div class="modal fade" id="permissionUpdateModal">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title" id="permissionUpdateModalLabel">
+                            Cập nhật phân quyền
+                        </h5>
+                        <button type="button" class="btn-close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-3">Bạn có chắc chắn muốn cập nhật phân quyền cho <strong>tất cả vai trò</strong>?</p>   
+                        <div class="alert alert-warning d-flex align-items-center">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <small>Các quyền cũ sẽ bị thay thế bởi quyền mới được chọn!</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-2"></i>Hủy
+                        </button>
+                        <button type="button" class="btn btn-primary" id="confirmPermissionUpdateBtn">
+                            <i class="fas fa-check me-2"></i>Cập nhật
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Thêm CSRF token cho JavaScript -->
+        <script>
+            window.csrfToken = '<%= csrfToken %>';
+        </script>
+        
+        <!-- Bootstrap JS -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="/js/toast-auto-hide.js?v=<%= Date.now() %>"></script>
+        <script src="/js/permission-management.js?v=<%= Date.now() %>"></script>
+        
+        <!-- Session Security -->
+        <script src="/js/session-security.js?v=<%= Date.now() %>"></script>
+    </body>
+</html> 
+

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chỉnh sửa khu vực trang chủ</title>
+    <!-- Embed Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+        rel="stylesheet"
+    />
+    <!-- Bootstrap CSS -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    />
+    <!-- Font Awesome -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <!-- CSS -->
+    <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body>
+    <div class="dashboard">
+        <div class="container_fuild">
+            <div class="dashboard__inner">
+                <%- include('../partials/sidebar') %>
+                <div class="home-section">
+                    <div class="home-section-form">
+                        <div class="home-section-form__header">
+                            <h3>Chỉnh sửa khu vực trang chủ</h3>
+                        </div>
+
+                        <!-- Notification Messages -->
+                        <% if (message && message.length > 0) { %>
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <%= message %>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        <% } %>
+                        <% if (error && error.length > 0) { %>
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            <%= error %>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        <% } %>
+
+                        <div class="home-section-form__body">
+                            <% if (userPermissions && userPermissions.includes('UPDATE_HOME_SECTION')) { %>
+                                <form method="POST" action="/homeSection/edit/<%= homeSection._id %>">
+                                    <%- include('../partials/csrf-token') %>
+
+                                    <div class="mb-4">
+                                        <label for="title" class="form-label">
+                                            Tiêu đề section <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="text" class="form-control" id="title" name="title" value="<%= homeSection.title %>" placeholder="Nhập tiêu đề section..." required>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-4">
+                                                <label for="order" class="form-label">
+                                                    Thứ tự hiển thị
+                                                </label>
+                                                <input type="number" class="form-control" id="order" name="order" value="<%= homeSection.order || 0 %>" min="0">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-4">
+                                                <label for="isActive" class="form-label">
+                                                    Trạng thái
+                                                </label>
+                                                <select class="form-select" id="isActive" name="isActive">
+                                                    <option value="true" <%= homeSection.isActive ? 'selected' : '' %>>
+                                                        <i class="fas fa-check-circle"></i> Hoạt động
+                                                    </option>
+                                                    <option value="false" <%= !homeSection.isActive ? 'selected' : '' %>>
+                                                        <i class="fas fa-pause-circle"></i> Tạm dừng
+                                                    </option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <label for="categories" class="form-label">
+                                            Danh mục liên kết
+                                        </label>
+                                        <select class="form-select" id="categories" name="categories" multiple>
+                                            <% categories.forEach(function(cat) { %>
+                                                <option value="<%= cat._id %>" 
+                                                    <%= homeSection.categories && homeSection.categories.some(c => c._id && c._id.toString() === cat._id.toString()) ? 'selected' : '' %>>
+                                                    <%= cat.name %>
+                                                </option>
+                                            <% }); %>
+                                        </select>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-4">
+                                                <label for="moreButtonTitle" class="form-label">
+                                                    Tiêu đề nút "Xem thêm"
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    class="form-control"
+                                                    id="moreButtonTitle"
+                                                    name="moreButtonTitle"
+                                                    value="<%= homeSection.moreButtonTitle || '' %>"
+                                                    placeholder="VD: Xem tất cả tour"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-4">
+                                                <label for="moreButtonSubtitle" class="form-label">
+                                                    Phụ đề nút "Xem thêm"
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    class="form-control"
+                                                    id="moreButtonSubtitle"
+                                                    name="moreButtonSubtitle"
+                                                    value="<%= homeSection.moreButtonSubtitle || '' %>"
+                                                    placeholder="VD: Khám phá thêm nhiều tour hấp dẫn"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <label for="filterQuery" class="form-label">
+                                            Điều kiện lọc (JSON)
+                                        </label>
+                                        <textarea
+                                            class="form-control"
+                                            id="filterQuery"
+                                            name="filterQuery"
+                                            rows="4"
+                                            placeholder='{"status": true, "highlight": true}'
+                                        ><%= homeSection.filterQuery ? JSON.stringify(homeSection.filterQuery, null, 2) : '' %></textarea>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between gap-3">
+                                        <a href="/homeSection" class="btn btn-secondary">
+                                            <i class="fas fa-arrow-left me-2"></i>Quay lại
+                                        </a>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save me-2"></i>Cập nhật
+                                        </button>
+                                    </div>
+                                </form>
+                            <% } else { %>
+                                <div class="alert alert-danger mt-3">Bạn không có quyền chỉnh sửa khu vực trang chủ.</div>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/toast-auto-hide.js?v=<%= Date.now() %>"></script>
+    <script>
+        $(document).ready(function() {
+            // Initialize Select2 for categories dropdown
+            $('#categories').select2({
+                placeholder: "-- Chọn danh mục --",
+                allowClear: true,
+                width: '100%',
+                closeOnSelect: false, // Không đóng dropdown khi chọn (cho phép chọn nhiều)
+                templateResult: function(category) {
+                    if (!category.id) {
+                        return category.text;
+                    }
+                    // Thêm icon cho mỗi option
+                    var $category = $('<span><i class="fas fa-tag me-2"></i>' + category.text + '</span>');
+                    return $category;
+                },
+                templateSelection: function(category) {
+                    if (!category.id) {
+                        return category.text;
+                    }
+                    // Hiển thị với icon cho selection
+                    return $('<span><i class="fas fa-tag me-1"></i>' + category.text + '</span>');
+                }
+            });
+
+            // JSON syntax highlighting for filterQuery
+            $('#filterQuery').on('blur', function() {
+                try {
+                    const jsonText = $(this).val().trim();
+                    if (jsonText && jsonText !== '') {
+                        JSON.parse(jsonText);
+                        $(this).removeClass('is-invalid').addClass('is-valid');
+                        $(this).next('.invalid-feedback').remove();
+                    } else {
+                        $(this).removeClass('is-invalid is-valid');
+                    }
+                } catch (e) {
+                    $(this).removeClass('is-valid').addClass('is-invalid');
+                    if (!$(this).next('.invalid-feedback').length) {
+                        $(this).after('<div class="invalid-feedback">JSON không hợp lệ</div>');
+                    }
+                }
+            });
+
+            // Validate form trước khi submit
+            $('form').on('submit', function(e) {
+                const filterQuery = $('#filterQuery').val().trim();
+                if (filterQuery && filterQuery !== '') {
+                    try {
+                        JSON.parse(filterQuery);
+                    } catch (error) {
+                        e.preventDefault();
+                        $('#filterQuery').addClass('is-invalid');
+                        if (!$('#filterQuery').next('.invalid-feedback').length) {
+                            $('#filterQuery').after('<div class="invalid-feedback">JSON không hợp lệ, vui lòng kiểm tra lại</div>');
+                        }
+                        return false;
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1313 @@
+// Dropdown Header Styles - Giống pystravel.vn
+.dropdown-header {
+    position: absolute;
+    top: 60px; 
+    left: -40px;
+    right: 0;
+    background: #fff;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    border-radius: 12px;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 1200px;
+
+    // Tạo "bridge" invisible ở phía trên để chuột có thể di chuyển
+    &::before {
+        content: '';
+        position: absolute;
+        top: -10px;
+        left: 0;
+        right: 0;
+        height: 12px;
+        background: transparent;
+        z-index: -1;
+    }
+
+    &.dropdown-header--active {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+        overflow: hidden;
+    }
+
+    &__container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    &__content {
+        display: flex;
+        gap: 20px;
+        min-height: 400px;
+
+        // Dropdown kiểu regional: Tour trong nước, Tour nước ngoài
+        &--regional {
+            padding: 0;
+            min-height: 450px;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        // Dropdown kiểu 1: Tour mùa Thu, Tour Lễ 2/9
+        &--special {
+            .dropdown-header__sidebar {
+                flex: 0 0 240px;
+                justify-content: center;
+                background: #ff6b35 ;
+            }
+
+            .dropdown-header__tours-list {
+                flex: 1;
+                padding: 20px;
+                padding-left: 0;
+            }
+        }
+
+        // Dropdown kiểu 2: Tour trong nước, Tour nước ngoài
+        &--tour {
+            .dropdown-header__sidebar {
+                flex: 0 0 220px;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .dropdown-header__tours {
+                flex: 1;
+                position: relative;
+            }
+        }
+
+        // Dropdown kiểu 2: Tour trong nước, Tour nước ngoài
+        &--tour {
+            .dropdown-header__sidebar {
+                flex: 0 0 240px;
+            }
+
+            .dropdown-header__tours {
+                flex: 1;
+            }
+        }
+    }
+
+    // Sidebar styles
+    &__sidebar {
+        display: flex;
+        flex-direction: column;
+    }
+
+    // Promo box cam lớn (cho dropdown kiểu 1)
+    &__promo-box {
+        border-radius: 12px;    
+        padding: 20px;
+        color: white;
+    }
+
+    &__promo-title {
+        font-size: 16px;
+        font-weight: 700;
+        margin: 0 0 16px 0;
+        line-height: 1.3;
+        text-align: center;
+    }
+
+    // Tabs trong promo box
+    &__tabs {
+        display: flex;
+        gap: 0;
+        border-radius: 6px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    &__tab {
+        flex: 1;
+        padding: 8px 12px;
+        background: transparent;
+        color: rgba(255, 255, 255, 0.8);
+        border: none;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        &--active {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+    }
+
+    // Category boxes (cho dropdown kiểu 2)
+    &__category-box {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        padding: 16px;
+        transition: all 0.2s ease;
+        cursor: pointer;
+
+        &--active {
+            border-color: #ff6b35;
+            background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+
+            .dropdown-header__category-title {
+                color: white;
+            }
+
+            .dropdown-header__category-description {
+                color: rgba(255, 255, 255, 0.9);
+            }
+        }
+
+        &:hover,
+        &--hovered {
+            border-color: #ff6b35;
+            box-shadow: 0 2px 8px rgba(255, 107, 53, 0.15);
+            background: #fff8f6;
+
+            // Override active state khi hover
+            &.dropdown-header__category-box--active {
+                background: linear-gradient(135deg, #ff8c42 0%, #ffab42 100%);
+                box-shadow: 0 6px 16px rgba(255, 107, 53, 0.4);
+            }
+        }
+
+        &--featured {
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            color: white;
+            border: none;
+
+            .dropdown-header__category-title {
+                color: white;
+            }
+
+            .dropdown-header__category-link {
+                color: rgba(255, 255, 255, 0.9);
+
+                &:hover {
+                    color: white;
+                }
+            }
+        }
+    }
+
+    &__category-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin: 0 0 4px 0;
+        color: #1f2937;
+    }
+
+    &__category-locations {
+        font-size: 12px;
+        color: #6b7280;
+        margin: 0 0 8px 0;
+        line-height: 1.4;
+    }
+
+    &__category-description {
+        font-size: 12px;
+        color: #6b7280;
+        margin: 0 0 8px 0;
+        line-height: 1.4;
+    }
+
+    &__category-link {
+        font-size: 12px;
+        color: #6b7280;
+        text-decoration: none;
+        transition: color 0.2s ease;
+
+        &:hover {
+            color: #ff6b35;
+        }
+    }
+
+    // Destinations section (hiển thị khi hover subcategory)
+    &__destinations {
+        flex: 1;
+        padding: 20px;
+        background: #f9fafb;
+        border-radius: 8px;
+        margin-left: 20px;
+    }
+
+    &__destinations-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0 0 20px 0;
+        padding-bottom: 8px;
+    }
+
+    &__destination-group {
+        display: flex;
+        gap: 8px;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+
+    &__destination-group-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #374151;
+        margin: 0 0 8px 0;
+    }
+
+    &__destination-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    &__destination-item {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        font-size: 12px;
+        color: #6b7280;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    // Tours list (cho dropdown kiểu 1 - special)
+    &__tours-list {
+        padding-left: 20px;
+    }
+
+    &__section-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #6b7280;
+        margin-bottom: 16px;
+        padding-bottom: 8px;
+    }
+
+    &__tour-links {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    &__tour-link {
+        display: block;
+        padding: 8px 0;
+        color: #374151;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 1.4;
+        transition: all 0.2s ease;
+        border-bottom: 1px solid transparent;
+
+        &:hover {
+            color: #ff6b35;
+            padding-left: 8px;
+            border-bottom-color: #ff6b35;
+        }
+    }
+
+    &__no-tours {
+        padding: 20px 0;
+        text-align: center;
+        color: #9ca3af;
+        font-size: 14px;
+        font-style: italic;
+        background: #f9fafb;
+        border-radius: 8px;
+        margin: 10px 0;
+        border: 1px dashed #d1d5db;
+    }
+
+    // Tours carousel (cho dropdown kiểu 2)
+    &__tours {
+        &-carousel {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+    }
+
+    // Tour carousel cho dropdown tour trong nước/nước ngoài (layout ngang)
+    &__tour-carousel {
+        position: relative;
+        overflow: hidden;
+        flex: 1;
+        padding: 20px;
+    }
+
+    &__carousel-container {
+        position: relative;
+        overflow: hidden;
+    }
+
+    &__carousel-track {
+        display: flex;
+        gap: 16px;
+        transition: transform 0.3s ease;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+
+        &::-webkit-scrollbar {
+            display: none;
+        }
+    }
+
+    &__carousel-nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid #e5e7eb;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        color: #374151;
+        transition: all 0.2s ease;
+        z-index: 10;
+
+        &:hover:not(:disabled) {
+            background: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            color: #ff6b35;
+        }
+
+        &:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #f3f4f6;
+            color: #9ca3af;
+        }
+
+        &--prev {
+            left: 10px;
+        }
+
+        &--next {
+            right: 10px;
+        }
+    }
+
+    // Carousel track animation
+    &__carousel-track {
+        display: flex;
+        transition: transform 0.3s ease;
+        width: 100%;
+    }
+
+    // Content layout cho simple dropdown
+    &__content--simple {
+        display: flex;
+        width: 100%;
+        max-width: 1200px;
+        min-height: 400px;
+        gap: 20px;
+
+        .dropdown-header__sidebar {
+            width: 200px;
+            flex-shrink: 0;
+        }
+    }
+
+    // Content layout cho dynamic dropdown (sidebar đa cấp)
+    &__content--dynamic {
+        display: flex;
+        width: 100%;
+        max-width: 1200px;
+        min-height: 400px;
+        gap: 20px;
+
+        .dropdown-header__sidebar {
+            width: 240px;
+            flex-shrink: 0;
+        }
+
+        .dropdown-header__main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+    }
+
+    // Styles cho Groups List (tỉnh/thành phố hoặc quốc gia)
+    &__groups-list {
+        .dropdown-header__groups-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+        }
+
+        .dropdown-header__groups-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .dropdown-header__group-item {
+            padding: 12px 16px;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+
+            &:hover {
+                border-color: #ff6b35;
+                box-shadow: 0 2px 8px rgba(255, 107, 53, 0.15);
+                transform: translateY(-2px);
+            }
+
+            &--active {
+                border-color: #ff6b35;
+                background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
+                color: white;
+                box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+
+                .dropdown-header__group-count {
+                    color: rgba(255, 255, 255, 0.9);
+                }
+            }
+
+            .dropdown-header__group-name {
+                font-weight: 600;
+                font-size: 14px;
+            }
+
+            .dropdown-header__group-count {
+                font-size: 12px;
+                color: #666;
+                font-weight: 400;
+            }
+        }
+    }
+
+    // Styles cho Destinations List
+    &__destinations-list {
+        .dropdown-header__destinations-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+        }
+
+        .dropdown-header__destinations-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 20px;
+        }
+
+        .dropdown-header__destination-item {
+            padding: 16px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            user-select: none;
+
+            &:hover {
+                border-color: #ff6b35;
+                box-shadow: 0 4px 12px rgba(255, 107, 53, 0.15);
+                transform: translateY(-2px);
+                text-decoration: none;
+                color: #333;
+            }
+
+            &:focus {
+                outline: 2px solid #ff6b35;
+                outline-offset: 2px;
+            }
+
+            &:active {
+                transform: translateY(0);
+                box-shadow: 0 2px 6px rgba(255, 107, 53, 0.2);
+            }
+
+            &--loading {
+                opacity: 0.7;
+                pointer-events: none;
+
+                .dropdown-header__destination-name {
+                    color: #999;
+                }
+            }
+
+            .dropdown-header__destination-name {
+                font-weight: 600;
+                font-size: 14px;
+                color: #ff6b35;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .dropdown-header__destination-info {
+                font-size: 12px;
+                color: #666;
+                line-height: 1.4;
+            }
+
+            .dropdown-header__loading-spinner {
+                font-size: 12px;
+                animation: spin 1s linear infinite;
+            }
+
+            .dropdown-header__no-tour-message {
+                margin-top: 8px;
+                padding: 8px 10px;
+                background: #fff3cd;
+                border: 1px solid #ffeaa7;
+                border-radius: 6px;
+                display: flex;
+                align-items: flex-start;
+                gap: 6px;
+                font-size: 11px;
+                line-height: 1.4;
+                animation: slideDown 0.3s ease-out;
+
+                .dropdown-header__no-tour-icon {
+                    font-size: 12px;
+                    flex-shrink: 0;
+                    margin-top: 1px;
+                }
+
+                .dropdown-header__no-tour-text {
+                    color: #856404;
+                    flex: 1;
+                }
+            }
+        }
+    }
+
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+            max-height: 0;
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+            max-height: 100px;
+        }
+    }
+
+
+
+    // Tours grid layout (thay thế carousel)
+    &__tours-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        flex: 1;
+        padding: 20px;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    &__tour-cards {
+        display: flex;
+        gap: 20px;
+        transition: transform 0.3s ease;
+    }
+
+    &__tour-card {
+        flex: 0 0 300px;
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        text-decoration: none;
+        color: inherit;
+        display: flex;
+        flex-direction: column;
+
+        &:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        // Grid layout specific styles
+        .dropdown-header__tours-grid & {
+            flex: 1;
+            min-width: auto;
+        }
+    }
+
+    // Navigation buttons
+    &__nav-btn {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: white;
+        border: 1px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        color: #6b7280;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        z-index: 2;
+
+        &:hover {
+            background: #f9fafb;
+            border-color: #d1d5db;
+            color: #374151;
+        }
+
+        &--prev {
+            left: -20px;
+        }
+
+        &--next {
+            right: -20px;
+        }
+    }
+
+    &__tour-item {
+        display: block;
+        text-decoration: none;
+        color: inherit;
+        background: #fff;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+
+        &:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+    }
+
+    &__tour-image {
+        position: relative;
+        width: 100%;
+        height: 140px;
+        overflow: hidden;
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+    }
+
+    &__tour-badge {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: #ff6b35;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    &__tour-info {
+        padding: 16px;
+    }
+
+    &__tour-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0 0 8px 0;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    &__tour-rating {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin: 0 0 8px 0;
+    }
+
+    &__tour-stars {
+        color: #fbbf24;
+        font-size: 12px;
+    }
+
+    &__tour-rating-text {
+        font-size: 11px;
+        color: #6b7280;
+    }
+
+    &__tour-details {
+        margin: 0 0 12px 0;
+    }
+
+    &__tour-duration,
+    &__tour-departure {
+        display: block;
+        font-size: 11px;
+        color: #6b7280;
+        margin: 0 0 4px 0;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+
+    &__tour-price {
+        font-size: 16px;
+        font-weight: 700;
+        color: #ff6b35;
+    }
+
+    // Loading state
+    &__loading {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 60px 40px;
+        color: #6b7280;
+        font-size: 14px;
+        gap: 12px;
+    }
+
+    &__loading-spinner {
+        width: 32px;
+        height: 32px;
+        border: 3px solid #f3f4f6;
+        border-top: 3px solid #ff6b35;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    // No tours state
+    &__no-tours {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 150px 40px;
+        text-align: center;
+        color: #6b7280;
+    }
+
+    &__no-tours-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.6;
+    }
+
+    &__no-tours-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #374151;
+        margin: 0 0 8px 0;
+    }
+
+    &__no-tours-text {
+        font-size: 14px;
+        line-height: 1.5;
+        margin: 0;
+        max-width: 300px;
+    }
+
+    // Responsive design
+    @media (max-width: 1024px) {
+        &__container {
+            padding: 0 16px;
+        }
+
+        &__content {
+            gap: 24px;
+            padding: 24px 0;
+
+            &--special .dropdown-header__sidebar {
+                flex: 0 0 240px;
+            }
+
+            &--tour .dropdown-header__sidebar {
+                flex: 0 0 200px;
+            }
+
+            &--dynamic {
+                .dropdown-header__sidebar {
+                    width: 200px;
+                }
+
+                .dropdown-header__main-content {
+                    padding: 16px;
+                }
+
+                .dropdown-header__groups-grid {
+                    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+                    gap: 10px;
+                }
+
+                .dropdown-header__destinations-grid {
+                    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+                    gap: 10px;
+                }
+            }
+        }
+
+        &__tours-list {
+            padding-left: 16px;
+        }
+
+        &__tour-links {
+            gap: 6px;
+        }
+
+        &__tour-link {
+            font-size: 13px;
+            padding: 6px 0;
+        }
+
+        &__tours-carousel {
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 16px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        // Ẩn dropdown trên mobile, sử dụng mobile menu thay thế
+        display: none;
+    }
+
+    // Thêm styles cho mobile menu nếu cần hiển thị dropdown trên mobile
+    &--mobile {
+        @media (max-width: 768px) {
+            display: block;
+            position: fixed;
+            top: 80px; // Chiều cao header
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 0;
+            overflow-y: auto;
+            z-index: 9999;
+            background: rgba(0, 0, 0, 0.5);
+
+            &__container {
+                padding: 0;
+                background: #fff;
+                height: 100%;
+            }
+
+            &__content {
+                flex-direction: column;
+                padding: 20px;
+                gap: 20px;
+                min-height: auto;
+
+                &--special .dropdown-header__sidebar,
+                &--tour .dropdown-header__sidebar {
+                    flex: none;
+                }
+
+                &--dynamic {
+                    .dropdown-header__sidebar {
+                        width: 100%;
+                        margin-bottom: 20px;
+                    }
+
+                    .dropdown-header__main-content {
+                        padding: 12px;
+                    }
+
+                    .dropdown-header__groups-grid,
+                    .dropdown-header__destinations-grid {
+                        grid-template-columns: 1fr;
+                        gap: 8px;
+                    }
+                }
+            }
+
+            &__promo-box {
+                padding: 20px;
+            }
+
+            &__tours-list {
+                padding-left: 0;
+            }
+
+            &__tour-links {
+                gap: 4px;
+            }
+
+            &__tour-link {
+                font-size: 12px;
+                padding: 4px 0;
+            }
+
+            &__tours-carousel {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            &__destination-image {
+                height: 80px;
+            }
+
+            &__tour-image {
+                height: 120px;
+            }
+        }
+    }
+
+    // Styles cho carousel tour mới (tour trong nước/nước ngoài)
+    &__content--simple {
+        .dropdown-header__tour-carousel {
+            position: relative;
+            flex: 1;
+            padding: 20px;
+            max-height: 400px;
+            overflow: hidden;
+        }
+
+        .dropdown-header__tours-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            transition: transform 0.3s ease;
+        }
+
+        .dropdown-header__tour-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            text-decoration: none;
+            color: inherit;
+
+            &:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            }
+        }
+
+        .dropdown-header__tour-image {
+            height: 160px;
+            position: relative;
+            overflow: hidden;
+
+            img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                transition: transform 0.3s ease;
+            }
+
+            &:hover img {
+                transform: scale(1.05);
+            }
+        }
+
+        .dropdown-header__tour-rating {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+
+            .star {
+                color: #ffd700;
+                font-size: 14px;
+            }
+
+            .review-text {
+                opacity: 0.8;
+                font-size: 11px;
+                margin-left: 2px;
+            }
+        }
+
+        .dropdown-header__tour-info {
+            padding: 16px;
+        }
+
+        .dropdown-header__tour-title {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .dropdown-header__tour-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 12px;
+            font-size: 14px;
+            color: #666;
+
+            > div {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .icon {
+                font-size: 16px;
+            }
+        }
+
+        .dropdown-header__tour-duration,
+        .dropdown-header__tour-group {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .dropdown-header__tour-price {
+            font-weight: 700;
+            color: #ff6b35;
+            margin-top: auto;
+            font-size: 18px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+
+            .original-price {
+                font-size: 14px;
+                color: #999;
+                text-decoration: line-through;
+                font-weight: 400;
+            }
+
+            .discount-price {
+                font-size: 18px;
+                color: #ff6b35;
+                font-weight: 700;
+            }
+
+            .current-price {
+                font-size: 18px;
+                color: #ff6b35;
+                font-weight: 700;
+            }
+
+            .discount-label {
+                background: #ff6b35;
+                color: white;
+                padding: 2px 6px;
+                border-radius: 4px;
+                font-size: 12px;
+                font-weight: 600;
+            }
+        }
+    }
+
+    // Regional Layout Styles
+    &__regional-layout {
+        display: flex;
+        height: 450px;
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    &__regional-sidebar {
+        flex: 0 0 200px;
+        background: #ff6b35;
+        padding: 20px 0;
+        overflow-y: auto;
+    }
+
+    &__region-item {
+        padding: 12px 20px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+        &:hover,
+        &--active {
+            background: rgba(255, 255, 255, 0.1);
+        }
+    }
+
+    &__region-name {
+        display: block;
+        color: white;
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 4px;
+    }
+
+    &__region-destinations {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.8);
+        line-height: 1.3;
+    }
+
+    &__region-preview {
+        font-size: 12px;
+    }
+
+    &__regional-content {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        background: white;
+    }
+
+    &__content-header {
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #e9ecef;
+
+        h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+    }
+
+    &__destinations-by-region {
+        display: flex;
+        flex-direction: column;
+        gap: 25px;
+    }
+
+    &__destination-group {
+        .dropdown-header__group-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin: 0 0 12px 0;
+            padding-bottom: 8px;
+            display: inline-block;
+            width: 150px;
+        }
+    }
+
+    &__destinations-grid {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 20px;
+    }
+
+    &__destination-item {
+        position: relative;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 1px solid transparent;
+
+        &:hover {
+            text-decoration: underline;
+        }
+
+        &--loading {
+            opacity: 0.7;
+            cursor: wait;
+        }
+    }
+
+    &__destination-name {
+        font-size: 13px;
+        color: #333;
+        font-weight: 500;
+        display: block;
+        white-space: nowrap;
+    }
+
+    &__destination-spinner {
+        position: absolute;
+        top: 50%;
+        right: 8px;
+        transform: translateY(-50%);
+        width: 12px;
+        height: 12px;
+        border: 2px solid #ff6b35;
+        border-top: 2px solid transparent;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    &__no-tour-message {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 4px;
+        padding: 8px;
+        font-size: 11px;
+        color: #856404;
+        z-index: 10;
+        margin-top: 4px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    &__placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: #6c757d;
+        font-style: italic;
+    }
+}

@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Thêm tour mới</title>
+    <!-- Embed Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet" />
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <!-- CSS -->
+    <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body>
+    <div class="dashboard">
+        <div class="container_fuild">
+            <div class="dashboard__inner">
+                <%- include('../partials/sidebar') %>
+                <div class="tour">
+                    <div class="row justify-content-center">
+                        <div class="col-md-12">
+                            <div class="tour-form">
+                                <div class="tour-form__header">
+                                    <h3>Thêm tour mới</h3>
+                                </div>
+
+                                <!-- Notification Messages -->
+                                <% if (typeof message !== 'undefined' && message && message.length > 0) { %>
+                                    <div class="modal-notify modal-notify--active modal-notify--success">
+                                        <div class="modal-notify__content">
+                                            <span class="modal-notify__message">
+                                                <i class="fas fa-check-circle me-2"></i><%= message[0] %>
+                                            </span>
+                                            <button class="modal-notify__close">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                <% } %>
+                                
+                                <% if (typeof error !== 'undefined' && error && error.length > 0) { %>
+                                    <div class="modal-notify modal-notify--active modal-notify--error">
+                                        <div class="modal-notify__content">
+                                            <span class="modal-notify__message">
+                                                <i class="fas fa-exclamation-circle me-2"></i><%= error[0] %>
+                                            </span>
+                                            <button class="modal-notify__close">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                <% } %>
+
+                                <div class="tour-form__body">
+                                    <% if (userPermissions && userPermissions.includes('CREATE_TOUR')) { %>
+                                        <form method="POST" action="/tour/add" enctype="multipart/form-data" id="tourForm">
+                                            <%- include('../partials/csrf-token') %>
+                                            
+                                            <!-- 1. THÔNG TIN CƠ BẢN -->
+                                            <div class="form-section mb-5">
+                                                <div class="mb-4">
+                                                    <label for="title" class="form-label">
+                                                        Tiêu đề tour <span class="text-danger">*</span>
+                                                    </label>
+                                                    <input type="text" class="form-control" id="title" name="title"
+                                                           placeholder="Nhập tiêu đề tour..."
+                                                           value="<%= typeof formData !== 'undefined' && formData ? formData.title || '' : '' %>"
+                                                           required />
+                                                </div>
+
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="mb-4">
+                                                            <label for="code" class="form-label">
+                                                                Mã tour <span class="text-danger">*</span>
+                                                            </label>
+                                                            <div class="input-group">
+                                                                <input type="text" class="form-control" id="code" name="code" 
+                                                                       placeholder="Nhập mã tour..." 
+                                                                       value="<%= typeof formData !== 'undefined' && formData ? formData.code || '' : '' %>" 
+                                                                       required />
+                                                                <button class="btn btn-outline-secondary" type="button" 
+                                                                        id="generateCodeBtn" title="Tạo mã tự động">
+                                                                    <i class="fas fa-magic"></i>
+                                                                </button>
+                                                            </div>
+                                                            <div id="codeMessage" class="form-text" style="display: none;"></div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="mb-4">
+                                                            <label for="category" class="form-label">
+                                                                Danh mục <span class="text-danger">*</span>
+                                                            </label>
+                                                            <select class="form-select select2" id="category" name="category" required>
+                                                                <option value="">-- Chọn danh mục --</option>
+                                                                <% if (categories && categories.length > 0) { %>
+                                                                    <% categories.forEach(function(category) { %>
+                                                                        <option value="<%= category._id %>"
+                                                                                <%= typeof formData !== 'undefined' && formData && formData.category === category._id.toString() ? 'selected' : '' %>>
+                                                                            <%= category.name %>
+                                                                        </option>
+                                                                    <% }); %>
+                                                                <% } %>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="row">
+                                                    <div class="col-md-4">
+                                                        <div class="mb-4">
+                                                            <label for="departure" class="form-label">
+                                                                Điểm khởi hành <span class="text-danger">*</span>
+                                                            </label>
+                                                            <select class="form-select select2" id="departure" name="departure" required>
+                                                                <option value="">-- Chọn điểm khởi hành --</option>
+                                                                <% if (departures && departures.length > 0) { %>
+                                                                    <% departures.forEach(function(departure) { %>
+                                                                        <option value="<%= departure._id %>"
+                                                                                <%= typeof formData !== 'undefined' && formData && formData.departure === departure._id.toString() ? 'selected' : '' %>>
+                                                                            <%= departure.name %>
+                                                                        </option>
+                                                                    <% }); %>
+                                                                <% } %>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <div class="mb-4">
+                                                            <label for="destination" class="form-label">
+                                                                Điểm đến <span class="text-danger">*</span>
+                                                            </label>
+                                                            <select class="form-select select2" id="destination" name="destination" required>
+                                                                <option value="">-- Chọn điểm đến --</option>
+                                                                <% if (destinations && destinations.length > 0) { %>
+                                                                    <% destinations.forEach(function(destination) { %>
+                                                                        <option value="<%= destination._id %>"
+                                                                                <%= typeof formData !== 'undefined' && formData && formData.destination === destination._id.toString() ? 'selected' : '' %>>
+                                                                            <%= destination.name %>
+                                                                        </option>
+                                                                    <% }); %>
+                                                                <% } %>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <div class="mb-4">
+                                                            <label for="transportation" class="form-label">
+                                                                Phương tiện <span class="text-danger">*</span>
+                                                            </label>
+                                                            <select class="form-select select2" id="transportation" name="transportation" required>
+                                                                <option value="">-- Chọn phương tiện --</option>
+                                                                <% if (transportations && transportations.length > 0) { %>
+                                                                    <% transportations.forEach(function(transportation) { %>
+                                                                        <option value="<%= transportation._id %>"
+                                                                                <%= typeof formData !== 'undefined' && formData && formData.transportation === transportation._id.toString() ? 'selected' : '' %>>
+                                                                            <%= transportation.title %>
+                                                                        </option>
+                                                                    <% }); %>
+                                                                <% } %>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- 2. THÔNG TIN BỔ SUNG -->
+                                            <div class="form-section mb-5">
+                                                <h4 class="section-title mb-4">Thông tin bổ sung</h4>
+                                                <div class="itinerary-item border rounded p-3 mb-3">
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            <div class="mb-4">
+                                                                <label for="attractions" class="form-label">Điểm tham quan</label>
+                                                                <textarea class="form-control" id="attractions" name="attractions"
+                                                                          rows="3" placeholder="Nhập các điểm tham quan..."><%= typeof formData !== 'undefined' && formData ? formData.attractions || '' : '' %></textarea>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <div class="mb-4">
+                                                                <label for="cuisine" class="form-label">Ẩm thực</label>
+                                                                <textarea class="form-control" id="cuisine" name="cuisine"
+                                                                          rows="3" placeholder="Nhập thông tin ẩm thực..."><%= typeof formData !== 'undefined' && formData ? formData.cuisine || '' : '' %></textarea>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            <div class="mb-4">
+                                                                <label for="suitableTime" class="form-label">Thời gian thích hợp</label>
+                                                                <textarea class="form-control" id="suitableTime" name="suitableTime"
+                                                                          rows="3" placeholder="Nhập thời gian thích hợp..."><%= typeof formData !== 'undefined' && formData ? formData.suitableTime || '' : '' %></textarea>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <div class="mb-4">
+                                                                <label for="suitableObject" class="form-label">Đối tượng thích hợp</label>
+                                                                <textarea class="form-control" id="suitableObject" name="suitableObject"
+                                                                          rows="3" placeholder="Nhập đối tượng thích hợp..."><%= typeof formData !== 'undefined' && formData ? formData.suitableObject || '' : '' %></textarea>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            <div class="mb-4">
+                                                                <label for="vehicleInfo" class="form-label">Phương tiện</label>
+                                                                <textarea class="form-control" id="vehicleInfo" name="vehicleInfo"
+                                                                          rows="3" placeholder="Ví dụ: Xe 4-16 chỗ, máy lạnh..."><%= typeof formData !== 'undefined' && formData ? formData.vehicleInfo || '' : '' %></textarea>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <div class="mb-4">
+                                                                <label class="form-label">Ưu đãi</label>
+                                                                <div id="promotionContainer">
+                                                                    <div class="row mb-2">
+                                                                        <div class="col-md-6">
+                                                                            <input type="text" class="form-control" name="promotions[0][label]"
+                                                                                   placeholder="Khuyến mãi 50%" />
+                                                                        </div>
+                                                                        <div class="col-md-6">
+                                                                            <input type="text" class="form-control" name="promotions[1][label]"
+                                                                                   placeholder="Ưu đãi thứ 2" />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="row mb-2">
+                                                                        <div class="col-md-6">
+                                                                            <input type="text" class="form-control" name="promotions[2][label]"
+                                                                                   placeholder="Ưu đãi thứ 3" />
+                                                                        </div>
+                                                                        <div class="col-md-6">
+                                                                            <input type="text" class="form-control" name="promotions[3][label]"
+                                                                                   placeholder="Ưu đãi thứ 4" />
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <button type="button" class="btn btn-outline-primary btn-sm"
+                                                                        onclick="addPromotionRow()">
+                                                                    <i class="fas fa-plus"></i> Thêm ưu đãi
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- 3. LỊCH TRÌNH TOUR -->
+                                            <div class="form-section mb-5">
+                                                <h4 class="section-title d-flex justify-content-between">
+                                                    Lịch trình tour
+                                                    <button type="button" class="btn btn-sm btn-outline-primary ms-2 mb-3" 
+                                                            onclick="addItinerary()">
+                                                        <i class="fas fa-plus me-1"></i>Thêm lịch trình
+                                                    </button>
+                                                </h4>
+                                                
+                                                <div id="itineraryContainer">
+                                                    <div class="itinerary-item border rounded p-3 mb-3 position-relative">
+                                                        <button type="button" class="btn btn-sm btn-outline-danger itinerary-delete-btn" 
+                                                                onclick="removeItinerary(this)" 
+                                                                style="position: absolute; top: 10px; right: 10px; display: none; width: 24px; height: 23px; border: 1px solid #dc3545; padding: 0; border-radius: 6px;">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                        
+                                                        <div class="row">
+                                                            <div class="col-md-3">
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Ngày <span class="text-danger">*</span></label>
+                                                                    <input type="number" class="form-control" name="itinerary[0][day]" 
+                                                                           value="1" min="1" required disabled />
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-9">
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Tiêu đề <span class="text-danger">*</span></label>
+                                                                    <input type="text" class="form-control" name="itinerary[0][title]" 
+                                                                           placeholder="Ví dụ: Khởi hành từ Hà Nội" required />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label class="form-label">Thông tin chi tiết <span class="text-danger">*</span></label>
+                                                            <textarea class="form-control ckeditor-itinerary" name="itinerary[0][details]" rows="4"
+                                                                      placeholder="Nhập thông tin chi tiết cho ngày này: địa điểm tham quan, hoạt động, bữa ăn..." required></textarea>
+                                                        </div>
+
+                                                        <div class="mb-3">
+                                                            <label class="form-label">Ngày bắt đầu</label>
+                                                            <input type="date" class="form-control" name="itinerary[0][dayStart]" />
+                                                        </div>
+
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- 4. OVERVIEW -->
+                                            <div class="form-section mb-5">
+                                                <h4 class="section-title mb-4">Tổng quan tour</h4>
+                                                <div class="itinerary-item border rounded p-3 mb-3">
+                                                    <div class="mb-4">
+                                                        <label for="overview_introHtml" class="form-label">Giới thiệu</label>
+                                                        <textarea class="form-control ckeditor-overview" id="overview_introHtml" name="overview_introHtml"
+                                                                  rows="4" placeholder="Nhập nội dung giới thiệu tour: điểm nổi bật, trải nghiệm đặc biệt..."><%= typeof formData !== 'undefined' && formData ? formData.overview_introHtml || '' : '' %></textarea>
+                                                    </div>
+
+                                                    <!-- Pricing Section -->
+                                                    <div class="mb-4">
+                                                        <div class="mb-3">
+                                                            <label for="pricing_yearTitle" class="form-label">Tiêu đề lịch khởi hành</label>
+                                                            <input type="text" class="form-control" id="pricing_yearTitle" name="pricing_yearTitle"
+                                                                   placeholder="LỊCH KHỞI HÀNH 2024"
+                                                                   value="<%= typeof formData !== 'undefined' && formData ? formData.pricing_yearTitle || '' : '' %>" />
+                                                        </div>
+
+                                                        <div class="mb-3">
+                                                            <label class="form-label">Lịch giá</label>
+                                                            <div id="pricingRowsContainer">
+                                                                <div class="row mb-2 pricing-row" data-index="0">
+                                                                    <div class="col-md-5">
+                                                                        <input type="text" class="form-control pricing-date-input"
+                                                                               name="pricing_dateLabel[0]"
+                                                                               placeholder="Ngày khởi hành"
+                                                                               data-index="0" />
+                                                                    </div>
+                                                                    <div class="col-md-5">
+                                                                        <input type="text" class="form-control pricing-price-input"
+                                                                               name="pricing_priceText[0]"
+                                                                               placeholder="Giá tour"
+                                                                               data-index="0" />
+                                                                    </div>
+                                                                    <div class="col-md-2">
+                                                                        <button type="button" class="btn btn-outline-danger btn-sm"
+                                                                                onclick="removePricingRow(this)">
+                                                                            <i class="fas fa-trash"></i>
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <button type="button" class="btn btn-outline-primary btn-sm"
+                                                                    onclick="addPricingRow()">
+                                                                <i class="fas fa-plus"></i> Thêm lịch giá
+                                                            </button>
+                                                        </div>
+
+                                                        <div class="mb-3">
+                                                            <label for="pricing_noteHtml" class="form-label">Ghi chú giá</label>
+                                                            <textarea class="form-control" id="pricing_noteHtml" name="pricing_noteHtml"
+                                                                      rows="2" placeholder="Ghi chú về giá tour..."><%= typeof formData !== 'undefined' && formData ? formData.pricing_noteHtml || '' : '' %></textarea>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Promotions Section -->
+                                                    <div class="mb-4">
+                                                        <label class="form-label">Khuyến mãi</label>
+                                                        <div id="promotionsContainer">
+                                                            <div class="row mb-2">
+                                                                <div class="col-md-4">
+                                                                    <input type="text" class="form-control" name="promo_label[]"
+                                                                           placeholder="Nhãn khuyến mãi" />
+                                                                </div>
+                                                                <div class="col-md-6">
+                                                                    <input type="text" class="form-control" name="promo_desc[]"
+                                                                           placeholder="Mô tả khuyến mãi" />
+                                                                </div>
+                                                                <div class="col-md-2">
+                                                                    <button type="button" class="btn btn-outline-danger btn-sm"
+                                                                            onclick="removePromotion(this)">
+                                                                        <i class="fas fa-trash"></i>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <button type="button" class="btn btn-outline-primary btn-sm"
+                                                                onclick="addPromotion()">
+                                                            <i class="fas fa-plus"></i> Thêm khuyến mãi
+                                                        </button>
+                                                    </div>
+
+                                                    <!-- Description Section -->
+                                                    <div class="mb-4">
+                                                        <label for="overview_description" class="form-label">Mô tả tour</label>
+                                                        <textarea class="form-control ckeditor-overview" id="overview_description" name="overview_description"
+                                                                  rows="5" placeholder="Nhập mô tả chi tiết về tour, lịch trình tổng quan, điểm đến..."><%= typeof formData !== 'undefined' && formData ? formData.overview_description || '' : '' %></textarea>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- 5. BAO GỒM & ĐIỀU KHOẢN -->
+                                            <div class="form-section mb-5">
+                                                <h4 class="section-title mb-4">Bao gồm & Điều khoản</h4>
+                                                <div class="itinerary-item border rounded p-3 mb-3">
+                                                    <div class="row">
+                                                        <div class="col-md-4">
+                                                            <div class="mb-4">
+                                                                <label for="includes_included" class="form-label">Bao gồm</label>
+                                                                <textarea class="form-control ckeditor-includes" id="includes_included" name="includes_included"
+                                                                          rows="5" placeholder="Vé máy bay khứ hồi, khách sạn 4 sao, bữa ăn theo chương trình, hướng dẫn viên..."><%= typeof formData !== 'undefined' && formData ? formData.includes_included || '' : '' %></textarea>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <div class="mb-4">
+                                                                <label for="includes_excluded" class="form-label">Không bao gồm</label>
+                                                                <textarea class="form-control ckeditor-includes" id="includes_excluded" name="includes_excluded"
+                                                                          rows="5" placeholder="Chi phí cá nhân, tip, bảo hiểm..."><%= typeof formData !== 'undefined' && formData ? formData.includes_excluded || '' : '' %></textarea>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <div class="mb-4">
+                                                                <label for="notes_important" class="form-label">Lưu ý</label>
+                                                                <textarea class="form-control ckeditor-includes" id="notes_important" name="notes_important"
+                                                                          rows="5" placeholder="Mang theo CMND/Passport, kiểm tra thời tiết..."><%= typeof formData !== 'undefined' && formData ? formData.notes_important || '' : '' %></textarea>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- 6. ĐIỂM NỔI BẬT -->
+                                            <div class="form-section mb-5">
+                                                <h4 class="section-title mb-4">Điểm nổi bật</h4>
+                                                <div class="itinerary-item border rounded p-3 mb-3">
+                                                    <div class="mb-4">
+                                                        <label for="highlights" class="form-label">Điểm nổi bật</label>
+                                                        <textarea class="form-control ckeditor-highlights" id="highlights" name="highlights"
+                                                                  rows="5" placeholder="Các điểm nổi bật, trải nghiệm độc đáo của tour..."><%= typeof formData !== 'undefined' && formData ? formData.highlights || '' : '' %></textarea>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- 7. CHI TIẾT TOUR -->
+                                            <div class="form-section mb-5">
+                                                <h4 class="section-title d-flex justify-content-between">
+                                                    Chi tiết tour
+                                                    <button type="button" class="btn btn-sm btn-outline-primary ms-2 mb-3" 
+                                                            onclick="addPriceBlock()">
+                                                        <i class="fas fa-plus me-1"></i>Thêm tour chi tiết
+                                                    </button>
+                                                </h4>
+                                                
+                                                <div id="priceContainer">
+                                                    <div class="price-block border rounded p-4 mb-4">
+                                                        <div class="price-block-header">
+                                                            <h5 class="price-block-title">Ngày 1</h5>
+                                                            <button type="button" class="btn btn-sm btn-outline-danger price-block-delete" 
+                                                                    onclick="removePriceBlock(this)" style="opacity: 0; visibility: hidden;">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </div>
+                                                        
+                                                        <div class="row">
+                                                            <div class="col-md-3">
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Giá người lớn <span class="text-danger">*</span></label>
+                                                                    <input type="number" class="form-control" name="tourDetails[0][adultPrice]" 
+                                                                           placeholder="0" min="0" required />
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Giá trẻ em</label>
+                                                                    <input type="number" class="form-control" name="tourDetails[0][childrenPrice]" 
+                                                                           placeholder="0" min="0" />
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Giá trẻ nhỏ</label>
+                                                                    <input type="number" class="form-control" name="tourDetails[0][childPrice]" 
+                                                                           placeholder="0" min="0" />
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Giá trẻ sơ sinh</label>
+                                                                    <input type="number" class="form-control" name="tourDetails[0][babyPrice]" 
+                                                                           placeholder="0" min="0" />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div class="row">
+                                                            <div class="col-md-3">
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Phụ thu phòng đơn</label>
+                                                                    <input type="number" class="form-control" name="tourDetails[0][singleRoomSupplementPrice]" 
+                                                                           placeholder="0" min="0" />
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Giảm giá (%)</label>
+                                                                    <input type="number" class="form-control" name="tourDetails[0][discount]" 
+                                                                           placeholder="0" min="0" max="100" />
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Số lượng <span class="text-danger">*</span></label>
+                                                                    <input type="number" class="form-control" name="tourDetails[0][stock]" 
+                                                                           placeholder="0" min="0" required />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div class="row">
+                                                            <div class="col-md-6">
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Ngày khởi hành <span class="text-danger">*</span></label>
+                                                                    <input type="date" class="form-control" name="tourDetails[0][dayStart]" 
+                                                                           min="<%= new Date().toISOString().split('T')[0] %>" required />
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Ngày trở về <span class="text-danger">*</span></label>
+                                                                    <input type="date" class="form-control" name="tourDetails[0][dayReturn]" 
+                                                                           min="<%= new Date().toISOString().split('T')[0] %>" required />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- 8. HÌNH ẢNH TOUR -->
+                                            <div class="form-section mb-5">
+                                                <h4 class="section-title mb-4">Hình ảnh tour</h4>
+                                                <div class="itinerary-item border rounded p-3 mb-3">
+                                                    <div class="mb-4">
+                                                        <label for="images" class="form-label">Ảnh tour</label>
+                                                        <input type="file" class="form-control" id="images" name="images" 
+                                                               accept="image/*" multiple />
+                                                        <div class="form-text mt-2" style="font-style: italic;">
+                                                            Chọn nhiều file ảnh (JPG, PNG, GIF). Kích thước tối đa mỗi file: 5MB
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="images-preview" id="imagesPreview" style="display: none">
+                                                        <label class="form-label">
+                                                            <i class="fas fa-images me-2"></i>Các ảnh đã chọn:
+                                                        </label>
+                                                        <div class="preview-container row g-2" id="previewContainer">
+                                                            <!-- Preview images will be added here -->
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- FOOTER FORM -->
+                                            <div class="d-flex justify-content-between gap-3 py-3">
+                                                <a href="/tour" class="btn btn-secondary">
+                                                    <i class="fas fa-arrow-left me-2"></i>Quay lại
+                                                </a>
+                                                <div class="d-flex align-items-center">
+                                                    <button type="submit" class="btn btn-primary">
+                                                        <i class="fas fa-plus me-2"></i>Thêm tour
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    <% } else { %>
+                                        <div class="alert alert-warning" role="alert">
+                                            Bạn không có quyền thêm tour mới.
+                                        </div>
+                                    <% } %>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Modal -->
+    <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="imageModalLabel">Xem ảnh</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="modalImage" src="" alt="" class="img-fluid">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/toast-auto-hide.js?v=<%= Date.now() %>"></script>
+    <script src="/js/selectAdd.js?v=<%= Date.now() %>"></script>
+    <script src="/js/tour.js?v=<%= Date.now() %>"></script>
+
+
+
+    <!-- CKEditor 5 Integration -->
+    <script src="/vendor/ckeditor/ckeditor.js"></script>
+    <script src="/vendor/ckeditor/translations/vi.js"></script>
+
+
+
+
+</body>
+</html>

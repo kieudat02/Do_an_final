@@ -1,0 +1,141 @@
+.breadcrumb {
+  padding: 10px 0 0;
+  font-size: 13px;
+
+  &__container {
+    max-width: 1200px;
+    padding: 0 90px;
+
+    @media (max-width: 768px) {
+      padding: 0 16px;
+    }
+  }
+
+  &__list {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+  }
+
+  &__link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #6c757d;
+    text-decoration: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    color: #00759A;
+    transition: all 0.2s ease;
+  }
+
+  &__current {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #495057;
+    font-weight: 500;
+    padding: 4px 8px;
+  }
+
+  &__icon {
+    display: flex;
+    align-items: center;
+    color: inherit;
+  }
+
+  &__text {
+    white-space: nowrap;
+    
+    @media (max-width: 480px) {
+      max-width: 120px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+
+  &__separator {
+    color: #adb5bd;
+    flex-shrink: 0;
+    margin: 0 4px;
+  }
+
+  // Responsive adjustments
+  @media (max-width: 768px) {
+    padding: 10px 0;
+    font-size: 13px;
+
+    &__list {
+      gap: 6px;
+    }
+
+    &__item {
+      gap: 6px;
+    }
+
+    &__link,
+    &__current {
+      padding: 3px 6px;
+      gap: 4px;
+    }
+
+    &__separator {
+      margin: 0 2px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    &__text {
+      font-size: 12px;
+    }
+  }
+}
+
+// Dark theme support (optional)
+@media (prefers-color-scheme: dark) {
+  .breadcrumb {
+    background-color: #2d3748;
+    border-bottom-color: #4a5568;
+
+    &__link {
+      color: #a0aec0;
+
+      &:hover {
+        color: #63b3ed;
+        background-color: #2a4365;
+      }
+    }
+
+    &__current {
+      color: #e2e8f0;
+    }
+
+    &__separator {
+      color: #718096;
+    }
+  }
+}
+
+// Animation cho breadcrumb khi load
+.breadcrumb {
+  animation: breadcrumbFadeIn 0.3s ease-out;
+}
+
+@keyframes breadcrumbFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

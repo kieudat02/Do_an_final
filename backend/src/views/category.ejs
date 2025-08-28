@@ -1,0 +1,280 @@
+<% var userPermissions = typeof userPermissions !== 'undefined' ? userPermissions : []; %>
+<!DOCTYPE html>
+<html lang="vi">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Quản lý danh mục</title>
+        <!-- Embed Font -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+            rel="stylesheet"
+        />
+        <!-- Bootstrap CSS -->
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+        />
+        <!-- Font Awesome -->
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+        <!-- CSS -->
+        <link rel="stylesheet" href="/css/main.css" />
+    </head>
+    <body>
+        <div class="dashboard">
+            <div class="container_fuild">
+                <div class="dashboard__inner">
+                    <%- include('partials/sidebar') %>
+                    <div class="category">
+                        <div class="category__header">
+                            <h2 class="category__title">Quản lý danh mục</h2>
+                            <% if (userPermissions && userPermissions.includes('CREATE_CATEGORY')) { %>
+                            <a
+                                href="/category/add"
+                                class="category__btn category__btn--primary category__btn--add"
+                                >Thêm mới</a
+                            >
+                            <% } else { %>
+                            <a
+                                class="category__btn category__btn--primary category__btn--add disabled"
+                                style="pointer-events: none; opacity: 0.5"
+                                >Thêm mới</a
+                            >
+                            <% } %>
+                        </div>
+                        <!-- Notification Messages -->
+                        <% if (message && message.length > 0) { %>
+                        <div
+                            class="modal-notify modal-notify--active modal-notify--success"
+                        >
+                            <div class="modal-notify__content">
+                                <span class="modal-notify__message">
+                                    <i class="fas fa-check-circle me-2"></i><%= message[0] %>
+                                </span>
+                                <button
+                                    class="modal-notify__close"
+                                    onclick="this.parentElement.parentElement.style.display='none'"
+                                >
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <% } %> <% if (error && error.length > 0) { %>
+                        <div
+                            class="modal-notify modal-notify--active modal-notify--error"
+                        >
+                            <div class="modal-notify__content">
+                                <span class="modal-notify__message">
+                                    <i
+                                        class="fas fa-exclamation-circle me-2"
+                                    ></i
+                                    ><%= error[0] %>
+                                </span>
+                                <button
+                                    class="modal-notify__close"
+                                    onclick="this.parentElement.parentElement.style.display='none'"
+                                >
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <% } %>
+                        <div class="category__table--wrapper">
+                            <table class="category__table">
+                                <thead>
+                                    <tr>
+                                        <th>STT</th>
+                                        <th>Tên</th>
+                                        <th>Tiêu đề trang</th>
+                                        <th>Phụ đề</th>
+                                        <th>Trạng thái</th>
+                                        <th>Tạo bởi</th>
+                                        <th>Cập nhật bởi</th>
+                                        <th>Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% if (categories.length === 0) { %>
+                                    <tr>
+                                        <td
+                                            colspan="8"
+                                            class="category__table-empty"
+                                        >
+                                            Chưa có danh mục nào.
+                                        </td>
+                                    </tr>
+                                    <% } else { %> <% categories.forEach((cat,idx) => { %>
+                                    <tr>
+                                        <td><%= idx + 1 %></td>
+                                        <td>
+                                            <strong><%= cat.name %></strong>
+                                        </td>
+                                        <td>
+                                            <%= cat.pageTitle || 'Không có tiêu đề' %>
+                                        </td>
+                                        <td>
+                                            <%= cat.pageSubtitle || 'Không có phụ đề' %>
+                                        </td>
+                                        <td>
+                                            <% if (userPermissions && userPermissions.includes('UPDATE_CATEGORY')) { %>
+                                            <button
+                                                class="category__badge category__badge--toggle <%= cat.status === 'Hoạt động' ? 'category__badge--success' : 'category__badge--inactive' %>"
+                                                data-id="<%= cat._id %>"
+                                                data-status="<%= cat.status %>"
+                                                onclick="toggleStatus(this)"
+                                                title="Nhấn để thay đổi trạng thái"
+                                            >
+                                                <%= cat.status === 'Hoạt động' ? 'Hoạt động' : 'Tạm dừng' %>
+                                            </button>
+                                            <% } else { %>
+                                                <span class="category__badge category__badge--<%= cat.status === 'Hoạt động' ? 'success' : 'inactive' %>" style="opacity:0.5;">
+                                                    <%= cat.status === 'Hoạt động' ? 'Hoạt động' : 'Tạm dừng' %>
+                                                </span>
+                                            <% } %>
+                                        </td>
+                                        <td>
+                                            <span class="category__user-info">
+                                                <i class="fas fa-user me-1"></i>
+                                                <%= cat.createdBy || 'System' %>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="category__user-info">
+                                                <i
+                                                    class="fas fa-user-edit me-1"
+                                                ></i>
+                                                <%= cat.updatedBy || 'System' %>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div
+                                                class="d-flex gap-1 justify-content-center"
+                                            >
+                                                <% if (userPermissions && userPermissions.includes('UPDATE_CATEGORY')) { %>
+                                                <a
+                                                    href="/category/edit/<%= cat._id %>"
+                                                    class="category__btn category__btn--warning category__btn--sm"
+                                                    title="Chỉnh sửa danh mục"
+                                                >
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <% } else { %>
+                                                <a
+                                                    class="category__btn category__btn--warning category__btn--sm disabled"
+                                                    style="pointer-events: none; opacity: 0.5"
+                                                    title="Không có quyền chỉnh sửa"
+                                                >
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <% } %>
+                                                
+                                                <% if (userPermissions && userPermissions.includes('DELETE_CATEGORY')) { %>
+                                                <form
+                                                    class="category__form category__form--delete"
+                                                    action="/category/delete/<%= cat._id %>"
+                                                    method="POST"
+                                                    data-category-name="<%= cat.name %>"
+                                                >
+                                                    <%-include('partials/csrf-token') %>
+                                                    <button
+                                                        type="submit"
+                                                        class="category__btn category__btn--danger category__btn--sm"
+                                                        title="Xóa danh mục"
+                                                    >
+                                                        <i
+                                                            class="fas fa-trash"
+                                                        ></i>
+                                                    </button>
+                                                </form>
+                                                <% } else { %>
+                                                <button
+                                                    class="category__btn category__btn--danger category__btn--sm disabled"
+                                                    style="pointer-events: none; opacity: 0.5"
+                                                    title="Không có quyền xóa"
+                                                    disabled
+                                                >
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                                <% } %>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <% }) %> <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Delete Confirmation Modal -->
+        <div
+            class="modal fade"
+            id="deleteModal"
+            tabindex="-1"
+            aria-labelledby="deleteModalLabel"
+            aria-hidden="true"
+        >
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title" id="deleteModalLabel">
+                            Xóa danh mục
+                        </h5>
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"
+                        ></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-3">
+                            Bạn có chắc chắn muốn xóa danh mục
+                            <strong id="categoryNameToDelete"></strong> ?
+                        </p>
+                        <div
+                            class="alert alert-warning d-flex align-items-center"
+                        >
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <small>Hành động này không thể hoàn tác!</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal"
+                        >
+                            <i class="fas fa-times me-2"></i>Hủy
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-danger"
+                            id="confirmDeleteBtn"
+                        >
+                            <i class="fas fa-trash me-2"></i>Xóa
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thêm CSRF token cho JavaScript -->
+        <script>
+            window.csrfToken = "<%= csrfToken %>";
+        </script>
+
+        <!-- Bootstrap JS -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="/js/toast-auto-hide.js?v=<%= Date.now() %>"></script>
+        <script src="/js/category.js?v=<%= Date.now() %>"></script>
+
+        <!-- Session Security -->
+        <script src="/js/session-security.js?v=<%= Date.now() %>"></script>
+    </body>
+</html>

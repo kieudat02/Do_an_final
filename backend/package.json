@@ -1,0 +1,58 @@
+{
+    "name": "fullstack-backend",
+    "version": "1.0.0",
+    "description": "Kieu Dat fullstack-backend",
+    "main": "index.js",
+    "scripts": {
+        "start": "cross-env nodemon ./src/index.js",
+        "sass": "npx sass src/public/scss:src/public/css --watch",
+        "dev": "concurrently \"npm run sass\" \"npm run start\"",
+        "recalculate-prices": "node ./src/utils/recalculateAllTourPrices.js",
+        "seed-images": "node ./scripts/category-topic-image-seeder.js",
+        "seed-tours": "node ./scripts/optimized-tour-seeder.js"
+    },
+    "keywords": [
+        "nodejs"
+    ],
+    "author": "Kieu Dat",
+    "license": "ISC",
+    "dependencies": {
+        "@google/generative-ai": "^0.24.1",
+        "axios": "^1.11.0",
+        "bcrypt": "^6.0.0",
+        "bcryptjs": "^3.0.2",
+        "cloudinary": "^1.41.3",
+        "connect-flash": "^0.1.1",
+        "connect-mongo": "^5.1.0",
+        "cookie-parser": "^1.4.7",
+        "cors": "^2.8.5",
+        "csurf": "^1.11.0",
+        "dompurify": "^3.2.6",
+        "dotenv": "16.0.3",
+        "ejs": "^3.1.10",
+        "express": "^4.21.2",
+        "express-rate-limit": "^7.5.1",
+        "express-session": "^1.18.2",
+        "express-validator": "^7.2.1",
+        "google-auth-library": "^10.2.0",
+        "js-cookie": "^3.0.5",
+        "jsdom": "^26.1.0",
+        "jsonwebtoken": "^9.0.2",
+        "moment": "^2.30.1",
+        "mongoose": "^6.13.8",
+        "multer": "^2.0.1",
+        "multer-storage-cloudinary": "^4.0.0",
+        "nodemailer": "^7.0.5",
+        "passport": "^0.7.0",
+        "passport-facebook": "^3.0.0",
+        "passport-google-oauth20": "^2.0.0",
+        "sanitize-html": "^2.17.0",
+        "sass": "^1.58.3",
+        "slugify": "^1.6.6"
+    },
+    "devDependencies": {
+        "concurrently": "^9.2.0",
+        "cross-env": "^7.0.3",
+        "nodemon": "^3.1.10"
+    }
+}

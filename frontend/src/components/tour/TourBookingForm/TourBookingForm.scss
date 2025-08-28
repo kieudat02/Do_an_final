@@ -1,0 +1,476 @@
+.booking-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.booking-modal {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+
+  &__header {
+    background: transparent;
+    color: #333;
+    padding: 40px 40px 0;
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: none;
+    position: relative;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    text-align: center;
+    width: 100%;
+    margin-bottom: 16px;
+  }
+
+  &__close {
+    background: none;
+    border: none;
+    color: #999;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+    position: absolute;
+    right: 10px;
+    top: 5px;
+    z-index: 10;
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  &__content {
+    padding: 0 40px 40px;
+  }
+}
+
+// Tour Info
+.tour-info {
+  margin-bottom: 16px;
+  text-align: center;
+
+  &__title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #000000;
+    line-height: 1.4;
+    background: #ecf8fd;
+    padding: 5px 0;
+    border-radius: 5px;
+  }
+}
+
+// Form Styles
+.booking-form {
+  .form-row {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 15px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    // Date row - full width
+    &:first-child {
+      .form-group {
+        width: auto !important;
+      }
+    }
+  }
+
+  .participants-row {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 15px;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  .form-group {
+    flex: 1;
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .age-note {
+      font-size: 11px;
+      color: #999;
+      margin-left: 3px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 12px 15px;
+      border-radius: 8px;
+      font-size: 12px;
+      transition: all 0.2s;
+      background: #f2f2f2;
+
+      &:focus {
+        outline: none;
+        border-color: #ff6b35;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+      }
+
+      &.error {
+        border-color: #e74c3c;
+      }
+
+      &::placeholder {
+        color: #aaa;
+      }
+    }
+
+    // Date input specific styling
+    input[type="date"] {
+      background: #f2f2f2;
+      color: #333;
+
+      &::-webkit-calendar-picker-indicator {
+        background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path fill="%23666" d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>') no-repeat;
+        background-size: 16px;
+        cursor: pointer;
+      }
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+      border: none;
+    }
+
+    select {
+      cursor: pointer;
+    }
+
+    .no-dates-available {
+      padding: 12px 15px;
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 8px;
+      text-align: center;
+
+      p {
+        margin: 0;
+        color: #6c757d;
+        font-size: 14px;
+      }
+    }
+
+    .available-dates-info {
+      margin-top: 8px;
+
+      small {
+        color: #6c757d;
+        font-size: 12px;
+        line-height: 1.4;
+        display: block;
+      }
+    }
+
+    .react-datepicker {
+      left: -13px;
+
+      &-popper { 
+        top: -20px !important;
+      }
+
+      &-wrapper {
+        width: 100%;
+      }
+      &__input-container {
+        width: 100%;
+  
+        input {
+          width: 100%;
+          padding: 12px 15px;
+          border-radius: 8px;
+          border: 1px solid #ddd;
+          font-size: 12px;
+          transition: all 0.2s;
+  
+          &:focus {
+            outline: none;
+            border-color: #FF5B00;
+            box-shadow: 0 0 0 2px rgba(255, 91, 0, 0.1);
+          }
+  
+          &.error {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.1);
+          }
+        }
+      }
+    }
+
+    .payment-select {
+      background: #f2f2f2;
+      border: none;
+      appearance: none;
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12"><path fill="%23666" d="M6 8L2 4h8z"/></svg>');
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 12px;
+      padding-right: 35px;
+    }
+  }
+}
+
+// Quantity Control
+.quantity-control {
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f2f2f2;
+  width: fit-content;
+  min-width: 100px;
+
+  input[type="number"] {
+    width: 35px !important;
+    padding: 12px 0 12px 10px;
+  }
+
+  button {
+    background: transparent;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: 400;
+    color: #666;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 40px;
+
+    &:hover:not(:disabled) {
+      background: #e9ecef;
+      color: #333;
+    }
+
+    &:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+  }
+
+  input {
+    border: none;
+    text-align: center;
+    width: 40px;
+    padding: 8px 4px;
+    font-size: 14px;
+    font-weight: 500;
+    background: transparent;
+    color: #333;
+
+    &:focus {
+      outline: none;
+      box-shadow: none;
+      background: transparent;
+    }
+  }
+}
+
+// Price Summary
+.price-summary {
+  text-align: center;
+  margin: 20px 0 4px 0;
+
+  .price-original {
+    font-size: 14px;
+    color: #999;
+    text-decoration: line-through;
+    margin-bottom: 5px;
+    font-weight: 400;
+  }
+
+  .price-final {
+    font-size: 24px;
+    font-weight: 700;
+    color: #ff6b35;
+    margin-bottom: 0;
+
+    span {
+      display: block;
+    }
+  }
+}
+
+// Submit Button
+.booking-submit-btn {
+  width: 100%;
+  background: #ff6b35;
+  color: white;
+  border: none;
+  padding: 16px 20px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 15px;
+  text-transform: none;
+  letter-spacing: 0.5px;
+
+  &:hover:not(:disabled) {
+    background: #e55a2b;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+// Payment Note
+.payment-note {
+  text-align: center;
+  color: #999;
+  font-size: 12px;
+  margin-top: 0;
+  font-weight: 400;
+}
+
+// Error Text
+.error-text {
+  color: #e74c3c;
+  font-size: 12px;
+  margin-top: 5px;
+  display: block;
+  white-space: nowrap;
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .booking-modal-overlay {
+    padding: 10px;
+  }
+
+  .booking-modal {
+    max-width: 100%;
+    max-height: 95vh;
+    border-radius: 8px;
+
+    &__content {
+      padding: 0 15px 15px 15px;
+    }
+
+    &__header {
+      padding: 15px 15px 0 15px;
+    }
+
+    &__close {
+      right: 10px;
+      top: 10px;
+    }
+  }
+
+  .booking-form {
+    .form-row, .participants-row {
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .participants-row {
+      .form-group {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        .quantity-control {
+          margin-left: auto;
+        }
+      }
+    }
+  }
+
+  .quantity-control {
+    min-width: 120px;
+  }
+}
+
+@media (max-width: 480px) {
+  .booking-modal {
+    &__header {
+      padding: 12px 15px 0 15px;
+    }
+
+    &__title {
+      font-size: 15px;
+    }
+
+    &__content {
+      padding: 0 12px 12px 12px;
+    }
+  }
+
+  .tour-info {
+    margin-bottom: 20px;
+
+    &__title {
+      font-size: 16px;
+    }
+  }
+
+  .booking-form {
+    .form-group {
+      input, select, textarea {
+        padding: 10px 12px;
+        font-size: 14px;
+      }
+    }
+  }
+
+  .booking-submit-btn {
+    padding: 14px 15px;
+    font-size: 15px;
+  }
+
+  .price-summary {
+    .price-final {
+      font-size: 24px;
+    }
+  }
+}

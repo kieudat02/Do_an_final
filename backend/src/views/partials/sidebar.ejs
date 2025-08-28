@@ -1,0 +1,169 @@
+<% var userPermissions = typeof userPermissions !== 'undefined' ? userPermissions : []; %>
+<!-- Sidebar -->
+<aside class="sidebar">
+    <div class="sidebar__header">
+        <h2 class="sidebar__title">
+            <i class="fas fa-map-marked-alt"></i>
+            Travel Admin
+        </h2>
+        <button class="sidebar__toggle d-lg-none">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+
+    <nav class="sidebar__nav">
+        <ul class="sidebar__list">
+            <!-- Dashboard - Tất cả đều có thể xem -->
+            <li class="sidebar__item">
+                <a
+                    href="/"
+                    class="sidebar__link <%= (typeof currentPath !== 'undefined' && (currentPath === '/' || currentPath === '' || currentPath === '/dashboard')) ? 'sidebar__link--active' : '' %>"
+                >
+                    <i class="fas fa-tachometer-alt sidebar__icon"></i>
+                    <span class="sidebar__text">Bảng điều khiển</span>
+                </a>
+            </li>
+
+            <!-- Tours -->
+            <% if (userPermissions.includes('READ_TOUR')) { %>
+            <li class="sidebar__item">
+                <a
+                    href="/tour"
+                    class="sidebar__link <%= (typeof currentPath !== 'undefined' && (currentPath === '/tour' || currentPath.startsWith('/tour/tour') || currentPath.startsWith('/tour/detail/') || currentPath.startsWith('/tour?'))) ? 'sidebar__link--active' : '' %>"
+                >
+                    <i class="fas fa-route sidebar__icon"></i>
+                    <span class="sidebar__text">Quản lý Tour</span>
+                </a>
+            </li>
+            <% } %>
+
+            <!-- Categories -->
+            <% if (userPermissions.includes('READ_CATEGORY')) { %>
+            <li class="sidebar__item">
+                <a
+                    href="/category"
+                    class="sidebar__link <%= (typeof currentPath !== 'undefined' && (currentPath === '/category' || currentPath.startsWith('/category/') || currentPath.startsWith('/category?'))) ? 'sidebar__link--active' : '' %>"
+                >
+                    <i class="fas fa-tags sidebar__icon"></i>
+                    <span class="sidebar__text">Danh mục</span>
+                </a>
+            </li>
+            <% } %>
+
+            <!-- Home Sections -->
+            <% if (userPermissions.includes('READ_HOME_SECTION')) { %>
+            <li class="sidebar__item">
+                <a
+                    href="/homeSection"
+                    class="sidebar__link <%= (typeof currentPath !== 'undefined' && (currentPath === '/homeSection' || currentPath.startsWith('/homeSection/') || currentPath.startsWith('/homeSection?'))) ? 'sidebar__link--active' : '' %>"
+                >
+                    <i class="fas fa-home sidebar__icon"></i>
+                    <span class="sidebar__text">Khu vực trang chủ</span>
+                </a>
+            </li>
+            <% } %>
+
+            <!-- Departures -->
+            <% if (userPermissions.includes('READ_DEPARTURE')) { %>
+            <li class="sidebar__item">
+                <a
+                    href="/departure"
+                    class="sidebar__link <%= (typeof currentPath !== 'undefined' && (currentPath === '/departure' || currentPath.startsWith('/departure/') || currentPath.startsWith('/departure?'))) ? 'sidebar__link--active' : '' %>"
+                >
+                    <i class="fas fa-map-marker-alt sidebar__icon"></i>
+                    <span class="sidebar__text">Điểm khởi hành</span>
+                </a>
+            </li>
+            <% } %>
+
+            <!-- Destinations -->
+            <% if (userPermissions.includes('READ_DESTINATION')) { %>
+            <li class="sidebar__item">
+                <a
+                    href="/destination"
+                    class="sidebar__link <%= (typeof currentPath !== 'undefined' && (currentPath === '/destination' || currentPath.startsWith('/destination/') || currentPath.startsWith('/destination?'))) ? 'sidebar__link--active' : '' %>"
+                >
+                    <i class="fas fa-map-marked-alt sidebar__icon"></i>
+                    <span class="sidebar__text">Điểm đến</span>
+                </a>
+            </li>
+            <% } %>
+
+            <!-- Transportation -->
+            <% if (userPermissions.includes('READ_TRANSPORTATION')) { %>
+            <li class="sidebar__item">
+                <a
+                    href="/transportation"
+                    class="sidebar__link <%= (typeof currentPath !== 'undefined' && (currentPath === '/transportation' || currentPath.startsWith('/transportation/') || currentPath.startsWith('/transportation?'))) ? 'sidebar__link--active' : '' %>"
+                >
+                    <i class="fas fa-bus sidebar__icon"></i>
+                    <span class="sidebar__text">Phương tiện</span>
+                </a>
+            </li>
+            <% } %>
+
+            <!-- Orders - Đơn hàng -->
+            <% if (userPermissions.includes('READ_ORDER')) { %>
+            <li class="sidebar__item">
+                <a
+                    href="/orders"
+                    class="sidebar__link <%= (typeof currentPath !== 'undefined' && (currentPath === '/orders' || currentPath.startsWith('/orders/') || currentPath.startsWith('/orders?'))) ? 'sidebar__link--active' : '' %>"
+                >
+                    <i class="fas fa-shopping-cart sidebar__icon"></i>
+                    <span class="sidebar__text">Đơn hàng</span>
+                </a>
+            </li>
+            <% } %>
+
+            <!-- Reviews - Đánh giá -->
+            <% if (userPermissions.includes('READ_REVIEW')) { %>
+            <li class="sidebar__item">
+                <a
+                    href="/review"
+                    class="sidebar__link <%= (typeof currentPath !== 'undefined' && (currentPath === '/review' || currentPath.startsWith('/review/') || currentPath.startsWith('/review?'))) ? 'sidebar__link--active' : '' %>"
+                >
+                    <i class="fas fa-star sidebar__icon"></i>
+                    <span class="sidebar__text">Đánh giá</span>
+                </a>
+            </li>
+            <% } %>
+            <!-- Vai trò - chỉ Super Admin và Admin -->
+            <% if (userPermissions.includes('READ_ROLES')) { %>
+            <li class="sidebar__item">
+                <a
+                    href="/roles"
+                    class="sidebar__link <%= (typeof currentPath !== 'undefined' && (currentPath === '/roles' || currentPath.startsWith('/roles/') || currentPath.startsWith('/roles?'))) ? 'sidebar__link--active' : '' %>"
+                >
+                    <i class="fas fa-user-tag sidebar__icon"></i>
+                    <span class="sidebar__text">Vai trò</span>
+                </a>
+            </li>
+            <% } %>
+            <!-- Quyền hạn -->
+            <% if (userPermissions.includes('READ_PERMISSIONS')) { %>
+            <li class="sidebar__item">
+                <a
+                    href="/permissions"
+                    class="sidebar__link <%= (typeof currentPath !== 'undefined' && (currentPath === '/permissions' || currentPath.startsWith('/permissions/') || currentPath.startsWith('/permissions?'))) ? 'sidebar__link--active' : '' %>"
+                >
+                    <i class="fas fa-key sidebar__icon"></i>
+                    <span class="sidebar__text">Quyền hạn</span>
+                </a>
+            </li>
+            <% } %>
+            <!-- Accounts -->
+            <% if (userPermissions.includes('READ_USERS') || userPermissions.includes('READ_ACCOUNT')) { %>
+            <li class="sidebar__item">
+                <a
+                    href="/account"
+                    class="sidebar__link <%= (typeof currentPath !== 'undefined' && (currentPath === '/account' || currentPath.startsWith('/account/') || currentPath.startsWith('/account?'))) ? 'sidebar__link--active' : '' %>"
+                >
+                    <i class="fas fa-users sidebar__icon"></i>
+                    <span class="sidebar__text">Tài khoản</span>
+                </a>
+            </li>
+            <% } %>
+        </ul>
+        <%- include('header') %>
+    </nav>
+</aside>

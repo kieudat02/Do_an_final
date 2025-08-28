@@ -1,0 +1,284 @@
+<% var userPermissions = typeof userPermissions !== 'undefined' ? userPermissions : []; %>
+<!DOCTYPE html>
+<html lang="vi">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Quản lý khu vực trang chủ</title>
+        <!-- Embed Font -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+            rel="stylesheet"
+        />
+        <!-- Bootstrap CSS -->
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+        />
+        <!-- Font Awesome -->
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+        <!-- CSS -->
+        <link rel="stylesheet" href="/css/main.css" />
+    </head>
+    <body>
+        <div class="dashboard">
+            <div class="container_fuild">
+                <div class="dashboard__inner">
+                    <%- include('partials/sidebar') %>
+                    <div class="home-section">
+                        <div class="home-section__header">
+                            <h2 class="home-section__title">Quản lý khu vực trang chủ</h2>
+                            <% if (userPermissions && userPermissions.includes('CREATE_HOME_SECTION')) { %>
+                            <a
+                                href="/homeSection/add"
+                                class="home-section__btn home-section__btn--primary home-section__btn--add"
+                                >Thêm mới</a
+                            >
+                            <% } else { %>
+                            <a
+                                class="home-section__btn home-section__btn--primary home-section__btn--add disabled"
+                                style="pointer-events: none; opacity: 0.5"
+                                >Thêm mới</a
+                            >
+                            <% } %>
+                        </div>
+                        <!-- Notification Messages -->
+                        <% if (message && message.length > 0) { %>
+                        <div
+                            class="modal-notify modal-notify--active modal-notify--success"
+                        >
+                            <div class="modal-notify__content">
+                                <span class="modal-notify__message">
+                                    <i class="fas fa-check-circle me-2"></i><%= message[0] %>
+                                </span>
+                                <button
+                                    class="modal-notify__close"
+                                    onclick="this.parentElement.parentElement.style.display='none'"
+                                >
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <% } %> <% if (error && error.length > 0) { %>
+                        <div
+                            class="modal-notify modal-notify--active modal-notify--error"
+                        >
+                            <div class="modal-notify__content">
+                                <span class="modal-notify__message">
+                                    <i
+                                        class="fas fa-exclamation-circle me-2"
+                                    ></i
+                                    ><%= error[0] %>
+                                </span>
+                                <button
+                                    class="modal-notify__close"
+                                    onclick="this.parentElement.parentElement.style.display='none'"
+                                >
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <% } %>
+                        <div class="home-section__table--wrapper">
+                            <table class="home-section__table">
+                                <thead>
+                                    <tr>
+                                        <th>STT</th>
+                                        <th>Tiêu đề</th>
+                                        <th>Thứ tự</th>
+                                        <th>Danh mục</th>
+                                        <th>Trạng thái</th>
+                                        <th>Tạo bởi</th>
+                                        <th>Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% if (homeSections && homeSections.length > 0) { %>
+                                        <% homeSections.forEach(function(homeSection, index) { %>
+                                            <tr class="home-section-row" data-id="<%= homeSection._id %>">
+                                                <td><%= (currentPage - 1) * limit + index + 1 %></td>
+                                                <td>
+                                                    <strong><%= homeSection.title %></strong>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-info"><%= homeSection.order %></span>
+                                                </td>
+                                                <td>
+                                                    <% if (homeSection.categories && homeSection.categories.length > 0) { %>
+                                                        <% homeSection.categories.forEach(function(cat, index) { %>
+                                                            <span class="badge bg-secondary me-1"><%= cat.name %></span>
+                                                        <% }); %>
+                                                    <% } else { %>
+                                                        <span class="text-muted">Không có</span>
+                                                    <% } %>
+                                                </td>
+                                                <td>
+                                                    <% if (homeSection.isActive) { %>
+                                                        <span class="badge bg-success">
+                                                            <i class="fas fa-check-circle"></i> Hoạt động
+                                                        </span>
+                                                    <% } else { %>
+                                                        <span class="badge bg-warning">
+                                                            <i class="fas fa-pause-circle"></i> Tạm dừng
+                                                        </span>
+                                                    <% } %>
+                                                </td>
+                                                <td><%= homeSection.createdBy %></td>
+                                                <td>
+                                                    <div class="home-section__actions">
+                                                        <% if (userPermissions && userPermissions.includes('UPDATE_HOME_SECTION')) { %>
+                                                            <a href="/homeSection/edit/<%= homeSection._id %>" class="home-section__btn home-section__btn--edit" title="Chỉnh sửa">
+                                                                <i class="fas fa-edit"></i>
+                                                            </a>
+                                                            <button
+                                                                class="home-section__btn home-section__btn--toggle"
+                                                                data-id="<%= homeSection._id %>"
+                                                                data-status="<%= homeSection.isActive %>"
+                                                                data-title="<%= homeSection.title %>"
+                                                                onclick="toggleStatusModal(this)"
+                                                                title="<%= homeSection.isActive ? 'Tắt' : 'Bật' %>"
+                                                            >
+                                                                <i class="fas fa-<%= homeSection.isActive ? 'pause' : 'play' %>"></i>
+                                                            </button>
+                                                        <% } %>
+                                                        <% if (userPermissions && userPermissions.includes('DELETE_HOME_SECTION')) { %>
+                                                            <button
+                                                                class="home-section__btn home-section__btn--delete"
+                                                                data-id="<%= homeSection._id %>"
+                                                                data-title="<%= homeSection.title %>"
+                                                                onclick="deleteHomeSectionModal(this)"
+                                                                title="Xóa"
+                                                            >
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        <% } %>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        <% }); %>
+                                    <% } else { %>
+                                        <tr>
+                                            <td colspan="7" class="text-center">
+                                                <div class="empty-state">
+                                                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                                    <p class="text-muted">Chưa có khu vực trang chủ nào</p>
+                                                    <% if (userPermissions && userPermissions.includes('CREATE_HOME_SECTION')) { %>
+                                                        <a href="/homeSection/add" class="btn btn-primary">
+                                                            <i class="fas fa-plus me-2"></i>Thêm khu vực trang chủ đầu tiên
+                                                        </a>
+                                                    <% } %>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        <% if (totalPages > 1) { %>
+                        <div class="home-section__pagination">
+                            <div class="pagination-info">
+                                Hiển thị <%= (currentPage - 1) * limit + 1 %> - <%= Math.min(currentPage * limit, total) %> trong tổng số <%= total %> khu vực trang chủ
+                            </div>
+                            <nav aria-label="Pagination">
+                                <ul class="pagination">
+                                    <% if (hasPrevPage) { %>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page=<%= currentPage - 1 %>&limit=<%= limit %>&search=<%= search %>">
+                                                <i class="fas fa-chevron-left"></i>
+                                            </a>
+                                        </li>
+                                    <% } %>
+
+                                    <% for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) { %>
+                                        <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+                                            <a class="page-link" href="?page=<%= i %>&limit=<%= limit %>&search=<%= search %>"><%= i %></a>
+                                        </li>
+                                    <% } %>
+
+                                    <% if (hasNextPage) { %>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page=<%= currentPage + 1 %>&limit=<%= limit %>&search=<%= search %>">
+                                                <i class="fas fa-chevron-right"></i>
+                                            </a>
+                                        </li>
+                                    <% } %>
+                                </ul>
+                            </nav>
+                        </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Change Confirmation Modal -->
+        <div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title" id="statusModalLabel">
+                            Thay đổi trạng thái
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-3">Bạn có chắc chắn muốn thay đổi trạng thái của khu vực trang chủ <strong id="homeSectionNameForStatus"></strong>?</p>
+                        <div class="alert alert-info d-flex align-items-center">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <small>Thay đổi trạng thái sẽ ảnh hưởng đến hiển thị trên trang chủ.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-2"></i>Hủy
+                        </button>
+                        <button type="button" class="btn btn-primary" id="confirmStatusBtn">
+                            <i class="fas fa-toggle-on me-2"></i>Thay đổi
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Confirmation Modal -->
+        <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title" id="deleteModalLabel">
+                            Xóa khu vực trang chủ
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-3">Bạn có chắc chắn muốn xóa khu vực trang chủ <strong id="homeSectionNameToDelete"></strong>?</p>
+                        <div class="alert alert-warning d-flex align-items-center">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <small>Hành động này không thể hoàn tác!</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-2"></i>Hủy
+                        </button>
+                        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                            <i class="fas fa-trash me-2"></i>Xóa
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- jQuery -->
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="/js/toast-auto-hide.js?v=<%= Date.now() %>"></script>
+        <script src="/js/homeSection.js?v=<%= Date.now() %>"></script>
+    </body>
+</html>

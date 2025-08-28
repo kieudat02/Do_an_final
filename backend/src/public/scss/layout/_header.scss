@@ -1,0 +1,121 @@
+@use "../abstracts/" as *;
+
+//Header
+.dashboard-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 62px;
+    padding: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    height: 70px;
+    background-color: #263248; 
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    
+    // User Info - Enhanced design
+    .user-info {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 0.5rem 1rem;
+        transition: all 0.3s ease;
+        position: relative;
+        color: #fff;
+        
+        &:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        .user-avatar-container {
+            position: relative;
+            margin-right: 12px;
+            
+            &::after {
+                content: '';
+                position: absolute;
+                right: 0;
+                bottom: 2px;
+                width: 10px;
+                height: 10px;
+                background-color: #4cd137; // Online indicator
+                border-radius: 50%;
+                border: 2px solid #263248;
+            }
+        }
+        
+        .user-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            
+            &:hover {
+                border-color: rgba(255, 255, 255, 0.5);
+                transform: scale(1.05);
+            }
+        }
+        
+        .user-details {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            
+            h4 {
+                margin: 0;
+                font-size: 1rem;
+                font-weight: 600;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                color: #fff;
+                letter-spacing: 0.2px;
+            }
+            
+            .user-role {
+                font-size: 0.8rem;
+                color: rgba(255, 255, 255, 0.7);
+                display: block;
+                margin-top: 0.1rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+        }
+        
+        .logout-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            color: rgba(255, 255, 255, 0.8);
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            text-decoration: none;
+            margin-left: 10px;
+            
+            &:hover {
+                background-color: rgba(255, 255, 255, 0.2);
+                color: #fff;
+            }
+            
+            i {
+                font-size: 0.85rem;
+            }
+        }
+
+        // Responsive adjustments
+        @media (max-width: 576px) {
+            padding: 0.5rem;
+            
+            .user-details {
+                max-width: 120px;
+            }
+        }
+    }
+}

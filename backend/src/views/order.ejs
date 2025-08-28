@@ -1,0 +1,297 @@
+<% var userPermissions = typeof userPermissions !== 'undefined' ? userPermissions : []; %>
+<!DOCTYPE html>
+<html lang="vi">
+    <head>
+        <meta charset="UTF-8" />
+        <title><%= title %></title>
+        <!-- Embed Font -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+            rel="stylesheet"
+        />
+        <!-- Bootstrap CSS -->
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+        />
+        <!-- Font Awesome -->
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+        <!-- Select2 -->
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+        <!-- CSS -->
+        <link rel="stylesheet" href="/css/main.css" />
+    </head>
+    <body>
+        <div class="dashboard">
+            <div class="container_fuild">
+                <div class="dashboard__inner">
+                    <%- include('partials/sidebar') %>
+                    <div class="order">
+                        <div class="order__header">
+                            <h2 class="order__title">Quản lý đơn hàng</h2>
+                        </div>
+                        
+                        <!-- Notification Messages -->
+                        <% if (messages.success && messages.success.length > 0) { %>
+                        <div class="modal-notify modal-notify--active modal-notify--success">
+                            <div class="modal-notify__content">
+                                <span class="modal-notify__message">
+                                    <i class="fas fa-check-circle me-2"></i><%= messages.success %>
+                                </span>
+                                <button class="modal-notify__close" onclick="this.parentElement.parentElement.style.display='none'">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <% } %>
+                        
+                        <% if (messages.error && messages.error.length > 0) { %>
+                        <div class="modal-notify modal-notify--active modal-notify--error">
+                            <div class="modal-notify__content">
+                                <span class="modal-notify__message">
+                                    <i class="fas fa-exclamation-circle me-2"></i><%= messages.error %>
+                                </span>
+                                <button class="modal-notify__close" onclick="this.parentElement.parentElement.style.display='none'">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <% } %>
+                        
+                        <!-- Search and filter controls -->
+                        <div class="order__filter">
+                            <div class="order__controls">
+                                <div class="search-container">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="searchInput" placeholder="Tìm kiếm đơn hàng...">
+                                        <button type="button" class="btn-outline-danger" id="clearSearch" style="display: none;">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                        <button class="btn btn-primary" id="searchButton">Tìm kiếm</i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="status-select">
+                                <select class="form-select" id="statusFilter">
+                                    <option value="all" selected>Tất cả</option>
+                                    <option value="pending">Đang chờ</option>
+                                    <option value="confirmed">Đã xác nhận</option>
+                                    <option value="completed">Hoàn thành</option>
+                                    <option value="cancelled">Đã hủy</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="order__table--wrapper">
+                            <table class="order__table">
+                                <thead>
+                                    <tr>
+                                        <th width="4%">STT</th>
+                                        <th width="10%">Mã đơn hàng</th>
+                                        <th width="9%">Khách hàng</th>
+                                        <th width="12%">Email</th>
+                                        <th width="8%">Số điện thoại</th>
+                                        <th width="15%">Địa chỉ</th>
+                                        <th width="6%">Trạng thái</th>
+                                        <th width="8%">Tổng tiền</th>
+                                        <th width="6%">Phương thức</th>
+                                        <th width="8%">Thanh toán</th>
+                                        <th width="10%">Ngày đặt</th>
+                                        <th width="6%">Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ordersList">
+                                    <!-- Dữ liệu sẽ được tải qua JavaScript -->
+                                    <tr>
+                                        <td colspan="12" class="order__table-empty">
+                                            Đang tải dữ liệu...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Phân trang -->
+                        <div class="order__pagination">
+                            <nav aria-label="Page navigation">
+                                <ul class="pagination justify-content-center" id="pagination">
+                                    <!-- Phân trang sẽ được tạo qua JavaScript -->
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal chi tiết đơn hàng -->
+        <div
+            class="modal fade"
+            id="orderDetailsModal"
+            tabindex="-1"
+            aria-labelledby="orderDetailsModalLabel"
+            aria-hidden="true"
+        >
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title" id="orderDetailsModalLabel">
+                            Chi tiết đơn hàng
+                        </h5>
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"
+                        ></button>
+                    </div>
+                    <div class="modal-body" id="orderDetailsContent">
+                        <!-- Chi tiết đơn hàng sẽ được tải ở đây -->
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal"
+                        >
+                            <i class="fas fa-times me-2"></i>Đóng
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal cập nhật trạng thái -->
+        <div
+            class="modal fade"
+            id="statusUpdateModal"
+            tabindex="-1"
+            aria-labelledby="statusUpdateModalLabel"
+            aria-hidden="true"
+        >
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title" id="statusUpdateModalLabel">
+                            Cập nhật trạng thái đơn hàng
+                        </h5>
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"
+                        ></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="updateOrderId">
+                        <div class="mb-3">
+                            <label for="orderStatus" class="form-label">Trạng thái đơn hàng</label>
+                            <select class="form-select" id="orderStatus">
+                                <option value="pending">Đang chờ</option>
+                                <option value="confirmed">Đã xác nhận</option>
+                                <option value="completed">Hoàn thành</option>
+                                <option value="cancelled">Đã hủy</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="paymentStatus" class="form-label">Trạng thái thanh toán</label>
+                            <select class="form-select" id="paymentStatus">
+                                <option value="pending">Chưa thanh toán</option>
+                                <option value="completed">Đã thanh toán</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal"
+                        >
+                            <i class="fas fa-times me-2"></i>Hủy
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-primary"
+                            id="saveStatusButton"
+                        >
+                            <i class="fas fa-save me-2"></i>Lưu thay đổi
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal xác nhận xóa -->
+        <div
+            class="modal fade"
+            id="deleteConfirmModal"
+            tabindex="-1"
+            aria-labelledby="deleteConfirmModalLabel"
+            aria-hidden="true"
+            style="display: none;"
+        >
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title" id="deleteConfirmModalLabel">
+                            Xóa đơn hàng
+                        </h5>
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"
+                        ></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-3">
+                            Bạn có chắc chắn muốn xóa đơn hàng này?
+                        </p>
+                        <input type="hidden" id="deleteOrderId">
+                        <div
+                            class="alert alert-warning d-flex align-items-center"
+                        >
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <small>Hành động này không thể hoàn tác!</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal"
+                        >
+                            <i class="fas fa-times me-2"></i>Hủy
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-danger"
+                            id="confirmDeleteButton"
+                        >
+                            <i class="fas fa-trash me-2"></i>Xóa
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thêm CSRF token cho JavaScript -->
+        <script>
+            window.csrfToken = "<%= csrfToken %>";
+        </script>
+
+        <!-- Scripts -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+        <script src="/js/toast-auto-hide.js?v=<%= Date.now() %>"></script>
+        <script src="/js/order.js?v=<%= Date.now() %>"></script>
+        <!-- Session Security -->
+        <script src="/js/session-security.js?v=<%= Date.now() %>"></script>
+    </body>
+</html>

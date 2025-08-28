@@ -1,0 +1,39 @@
+<!-- Header -->
+<div class="dashboard-header">
+    <div class="user-info">
+        <div class="user-avatar-container">
+            <% if (currentUser.avatar && currentUser.avatar.trim() !== '') { %>
+                <img 
+                    src="<%= currentUser.avatar %>" 
+                    alt="<%= currentUser.fullName %>" 
+                    class="user-avatar"
+                    onerror="this.onerror=null; this.src='/images/default-avatar.png';"
+                >
+            <% } else { %>
+                <img src="/images/default-avatar.png" alt="<%= currentUser.fullName %>" class="user-avatar">
+            <% } %>
+        </div>
+        <div class="user-details">
+            <h4><%= currentUser.fullName %></h4>
+            <span class="user-role"><%= currentUser.role.name %></span>
+        </div>
+        <a href="/logout" class="logout-button" title="Đăng xuất">
+            <i class="fas fa-sign-out-alt"></i>
+        </a>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const theme = localStorage.getItem('theme');
+        
+        if (theme === 'dark') {
+            document.body.classList.add('dark-mode');
+        }
+    });
+    
+    // Toggle sidebar functionality is kept for sidebar toggling even though the button is gone
+    document.querySelector('.sidebar-toggle')?.addEventListener('click', function() {
+        document.body.classList.toggle('sidebar-collapsed');
+    });
+</script>

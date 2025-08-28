@@ -1,0 +1,495 @@
+<% var userPermissions = typeof userPermissions !== 'undefined' ? userPermissions : []; %>
+<!DOCTYPE html>
+<html lang="vi">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title><%= tour.title %> - Chi tiết tour</title>
+        <!-- Embed Font -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+            rel="stylesheet"
+        />
+        <!-- Bootstrap CSS -->
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+        />
+        <!-- Font Awesome -->
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+        <!-- CSS -->
+        <link rel="stylesheet" href="/css/main.css"/>
+    </head>
+    <body>
+        <div class="dashboard">
+            <div class="container_fuild">
+                <div class="dashboard__inner">
+                    <%- include('../partials/sidebar') %>
+                    <div class="tour-detail">
+                        <!-- Thanh thông tin tổng quan tour (bảng ngang đầu trang) -->
+                        <div class="tour-detail__table--wrapper">
+                            <table class="table table-striped tour-detail__table">
+                                <thead>
+                                    <tr>
+                                        <th>Tên tour</th>
+                                        <th>Mã tour</th>
+                                        <th>Trạng thái</th>
+                                        <th>Slug</th>
+                                        <th>Nổi bật</th>
+                                        <th>Điểm đến</th>
+                                        <th>Phương tiện</th>
+                                        <th>Điểm khởi hành</th>
+                                        <th>Người tạo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong><%= tour.title %></strong></td>
+                                        <td><%= tour.code %></td>
+                                        <td>
+                                            <span class="badge bg-<%= tour.status ? 'success' : 'secondary' %>">
+                                                <%= tour.status ? 'Hoạt động' : 'Không hoạt động' %>
+                                            </span>
+                                        </td>
+                                        <td><%= tour.slug %></td>
+                                        <td>
+                                            <span class="badge bg-<%= tour.highlight ? 'info' : 'secondary' %>">
+                                                <%= tour.highlight ? 'Có' : 'Không' %>
+                                            </span>
+                                        </td>
+                                        <td><%= destination ? destination.name : 'Chưa có' %></td>
+                                        <td><%= transportation ? transportation.title : 'Chưa có' %></td>
+                                        <td><%= departure ? departure.name : 'Chưa có' %></td>
+                                        <td><%= tour.createdBy || 'Admin' %></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Thông tin thêm về chuyến đi -->
+                        <div class="tour-detail__additional-info">
+                            <h2 class="tour-detail__section-title">Thông tin thêm về chuyến đi</h2>
+                            
+                            <div class="tour-detail__info-grid">
+                                <div class="tour-detail__info-card">
+                                    <div class="tour-detail__info-card-icon">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                    </div>
+                                    <div class="tour-detail__info-card-content">
+                                        <h3 class="tour-detail__info-card-title">Điểm tham quan</h3>
+                                        <p class="tour-detail__info-card-desc"><%- tour.attractions || '<span class="text-muted"><i class="fas fa-info-circle"></i>Chưa có thông tin</span>' %></p>
+                                    </div>
+                                </div>
+
+                                <div class="tour-detail__info-card">
+                                    <div class="tour-detail__info-card-icon">
+                                        <i class="fas fa-utensils"></i>
+                                    </div>
+                                    <div class="tour-detail__info-card-content">
+                                        <h3 class="tour-detail__info-card-title">Ẩm thực</h3>
+                                        <p class="tour-detail__info-card-desc"><%- tour.cuisine || '<span class="text-muted"><i class="fas fa-info-circle"></i>Chưa có thông tin</span>' %></p>
+                                    </div>
+                                </div>
+
+                                <div class="tour-detail__info-card">
+                                    <div class="tour-detail__info-card-icon">
+                                        <i class="fas fa-users"></i>
+                                    </div>
+                                    <div class="tour-detail__info-card-content">
+                                        <h3 class="tour-detail__info-card-title">Đối tượng thích hợp</h3>
+                                        <p class="tour-detail__info-card-desc"><%- tour.suitableObject || '<span class="text-muted"><i class="fas fa-info-circle"></i>Chưa có thông tin</span>' %></p>
+                                    </div>
+                                </div>
+
+                                <div class="tour-detail__info-card">
+                                    <div class="tour-detail__info-card-icon">
+                                        <i class="fas fa-clock"></i>
+                                    </div>
+                                    <div class="tour-detail__info-card-content">
+                                        <h3 class="tour-detail__info-card-title">Thời gian lý tưởng</h3>
+                                        <p class="tour-detail__info-card-desc"><%- tour.suitableTime || '<span class="text-muted"><i class="fas fa-info-circle"></i>Chưa có thông tin</span>' %></p>
+                                    </div>
+                                </div>
+
+                                <div class="tour-detail__info-card">
+                                    <div class="tour-detail__info-card-icon">
+                                        <i class="fas fa-plane"></i>
+                                    </div>
+                                    <div class="tour-detail__info-card-content">
+                                        <h3 class="tour-detail__info-card-title">Phương tiện</h3>
+                                        <p class="tour-detail__info-card-desc"><%- tour.vehicleInfo || '<span class="text-muted"><i class="fas fa-info-circle"></i>Chưa có thông tin phương tiện</span>' %></p>
+                                    </div>
+                                </div>
+
+                                <div class="tour-detail__info-card">
+                                    <div class="tour-detail__info-card-icon">
+                                        <i class="fas fa-gift"></i>
+                                    </div>
+                                    <div class="tour-detail__info-card-content">
+                                        <h3 class="tour-detail__info-card-title">Khuyến mại</h3>
+                                        <p class="tour-detail__info-card-desc"><%- tour.promotion || '<span class="text-muted"><i class="fas fa-info-circle"></i>Chưa có khuyến mại</span>' %></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Lịch trình -->
+                        <div class="tour-detail__itinerary">
+                            <h2 class="tour-detail__section-title">Lịch Trình</h2>
+                            
+                            <% if (tour.itinerary && tour.itinerary.length > 0) { %>
+                                <div class="tour-detail__itinerary-list">
+                                    <% tour.itinerary.forEach((item, index) => { %>
+                                        <div class="tour-detail__itinerary-item">
+                                            <div class="tour-detail__itinerary-header" onclick="toggleItinerary('<%= index %>')">
+                                                <span class="tour-detail__itinerary-day">
+                                                    Ngày <%= item.day %>: <%= item.title %>
+                                                </span>
+                                                <span class="tour-detail__itinerary-icon">
+                                                    <i class="fas fa-chevron-down"></i>
+                                                </span>
+                                            </div>
+                                            <div class="tour-detail__itinerary-content" id="itinerary-<%= index %>">
+                                                <div class="tour-detail__itinerary-body">
+                                                    <% if (item.image) { %>
+                                                        <div class="tour-detail__itinerary-image">
+                                                            <img src="<%= item.image %>" alt="Hình ảnh ngày <%= item.day %>" class="img-fluid rounded">
+                                                        </div>
+                                                    <% } %>
+                                                    <div class="tour-detail__itinerary-desc">
+                                                        <%- item.details || item.description || 'Chưa có mô tả chi tiết cho ngày này.' %>
+                                                    </div>
+                                                    <% if (item.meals) { %>
+                                                        <div class="tour-detail__itinerary-meals">
+                                                            <strong>Bữa ăn:</strong> <%= item.meals %>
+                                                        </div>
+                                                    <% } %>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <% }) %>
+                                </div>
+                            <% } else { %>
+                                <div class="tour-detail__itinerary-list">
+                                    <div class="tour-detail__itinerary-item">
+                                        <div class="tour-detail__itinerary-header" onclick="toggleItinerary('0')">
+                                            <span class="tour-detail__itinerary-day">
+                                                Ngày 1: Chỗ bắt hành tự tại Hà Nội
+                                            </span>
+                                            <span class="tour-detail__itinerary-icon">
+                                                <i class="fas fa-chevron-down"></i>
+                                            </span>
+                                        </div>
+                                        <div class="tour-detail__itinerary-content" id="itinerary-0">
+                                            <div class="tour-detail__itinerary-body">
+                                                <p class="tour-detail__itinerary-desc">Tham quan các điểm nổi tiếng của thủ đô</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="tour-detail__itinerary-item">
+                                        <div class="tour-detail__itinerary-header" onclick="toggleItinerary('1')">
+                                            <span class="tour-detail__itinerary-day">
+                                                Ngày 2: Khám phá Sapa
+                                            </span>
+                                            <span class="tour-detail__itinerary-icon">
+                                                <i class="fas fa-chevron-down"></i>
+                                            </span>
+                                        </div>
+                                        <div class="tour-detail__itinerary-content" id="itinerary-1">
+                                            <div class="tour-detail__itinerary-body">
+                                                <p class="tour-detail__itinerary-desc">Khám phá vẻ đẹp núi rừng Tây Bắc</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="tour-detail__itinerary-item">
+                                        <div class="tour-detail__itinerary-header" onclick="toggleItinerary('2')">
+                                            <span class="tour-detail__itinerary-day">
+                                                Ngày 3: Tham quan thác Bạc
+                                            </span>
+                                            <span class="tour-detail__itinerary-icon">
+                                                <i class="fas fa-chevron-down"></i>
+                                            </span>
+                                        </div>
+                                        <div class="tour-detail__itinerary-content" id="itinerary-2">
+                                            <div class="tour-detail__itinerary-body">
+                                                <p class="tour-detail__itinerary-desc">Chiêm ngưỡng vẻ đẹp hùng vĩ của thác nước</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            <% } %>
+                        </div>
+
+                        <!-- Hình ảnh chuyến đi -->
+                        <div class="tour-detail__images">
+                            <h2 class="tour-detail__section-title">Hình ảnh chuyến đi</h2>
+                            
+                            <div class="tour-detail__images-grid">
+                                <% if (tour.images && Array.isArray(tour.images) && tour.images.length > 0) { %>
+                                    <% tour.images.forEach((img, index) => { %>
+                                        <div class="tour-detail__image-item" onclick="showImageModal('<%= img %>', 'Hình ảnh tour <%= index + 1 %>')">
+                                            <img src="<%= img %>" alt="Hình ảnh tour <%= index + 1 %>" class="tour-detail__image">
+                                        </div>
+                                    <% }) %>
+                                <% } else { %>
+                                    <div class="tour-detail__image-item" onclick="showImageModal('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80', 'Hình ảnh tour mẫu 1')">
+                                        <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80" 
+                                             alt="Hình ảnh tour mẫu 1" class="tour-detail__image">
+                                    </div>
+                                    
+                                    <div class="tour-detail__image-item" onclick="showImageModal('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80', 'Hình ảnh tour mẫu 2')">
+                                        <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80" 
+                                             alt="Hình ảnh tour mẫu 2" class="tour-detail__image">
+                                    </div>
+                                <% } %>
+                            </div>
+                        </div>
+
+                        <!-- Chi tiết tour (bảng dữ liệu) -->
+                        <div class="tour-detail__pricing">
+                            <h2 class="tour-detail__section-title">Chi tiết tour</h2>
+                            <% if (tourDetail && tourDetail.length > 0) { %>
+                                <div class="tour-detail__table--wrapper">
+                                    <table class="table table-striped tour-detail__table">
+                                        <thead>
+                                            <tr>
+                                                <th>STT</th>
+                                                <th>Giá người lớn</th>
+                                                <th>Giá trẻ em</th>
+                                                <th>Giá trẻ nhỏ</th>
+                                                <th>Giá em bé</th>
+                                                <th>Phụ phí phòng đơn</th>
+                                                <th>Số lượng chỗ</th>
+                                                <th>Ngày khởi hành</th>
+                                                <th>Ngày trở về</th>
+                                                <% if (userPermissions && (userPermissions.includes('UPDATE_TOUR_DETAIL') || userPermissions.includes('DELETE_TOUR_DETAIL'))) { %>
+                                                    <th>Hành động</th>
+                                                <% } %>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tourDetailTableBody">
+                                            <% tourDetail.forEach((detail, index) => { %>
+                                                <tr id="tourDetail_<%= detail._id %>">
+                                                    <td><%= index + 1 %></td>
+                                                    <td><strong><%= new Intl.NumberFormat('vi-VN').format(detail.adultPrice) %> VNĐ</strong></td>
+                                                    <td><%= new Intl.NumberFormat('vi-VN').format(detail.childrenPrice) %> VNĐ</td>
+                                                    <td><%= new Intl.NumberFormat('vi-VN').format(detail.childPrice) %> VNĐ</td>
+                                                    <td><%= new Intl.NumberFormat('vi-VN').format(detail.babyPrice) %> VNĐ</td>
+                                                    <td><%= new Intl.NumberFormat('vi-VN').format(detail.singleRoomSupplementPrice) %> VNĐ</td>
+                                                    <td>
+                                                        <span class="badge bg-info"><%= detail.stock %></span>
+                                                    </td>
+                                                    <td><%= new Date(detail.dayStart).toLocaleDateString('vi-VN') %></td>
+                                                    <td><%= new Date(detail.dayReturn).toLocaleDateString('vi-VN') %></td>
+                                                    <% if (userPermissions && (userPermissions.includes('UPDATE_TOUR_DETAIL') || userPermissions.includes('DELETE_TOUR_DETAIL'))) { %>
+                                                        <td>
+                                                            <div class="d-flex gap-1 justify-content-center">
+                                                                <% if (userPermissions.includes('UPDATE_TOUR_DETAIL')) { %>
+                                                                    <button class="tour-detail__btn tour-detail__btn--warning tour-detail__btn--sm" onclick="editTourDetail('<%= detail._id %>')" title="Chỉnh sửa chi tiết">
+                                                                        <i class="fas fa-edit"></i>
+                                                                    </button>
+                                                                <% } else { %>
+                                                                    <button class="tour-detail__btn tour-detail__btn--warning tour-detail__btn--sm disabled" style="pointer-events: none; opacity: 0.5" title="Không có quyền chỉnh sửa">
+                                                                        <i class="fas fa-edit"></i>
+                                                                    </button>
+                                                                <% } %>
+                                                                <% if (userPermissions.includes('DELETE_TOUR_DETAIL')) { %>
+                                                                    <button class="tour-detail__btn tour-detail__btn--danger tour-detail__btn--sm" onclick="deleteTourDetail('<%= detail._id %>')" title="Xóa chi tiết">
+                                                                        <i class="fas fa-trash"></i>
+                                                                    </button>
+                                                                <% } else { %>
+                                                                    <button class="tour-detail__btn tour-detail__btn--danger tour-detail__btn--sm disabled" style="pointer-events: none; opacity: 0.5" title="Không có quyền xóa">
+                                                                        <i class="fas fa-trash"></i>
+                                                                    </button>
+                                                                <% } %>
+                                                            </div>
+                                                        </td>
+                                                    <% } %>
+                                                </tr>
+                                            <% }) %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            <% } else { %>
+                                <div class="tour-detail__table--wrapper">
+                                    <table class="table table-striped tour-detail__table">
+                                        <thead>
+                                            <tr>
+                                                <th>STT</th>
+                                                <th>Giá người lớn</th>
+                                                <th>Giá trẻ em</th>
+                                                <th>Giá trẻ nhỏ</th>
+                                                <th>Giá em bé</th>
+                                                <th>Phụ phí phòng đơn</th>
+                                                <th>Số lượng chỗ</th>
+                                                <th>Ngày khởi hành</th>
+                                                <th>Ngày trở về</th>
+                                                <th>Hành động</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td colspan="10" class="tour-detail__table-empty">
+                                                    <div class="text-center py-4">
+                                                        <i class="fas fa-calendar-times mb-3" style="font-size: 3rem; color: #6c757d;"></i>
+                                                        <h5>Chưa có chi tiết tour</h5>
+                                                        <p class="text-muted">Hãy thêm chi tiết tour để hiển thị thông tin giá cả và lịch trình.</p>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal thêm/sửa chi tiết tour -->
+        <div class="modal fade tour-detail__modal" id="tourDetailModal" tabindex="-1" aria-labelledby="tourDetailModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="tourDetailModalLabel">Thêm chi tiết tour</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form id="tourDetailForm">
+                        <div class="modal-body">
+                            <input type="hidden" id="tourDetailId" name="tourDetailId">
+                            <input type="hidden" id="tourId" name="tourId" value="<%= tour._id %>">
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="adultPrice" class="tour-detail__form-label">Giá người lớn *</label>
+                                        <input type="number" class="form-control tour-detail__form-control" id="adultPrice" name="adultPrice" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="childrenPrice" class="tour-detail__form-label">Giá trẻ em</label>
+                                        <input type="number" class="form-control tour-detail__form-control" id="childrenPrice" name="childrenPrice">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="childPrice" class="tour-detail__form-label">Giá trẻ nhỏ</label>
+                                        <input type="number" class="form-control tour-detail__form-control" id="childPrice" name="childPrice">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="babyPrice" class="tour-detail__form-label">Giá em bé</label>
+                                        <input type="number" class="form-control tour-detail__form-control" id="babyPrice" name="babyPrice">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="singleRoomSupplementPrice" class="tour-detail__form-label">Phụ thu phòng đơn</label>
+                                        <input type="number" class="form-control tour-detail__form-control" id="singleRoomSupplementPrice" name="singleRoomSupplementPrice">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="stock" class="tour-detail__form-label">Số lượng chỗ *</label>
+                                        <input type="number" class="form-control tour-detail__form-control" id="stock" name="stock" required>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="dayStart" class="tour-detail__form-label">Ngày khởi hành *</label>
+                                        <input type="date" class="form-control tour-detail__form-control" id="dayStart" name="dayStart" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="dayReturn" class="tour-detail__form-label">Ngày trở lại *</label>
+                                        <input type="date" class="form-control tour-detail__form-control" id="dayReturn" name="dayReturn" required>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="discount" class="tour-detail__form-label">Giảm giá (%)</label>
+                                        <input type="number" class="form-control tour-detail__form-control" id="discount" name="discount" min="0" max="100">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="tour-detail__btn tour-detail__btn--secondary" data-bs-dismiss="modal">Hủy</button>
+                            <button type="submit" class="tour-detail__btn tour-detail__btn--primary">Lưu</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Image Modal -->
+        <div class="modal fade tour-detail__modal" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="imageModalLabel">Xem ảnh</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <img id="modalImage" src="" alt="" class="tour-detail__modal-image">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thêm CSRF token cho JavaScript -->
+        <script>
+            window.csrfToken = '<%= csrfToken %>';
+            
+            // Custom accordion toggle function
+            function toggleItinerary(index) {
+                const content = document.getElementById(`itinerary-${index}`);
+                const icon = content.previousElementSibling.querySelector('.tour-detail__itinerary-icon i');
+                const header = content.previousElementSibling;
+                
+                if (content.classList.contains('active')) {
+                    content.classList.remove('active');
+                    icon.classList.remove('fa-chevron-up');
+                    icon.classList.add('fa-chevron-down');
+                    header.classList.remove('active');
+                } else {
+                    content.classList.add('active');
+                    icon.classList.remove('fa-chevron-down');
+                    icon.classList.add('fa-chevron-up');
+                    header.classList.add('active');
+                }
+            }
+        </script>
+
+        <!-- Bootstrap JS -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="/js/tourDetail.js?v=<%= Date.now() %>"></script>
+        <script src="/js/tourDetailRealtime.js?v=<%= Date.now() %>"></script>
+        
+        <!-- Session Security -->
+        <script src="/js/session-security.js?v=<%= Date.now() %>"></script>
+    </body>
+</html>
