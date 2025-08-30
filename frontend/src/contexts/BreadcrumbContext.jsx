@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 
 /**
  * Context để quản lý thông tin breadcrumb
@@ -22,16 +22,22 @@ export const BreadcrumbProvider = ({ children }) => {
     customItems: null
   });
 
-  // Tạo stable setter function
+  // Tạo stable setter function với useCallback để tránh re-render
   const updateBreadcrumb = useCallback((newData) => {
-    setBreadcrumbData(newData);
+    setBreadcrumbData(prev => {
+      // Chỉ update nếu data thực sự thay đổi
+      if (JSON.stringify(prev) !== JSON.stringify(newData)) {
+        return newData;
+      }
+      return prev;
+    });
   }, []);
 
-  // Tạo context value một lần duy nhất
-  const contextValue = {
+  // Memoize context value để tránh re-render không cần thiết
+  const contextValue = useMemo(() => ({
     breadcrumbData,
     setBreadcrumbData: updateBreadcrumb
-  };
+  }), [breadcrumbData, updateBreadcrumb]);
 
   return (
     <BreadcrumbContext.Provider value={contextValue}>

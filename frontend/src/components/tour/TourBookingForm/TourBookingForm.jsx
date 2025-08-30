@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import DatePicker, { registerLocale } from 'react-datepicker';
 import vi from 'date-fns/locale/vi';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -9,8 +9,7 @@ import { API_ENDPOINTS } from '../../../constants/ApiEndPoints';
 registerLocale('vi', vi);
 
 const TourBookingForm = ({ tour, isOpen, onClose, onSubmit }) => {
-  // Lấy danh sách ngày khởi hành có sẵn (chỉ ngày, không có thông tin stock)
-  const getAvailableDates = () => {
+  const availableDates = useMemo(() => {
     if (!tour?.tourDetails || tour.tourDetails.length === 0) {
       return [];
     }
@@ -25,13 +24,21 @@ const TourBookingForm = ({ tour, isOpen, onClose, onSubmit }) => {
       })
       .map(detail => detail.dayStart)
       .sort((a, b) => new Date(a) - new Date(b));
-  };
+  }, [tour?.tourDetails]);
+
+  const defaultDate = useMemo(() => {
+    return availableDates.length > 0 ? new Date(availableDates[0]) : null;
+  }, [availableDates]);
+
+  // Lấy danh sách ngày khởi hành có sẵn (chỉ ngày, không có thông tin stock)
+  const getAvailableDates = useCallback(() => {
+    return availableDates;
+  }, [availableDates]);
 
   // Kiểm tra ngày có trong danh sách khởi hành không
-  const isDateAvailable = (date) => {
+  const isDateAvailable = useCallback((date) => {
     if (!date) return false;
 
-    const availableDates = getAvailableDates();
     const selectedDate = new Date(date);
     selectedDate.setHours(0, 0, 0, 0);
 
@@ -40,13 +47,7 @@ const TourBookingForm = ({ tour, isOpen, onClose, onSubmit }) => {
       available.setHours(0, 0, 0, 0);
       return available.getTime() === selectedDate.getTime();
     });
-  };
-
-  // Khởi tạo với ngày có sẵn đầu tiên
-  const getDefaultDate = () => {
-    const availableDates = getAvailableDates();
-    return availableDates.length > 0 ? new Date(availableDates[0]) : null;
-  };
+  }, [availableDates]);
 
   const [formData, setFormData] = useState({
     startDate: null,
@@ -65,8 +66,8 @@ const TourBookingForm = ({ tour, isOpen, onClose, onSubmit }) => {
   const [currentPricing, setCurrentPricing] = useState(null);
   const [isLoadingPrice, setIsLoadingPrice] = useState(false);
 
-  // Function để gọi API lấy giá theo ngày
-  const fetchPricingByDate = async (date) => {
+  // Function để gọi API lấy giá theo ngày (memoized)
+  const fetchPricingByDate = useCallback(async (date) => {
     if (!tour?._id || !date) return;
 
     setIsLoadingPrice(true);
@@ -83,12 +84,13 @@ const TourBookingForm = ({ tour, isOpen, onClose, onSubmit }) => {
       if (result.success) {
         setCurrentPricing(result.data);
         // Clear any previous pricing errors
-        if (errors.pricing) {
-          setErrors(prev => ({
-            ...prev,
-            pricing: ''
-          }));
-        }
+        setErrors(prev => {
+          if (prev.pricing) {
+            const { pricing, ...rest } = prev;
+            return rest;
+          }
+          return prev;
+        });
       } else {
         console.error('Error fetching pricing:', result.message);
         setCurrentPricing(null);
@@ -107,13 +109,11 @@ const TourBookingForm = ({ tour, isOpen, onClose, onSubmit }) => {
     } finally {
       setIsLoadingPrice(false);
     }
-  };
+  }, [tour?._id]);
 
   //Đặt lại biểu mẫu khi phương thức mở hoặc tham quan thay đổi
   useEffect(() => {
-    if (isOpen && tour) {
-      const defaultDate = getDefaultDate();
-
+    if (isOpen && tour && tour._id) {
       setFormData({
         startDate: defaultDate,
         adults: 2,
@@ -132,7 +132,7 @@ const TourBookingForm = ({ tour, isOpen, onClose, onSubmit }) => {
         fetchPricingByDate(defaultDate);
       }
     }
-  }, [isOpen, tour]);
+  }, [isOpen, tour?._id, defaultDate, fetchPricingByDate]);
 
   // Calculate total price
   const calculateTotal = () => {
@@ -191,19 +191,20 @@ const TourBookingForm = ({ tour, isOpen, onClose, onSubmit }) => {
   };
 
   // Handle date change for DatePicker
-  const handleDateChange = (date) => {
+  const handleDateChange = useCallback((date) => {
     setFormData(prev => ({
       ...prev,
       startDate: date
     }));
 
     // Clear error when user selects a date
-    if (errors.startDate) {
-      setErrors(prev => ({
-        ...prev,
-        startDate: ''
-      }));
-    }
+    setErrors(prev => {
+      if (prev.startDate) {
+        const { startDate, ...rest } = prev;
+        return rest;
+      }
+      return prev;
+    });
 
     // Validate ngày khởi hành real-time
     if (date && !isDateAvailable(date)) {
@@ -217,12 +218,11 @@ const TourBookingForm = ({ tour, isOpen, onClose, onSubmit }) => {
     if (date && isDateAvailable(date)) {
       fetchPricingByDate(date);
     }
-  };
+  }, [isDateAvailable, fetchPricingByDate]);
 
   // Validate form
-  const validateForm = () => {
+  const validateForm = useCallback(() => {
     const newErrors = {};
-    const availableDates = getAvailableDates();
 
     if (!formData.startDate) {
       newErrors.startDate = 'Vui lòng chọn ngày khởi hành';
@@ -254,7 +254,7 @@ const TourBookingForm = ({ tour, isOpen, onClose, onSubmit }) => {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
+  }, [formData, availableDates.length, isDateAvailable]);
 
   // Handle form submission
   const handleSubmit = async (e) => {
@@ -320,8 +320,6 @@ const TourBookingForm = ({ tour, isOpen, onClose, onSubmit }) => {
               <div className="form-group">
                 <label>Ngày khởi hành *</label>
                 {(() => {
-                  const availableDates = getAvailableDates();
-
                   if (availableDates.length === 0) {
                     return (
                       <div className="no-dates-available">
