@@ -18,15 +18,13 @@ const DropDownHeader = ({ categories, activeCategory, onCategoryHover, onDropdow
     const [destinations, setDestinations] = useState({});
     const [destinationsLoading, setDestinationsLoading] = useState(false);
     const [activeRegion, setActiveRegion] = useState(null);
-    const [hoveredGroup, setHoveredGroup] = useState(null); // Group thực sự được hover
+    const [hoveredGroup, setHoveredGroup] = useState(null); 
 
-    const [checkingTour, setCheckingTour] = useState(null); // ID của destination đang check tour
-    const [noTourMessage, setNoTourMessage] = useState({}); // Thông báo không có tour cho từng destination
+    const [checkingTour, setCheckingTour] = useState(null); 
+    const [noTourMessage, setNoTourMessage] = useState({}); 
 
     const dropdownRef = useRef(null);
     const hoverTimeoutRef = useRef(null);
-
-
 
     // Helper functions để nhóm dữ liệu điểm đến
     const groupDestinationsByRegion = (destinationsData) => {
@@ -420,7 +418,6 @@ const DropDownHeader = ({ categories, activeCategory, onCategoryHover, onDropdow
             }
         } catch (error) {
             console.error('Error checking tours for destination:', error);
-            // Fallback - điều hướng đến trang tìm kiếm
             // Đóng dropdown trước khi navigate
             if (onCloseDropdown) {
                 onCloseDropdown();
@@ -781,9 +778,9 @@ const DropDownHeader = ({ categories, activeCategory, onCategoryHover, onDropdow
         const categorySlug = activeCategory.slug || activeCategory.fullSlug;
         const categoryName = activeCategory.name;
         const isDomestic = categoryName === 'Tour Trong Nước' ||
-                          categoryName === 'Tour trong nước' ||
-                          categorySlug === 'tour-trong-nuoc' ||
-                          categorySlug.includes('tour-trong-nuoc');
+                        categoryName === 'Tour trong nước' ||
+                        categorySlug === 'tour-trong-nuoc' ||
+                        categorySlug.includes('tour-trong-nuoc');
 
         // Sử dụng memoized grouped destinations
         const groupedDestinations = isDomestic
@@ -805,7 +802,7 @@ const DropDownHeader = ({ categories, activeCategory, onCategoryHover, onDropdow
                                     onMouseEnter={() => setActiveRegion(region)}
                                 >
                                     <span className="dropdown-header__region-name">
-                                        {isDomestic ? `Tour Miền ${region}` : `Tour ${region}`}
+                                        {isDomestic ? `Tour ${region}` : `Tour ${region}`}
                                     </span>
                                     {isDomestic && (
                                         <div className="dropdown-header__region-destinations">

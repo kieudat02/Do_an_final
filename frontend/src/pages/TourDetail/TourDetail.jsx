@@ -57,7 +57,7 @@ const TourDetail = () => {
         customItems: null
       });
     }
-  }, [tourData, location.state]);
+  }, [tourData, location.state, setBreadcrumbData]);
 
   return (
     <>

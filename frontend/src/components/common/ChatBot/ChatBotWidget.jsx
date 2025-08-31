@@ -14,27 +14,152 @@ import { PLACEHOLDER_IMAGES } from '../../../utils/placeholderImage';
 import { stripHtmlTags, decodeHtmlEntities } from '../../../utils/htmlUtils';
 import './ChatBotWidget.scss';
 
-// Utility function to clean and sanitize message text
+// Hàm tiện ích để làm sạch và xử lý văn bản tin nhắn
 const cleanMessageText = (text) => {
   if (!text || typeof text !== 'string') return '';
 
-  // First decode HTML entities
+  // Giải mã HTML entities trước
   let cleanedText = decodeHtmlEntities(text);
 
-  // Strip HTML tags if any
+  // Loại bỏ HTML tags nếu có
   cleanedText = stripHtmlTags(cleanedText);
 
-  // Trim whitespace and normalize line breaks
+  // Cắt khoảng trắng và chuẩn hóa xuống dòng
   cleanedText = cleanedText.trim().replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
-  // Remove excessive whitespace but preserve intentional line breaks
+  // Loại bỏ khoảng trắng thừa nhưng giữ nguyên xuống dòng có ý định
   cleanedText = cleanedText.replace(/[ \t]+/g, ' ').replace(/\n\s+/g, '\n');
 
   return cleanedText;
 };
 
+// Hàm xử lý và làm sạch định dạng markdown trong văn bản tin nhắn
+const parseAndCleanMarkdown = (text) => {
+  if (!text || typeof text !== 'string') return [];
+
+  // Xử lý text theo từng bước
+  let processedText = text;
+
+  // Bước 1: Thay thế dấu * đầu dòng bằng bullet point
+  processedText = processedText.replace(/^\s*\*\s+/gm, '• ');
+
+  // Bước 2: Xử lý **text** thành bold và loại bỏ dấu **
+  processedText = processedText.replace(/\*\*([^*]+)\*\*/g, '|||BOLD_START|||$1|||BOLD_END|||');
+
+  // Bước 3: Xử lý *text* thành italic và loại bỏ dấu *
+  processedText = processedText.replace(/\*([^*]+)\*/g, '|||ITALIC_START|||$1|||ITALIC_END|||');
+
+  // Bước 4: Loại bỏ tất cả dấu * còn lại
+  processedText = processedText.replace(/\*/g, '');
+
+  // Bước 5: Chia thành các dòng và xử lý
+  const lines = processedText.split('\n');
+  const elements = [];
+
+  lines.forEach((line, lineIndex) => {
+    if (line.trim() === '') {
+      elements.push(<br key={`br-${lineIndex}`} />);
+      return;
+    }
+
+    // Parse các marker đặc biệt
+    const parts = [];
+    let currentIndex = 0;
+    let partKey = 0;
+
+    // Tìm tất cả markers
+    const markerRegex = /\|\|\|(BOLD_START|BOLD_END|ITALIC_START|ITALIC_END)\|\|\|/g;
+    let match;
+    let isInBold = false;
+    let isInItalic = false;
+    let currentText = '';
+
+    while ((match = markerRegex.exec(line)) !== null) {
+      // Thêm text trước marker
+      if (match.index > currentIndex) {
+        currentText += line.substring(currentIndex, match.index);
+      }
+
+      // Xử lý marker
+      switch (match[1]) {
+        case 'BOLD_START':
+          if (currentText) {
+            if (isInItalic) {
+              parts.push(<em key={`italic-${lineIndex}-${partKey++}`} className="markdown-italic">{currentText}</em>);
+            } else {
+              parts.push(<span key={`text-${lineIndex}-${partKey++}`}>{currentText}</span>);
+            }
+            currentText = '';
+          }
+          isInBold = true;
+          break;
+        case 'BOLD_END':
+          if (currentText) {
+            parts.push(<strong key={`bold-${lineIndex}-${partKey++}`} className="markdown-bold">{currentText}</strong>);
+            currentText = '';
+          }
+          isInBold = false;
+          break;
+        case 'ITALIC_START':
+          if (currentText) {
+            if (isInBold) {
+              parts.push(<strong key={`bold-${lineIndex}-${partKey++}`} className="markdown-bold">{currentText}</strong>);
+            } else {
+              parts.push(<span key={`text-${lineIndex}-${partKey++}`}>{currentText}</span>);
+            }
+            currentText = '';
+          }
+          isInItalic = true;
+          break;
+        case 'ITALIC_END':
+          if (currentText) {
+            parts.push(<em key={`italic-${lineIndex}-${partKey++}`} className="markdown-italic">{currentText}</em>);
+            currentText = '';
+          }
+          isInItalic = false;
+          break;
+      }
+
+      currentIndex = match.index + match[0].length;
+    }
+
+    // Thêm text còn lại
+    if (currentIndex < line.length) {
+      currentText += line.substring(currentIndex);
+    }
+
+    if (currentText) {
+      if (isInBold) {
+        parts.push(<strong key={`bold-${lineIndex}-${partKey++}`} className="markdown-bold">{currentText}</strong>);
+      } else if (isInItalic) {
+        parts.push(<em key={`italic-${lineIndex}-${partKey++}`} className="markdown-italic">{currentText}</em>);
+      } else {
+        parts.push(<span key={`text-${lineIndex}-${partKey++}`}>{currentText}</span>);
+      }
+    }
+
+    // Nếu không có parts, thêm dòng thuần
+    if (parts.length === 0) {
+      parts.push(<span key={`text-${lineIndex}-0`}>{line}</span>);
+    }
+
+    // Thêm dòng với styling phù hợp
+    const lineClass = line.includes('•') ? 'message-line bullet-line' :
+                     line.includes(':') && !line.includes('http') ? 'message-line title-line' :
+                     'message-line';
+
+    elements.push(
+      <div key={`line-${lineIndex}`} className={lineClass}>
+        {parts}
+      </div>
+    );
+  });
+
+  return elements;
+};
+
 const ChatBotWidget = () => {
-  // State management
+  // Quản lý state
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -50,7 +175,7 @@ const ChatBotWidget = () => {
   const [showWelcomePopup, setShowWelcomePopup] = useState(false);
   const [welcomePopupDismissed, setWelcomePopupDismissed] = useState(false);
 
-  // User state management
+  // Quản lý trạng thái người dùng
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const [userState, setUserState] = useState(null);
 
@@ -59,23 +184,23 @@ const ChatBotWidget = () => {
   const inputRef = useRef(null);
   const chatContainerRef = useRef(null);
 
-  // Utility functions
+  // Các hàm tiện ích
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
-  // Generate unique device ID
+  // Tạo ID thiết bị duy nhất
   const generateDeviceId = useCallback(() => {
     return 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
   }, []);
 
-  // LocalStorage service for user state management
+  // Dịch vụ LocalStorage để quản lý trạng thái người dùng
   const getUserState = useCallback(() => {
     try {
       const stored = localStorage.getItem('chatbot_user_state');
       if (stored) {
         const parsed = JSON.parse(stored);
-        // Validate schema
+        // Xác thực schema
         if (parsed && typeof parsed === 'object') {
           return {
             hasInteracted: parsed.hasInteracted || false,
@@ -90,10 +215,10 @@ const ChatBotWidget = () => {
         }
       }
     } catch (error) {
-      console.warn('Error reading user state from localStorage:', error);
+      console.warn('Lỗi đọc trạng thái người dùng từ localStorage:', error);
     }
 
-    // Return default state for new users
+    // Trả về trạng thái mặc định cho người dùng mới
     return {
       hasInteracted: false,
       hasSeenWelcomePopup: false,
@@ -106,12 +231,12 @@ const ChatBotWidget = () => {
     };
   }, [generateDeviceId]);
 
-  // Save user state to localStorage with error handling
+  // Lưu trạng thái người dùng vào localStorage với xử lý lỗi
   const saveUserState = useCallback((state) => {
     try {
-      // Check if localStorage is available
+      // Kiểm tra localStorage có khả dụng không
       if (typeof Storage === 'undefined') {
-        console.warn('localStorage is not supported in this browser');
+        console.warn('localStorage không được hỗ trợ trong trình duyệt này');
         return false;
       }
 
@@ -120,10 +245,10 @@ const ChatBotWidget = () => {
         lastVisitDate: Date.now()
       };
 
-      // Check localStorage quota
+      // Kiểm tra quota localStorage
       const serialized = JSON.stringify(stateToSave);
-      if (serialized.length > 5000000) { // 5MB limit
-        console.warn('User state data too large for localStorage');
+      if (serialized.length > 5000000) { // Giới hạn 5MB
+        console.warn('Dữ liệu trạng thái người dùng quá lớn cho localStorage');
         return false;
       }
 
@@ -131,28 +256,28 @@ const ChatBotWidget = () => {
       return true;
     } catch (error) {
       if (error.name === 'QuotaExceededError') {
-        console.error('localStorage quota exceeded:', error);
-        // Try to clear old data and retry
+        console.error('Vượt quá quota localStorage:', error);
+        // Thử xóa dữ liệu cũ và thử lại
         try {
           localStorage.removeItem('chatbot_user_state');
           localStorage.setItem('chatbot_user_state', JSON.stringify({
             ...state,
-            chatHistory: state.chatHistory.slice(-10), // Keep only last 10 messages
+            chatHistory: state.chatHistory.slice(-10), // Chỉ giữ 10 tin nhắn cuối
             lastVisitDate: Date.now()
           }));
           return true;
         } catch (retryError) {
-          console.error('Failed to save user state after cleanup:', retryError);
+          console.error('Không thể lưu trạng thái người dùng sau khi dọn dẹp:', retryError);
           return false;
         }
       } else {
-        console.error('Error saving user state to localStorage:', error);
+        console.error('Lỗi lưu trạng thái người dùng vào localStorage:', error);
         return false;
       }
     }
   }, []);
 
-  // Mark user as interacted
+  // Đánh dấu người dùng đã tương tác
   const markUserAsInteracted = useCallback(() => {
     const currentState = getUserState();
     const updatedState = {
@@ -168,18 +293,16 @@ const ChatBotWidget = () => {
     }
   }, [getUserState, saveUserState]);
 
-  // Function không cần thiết đã được loại bỏ
-
-  // Initialize user state
+  // Khởi tạo trạng thái người dùng
   const initializeUserExperience = useCallback(() => {
     const state = getUserState();
     setUserState(state);
 
     if (state.hasInteracted) {
-      // Returning user who has interacted with chatbot
+      // Người dùng quay lại đã từng tương tác với chatbot
       setHasUserInteracted(true);
 
-      // Load chat history
+      // Tải lịch sử chat
       if (state.chatHistory && state.chatHistory.length > 0) {
         const formattedHistory = state.chatHistory.map(msg => ({
           id: Date.now() + Math.random(),
@@ -192,42 +315,42 @@ const ChatBotWidget = () => {
         setShowSuggestions(false);
       }
     } else {
-      // User who hasn't interacted with chatbot yet
+      // Người dùng chưa từng tương tác với chatbot
       setHasUserInteracted(false);
 
-      // Always show welcome popup for non-interacted users after delay
+      // Luôn hiển thị popup chào mừng cho người dùng chưa tương tác sau delay
       setTimeout(() => {
         setShowWelcomePopup(true);
-      }, 5000); // Show after 5 seconds
+      }, 5000); // Hiển thị sau 5 giây
     }
   }, [getUserState, cleanMessageText]);
 
-  // Extract tour information and images from message text
+  // Trích xuất thông tin tour và hình ảnh từ văn bản tin nhắn
   const extractTourData = useCallback((messageText) => {
     const tourData = {
       images: [],
       tourInfo: null
     };
 
-    // Look for tour information patterns in the message
+    // Tìm kiếm các pattern thông tin tour trong tin nhắn
     const tourPatterns = [
       /tour\s+([^,\n]+)/gi,
       /địa\s+điểm[:\s]+([^,\n]+)/gi,
       /giá[:\s]+([^,\n]+)/gi
     ];
 
-    // Extract images from message if they contain image URLs or tour references
+    // Trích xuất hình ảnh từ tin nhắn nếu chứa URL hình ảnh hoặc tham chiếu tour
     const imageUrlPattern = /(https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp))/gi;
     const imageMatches = messageText.match(imageUrlPattern);
 
     if (imageMatches) {
-      tourData.images = imageMatches.slice(0, 4); // Limit to 4 images
+      tourData.images = imageMatches.slice(0, 4); // Giới hạn 4 hình ảnh
     }
 
     return tourData;
   }, []);
 
-  // Handle image loading states
+  // Xử lý trạng thái tải hình ảnh
   const handleImageLoad = useCallback((imageUrl) => {
     setLoadingImages(prev => {
       const newSet = new Set(prev);
@@ -244,7 +367,7 @@ const ChatBotWidget = () => {
     });
   }, []);
 
-  // Open image modal
+  // Mở modal hình ảnh
   const openImageModal = useCallback((images, startIndex = 0) => {
     setImageModal({
       isOpen: true,
@@ -253,36 +376,36 @@ const ChatBotWidget = () => {
     });
   }, []);
 
-  // Close image modal
+  // Đóng modal hình ảnh
   const closeImageModal = useCallback(() => {
     setImageModal({ isOpen: false, images: [], currentIndex: 0 });
   }, []);
 
-  // Toggle system menu
+  // Bật/tắt menu hệ thống
   const toggleSystemMenu = useCallback(() => {
     setShowSystemMenu(prev => !prev);
   }, []);
 
-  // Close system menu when clicking outside
+  // Đóng menu hệ thống khi click bên ngoài
   const closeSystemMenu = useCallback(() => {
     setShowSystemMenu(false);
   }, []);
 
-  // Handle tour actions
+  // Xử lý các hành động tour
   const handleTourAction = useCallback((action, tourData) => {
     switch (action) {
       case 'book':
-        // Handle booking action
-        console.log('Booking tour:', tourData);
-        // You can integrate with booking system here
+        // Xử lý hành động đặt tour
+        console.log('Đặt tour:', tourData);
+        // Bạn có thể tích hợp với hệ thống đặt tour ở đây
         break;
       case 'details':
-        // Handle view details action
-        console.log('View tour details:', tourData);
-        // You can show detailed tour information
+        // Xử lý hành động xem chi tiết
+        console.log('Xem chi tiết tour:', tourData);
+        // Bạn có thể hiển thị thông tin chi tiết tour
         break;
       case 'gallery':
-        // Handle view gallery action
+        // Xử lý hành động xem thư viện ảnh
         if (tourData.images && tourData.images.length > 0) {
           openImageModal(tourData.images, 0);
         }
@@ -296,7 +419,7 @@ const ChatBotWidget = () => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
-  // Close system menu when clicking outside
+  // Đóng menu hệ thống khi click bên ngoài
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (showSystemMenu && !event.target.closest('.system-menu-container')) {
@@ -310,40 +433,38 @@ const ChatBotWidget = () => {
     }
   }, [showSystemMenu]);
 
-
-
-  // Initialize user experience and chatbot session
+  // Khởi tạo trải nghiệm người dùng và phiên chatbot
   useEffect(() => {
     const initializeSession = async () => {
       try {
-        // Initialize user experience first
+        // Khởi tạo trải nghiệm người dùng trước
         initializeUserExperience();
 
-        // Load tour context
+        // Tải ngữ cảnh tour
         const contextResult = await getChatbotContext();
         if (contextResult.success) {
           const suggestions = generateQuickSuggestions(contextResult.data);
           setQuickSuggestions(suggestions);
         }
 
-        // Try to get existing session from localStorage
+        // Thử lấy phiên hiện có từ localStorage
         const existingSessionId = ChatStorage.getSessionId();
         const userStateData = getUserState();
 
         if (existingSessionId && userStateData.hasInteracted) {
           setSessionId(existingSessionId);
-          // For returning users, chat history is already loaded in initializeUserExperience
+          // Đối với người dùng quay lại, lịch sử chat đã được tải trong initializeUserExperience
         } else {
-          // Create new session for new users or when no session exists
+          // Tạo phiên mới cho người dùng mới hoặc khi không có phiên nào tồn tại
           const result = await createNewSession();
           if (result.success) {
             const newSessionId = result.data.sessionId;
             setSessionId(newSessionId);
             ChatStorage.saveSessionId(newSessionId);
 
-            // For first-time users, no welcome message needed
+            // Đối với người dùng lần đầu, không cần tin nhắn chào mừng
             if (userStateData.hasInteracted) {
-              // This is a returning user without session, add friendly welcome message
+              // Đây là người dùng quay lại không có phiên, thêm tin nhắn chào mừng thân thiện
               const welcomeMessage = {
                 id: Date.now(),
                 text: "Chào mừng bạn quay lại! 👋\n\nTôi có thể giúp bạn tìm tour du lịch mới hôm nay không? ✈️",
@@ -355,31 +476,31 @@ const ChatBotWidget = () => {
           }
         }
       } catch (error) {
-        console.error('Session initialization error:', error);
+        console.error('Lỗi khởi tạo phiên:', error);
         setError('Không thể khởi tạo phiên chat');
       }
     };
 
     initializeSession();
-  }, [initializeUserExperience, getUserState, cleanMessageText]);
+  }, [initializeUserExperience, getUserState]);
 
-  // Handle sending message
+  // Xử lý gửi tin nhắn
   const handleSendMessage = async (messageText = null) => {
     const messageToSend = messageText || inputMessage.trim();
 
     if (!messageToSend || isLoading) return;
 
-    // Mark user as interacted if this is their first message
+    // Đánh dấu người dùng đã tương tác nếu đây là tin nhắn đầu tiên
     if (!hasUserInteracted) {
       markUserAsInteracted();
     }
 
-    // Hide suggestions after first message
+    // Ẩn gợi ý sau tin nhắn đầu tiên
     setShowSuggestions(false);
 
-    // Analyze user intent (for potential future enhancements)
+    // Phân tích ý định người dùng (để cải tiến trong tương lai)
     const intent = analyzeUserIntent(messageToSend);
-    console.log('User intent:', intent);
+    console.log('Ý định người dùng:', intent);
 
     const userMessage = {
       id: Date.now(),
@@ -388,18 +509,18 @@ const ChatBotWidget = () => {
       timestamp: new Date().toISOString()
     };
 
-    // Add user message to chat
+    // Thêm tin nhắn người dùng vào chat
     setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
     setIsLoading(true);
     setError(null);
 
     try {
-      // Send message to API
+      // Gửi tin nhắn đến API
       const result = await sendMessage(messageToSend, sessionId);
 
       if (result.success) {
-        // Extract tour data from the response
+        // Trích xuất dữ liệu tour từ phản hồi
         const tourData = extractTourData(result.data.reply);
 
         const botMessage = {
@@ -410,20 +531,20 @@ const ChatBotWidget = () => {
           tourData: tourData.images.length > 0 ? tourData : null
         };
 
-        // Add loading state for images if any
+        // Thêm trạng thái loading cho hình ảnh nếu có
         if (tourData.images.length > 0) {
           setLoadingImages(prev => new Set([...prev, ...tourData.images]));
         }
 
         setMessages(prev => [...prev, botMessage]);
 
-        // Update session ID if changed
+        // Cập nhật session ID nếu thay đổi
         if (result.data.sessionId && result.data.sessionId !== sessionId) {
           setSessionId(result.data.sessionId);
           ChatStorage.saveSessionId(result.data.sessionId);
         }
 
-        // Save to local storage and user state
+        // Lưu vào local storage và trạng thái người dùng
         const updatedHistory = [...messages, userMessage, botMessage];
         ChatStorage.saveLocalHistory(sessionId || result.data.sessionId,
           updatedHistory.map(msg => ({
@@ -433,7 +554,7 @@ const ChatBotWidget = () => {
           }))
         );
 
-        // Update user state with chat history
+        // Cập nhật trạng thái người dùng với lịch sử chat
         const currentState = getUserState();
         const updatedState = {
           ...currentState,
@@ -450,7 +571,7 @@ const ChatBotWidget = () => {
         saveUserState(updatedState);
 
       } else {
-        // Handle API error
+        // Xử lý lỗi API
         const errorMessage = {
           id: Date.now() + 1,
           text: result.error || 'Xin lỗi, tôi không thể trả lời lúc này. Vui lòng thử lại sau.',
@@ -480,14 +601,14 @@ const ChatBotWidget = () => {
 
 
 
-  // Handle suggestion click
+  // Xử lý click gợi ý
   const handleSuggestionClick = (suggestion) => {
-    // Remove emoji and send clean message
+    // Loại bỏ emoji và gửi tin nhắn sạch
     const cleanMessage = suggestion.replace(/[^\w\s\u00C0-\u024F\u1E00-\u1EFF]/g, '').trim();
     handleSendMessage(cleanMessage);
   };
 
-  // Handle key press
+  // Xử lý nhấn phím
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -495,24 +616,24 @@ const ChatBotWidget = () => {
     }
   };
 
-  // Clear chat history
+  // Xóa lịch sử chat
   const handleClearChat = async () => {
     if (!sessionId) return;
 
     try {
       const result = await clearChatHistory(sessionId);
       if (result.success) {
-        // Clear messages
+        // Xóa tin nhắn
         setMessages([]);
 
-        // Clear all local storage data
+        // Xóa tất cả dữ liệu local storage
         ChatStorage.clearLocalHistory(sessionId);
         ChatStorage.clearSessionId();
 
-        // Clear user state completely
+        // Xóa hoàn toàn trạng thái người dùng
         localStorage.removeItem('chatbot_user_state');
 
-        // Reset all states
+        // Reset tất cả states
         setUserState({
           hasInteracted: false,
           hasSeenWelcomePopup: false,
@@ -527,7 +648,7 @@ const ChatBotWidget = () => {
         setSessionId(null);
         setShowSuggestions(true);
 
-        // Add friendly welcome message for fresh start
+        // Thêm tin nhắn chào mừng thân thiện cho khởi đầu mới
         const welcomeMessage = {
           id: Date.now(),
           text: 'Xin chào 👋 Tôi có thể giúp bạn tìm tour nào hôm nay?',
@@ -537,28 +658,28 @@ const ChatBotWidget = () => {
         setMessages([welcomeMessage]);
       }
     } catch (error) {
-      console.error('Clear chat error:', error);
+      console.error('Lỗi xóa chat:', error);
       setError('Không thể xóa lịch sử hội thoại');
     }
   };
 
-  // Start new conversation
+  // Bắt đầu cuộc hội thoại mới
   const handleNewConversation = async () => {
     try {
       const result = await createNewSession();
       if (result.success) {
         const newSessionId = result.data.sessionId;
 
-        // Clear old session completely
+        // Xóa hoàn toàn phiên cũ
         if (sessionId) {
           ChatStorage.clearLocalHistory(sessionId);
         }
         ChatStorage.clearSessionId();
 
-        // Clear user state completely
+        // Xóa hoàn toàn trạng thái người dùng
         localStorage.removeItem('chatbot_user_state');
 
-        // Reset user state
+        // Reset trạng thái người dùng
         setUserState({
           hasInteracted: false,
           hasSeenWelcomePopup: false,
@@ -571,43 +692,43 @@ const ChatBotWidget = () => {
         });
         setHasUserInteracted(false);
 
-        // Set new session
+        // Thiết lập phiên mới
         setSessionId(newSessionId);
         ChatStorage.saveSessionId(newSessionId);
         setMessages([]);
         setError(null);
-        setShowSuggestions(true); // Show suggestions again
+        setShowSuggestions(true); // Hiển thị gợi ý lại
 
-        // Add friendly welcome message for new conversation
+        // Thêm tin nhắn chào mừng thân thiện cho cuộc hội thoại mới
         const welcomeMessage = {
           id: Date.now(),
-          text: 'Bắt đầu cuộc trò chuyện mới ✨\n\nXin chào! Tôi là PYS Travel AI. Hãy cho tôi biết bạn muốn khám phá điểm đến nào nhé! 🌍',
+          text: 'Bắt đầu cuộc trò chuyện mới ✨\n\nXin chào! Tôi là ND Travel AI. Hãy cho tôi biết bạn muốn khám phá điểm đến nào nhé! 🌍',
           isUser: false,
           timestamp: new Date().toISOString()
         };
         setMessages([welcomeMessage]);
       }
     } catch (error) {
-      console.error('New conversation error:', error);
+      console.error('Lỗi cuộc hội thoại mới:', error);
       setError('Không thể tạo cuộc hội thoại mới');
     }
   };
 
 
 
-  // Handle welcome popup actions
+  // Xử lý hành động popup chào mừng
   const handleWelcomeAction = (action) => {
     setShowWelcomePopup(false);
 
     if (action === 'start') {
-      // Mark user as interacted (this also marks popup as seen)
+      // Đánh dấu người dùng đã tương tác (điều này cũng đánh dấu popup đã được xem)
       markUserAsInteracted();
 
-      // Open chat and add welcome message
+      // Mở chat và thêm tin nhắn chào mừng
       setIsOpen(true);
       setIsMinimized(false);
 
-      // Add welcome message to chat
+      // Thêm tin nhắn chào mừng vào chat
       const welcomeMessage = {
         id: Date.now(),
         text: 'Xin chào! 👋 Tôi là trợ lý ảo của ND Travel.\n\nTôi có thể giúp bạn:\n• Tìm kiếm tour du lịch phù hợp\n• Tư vấn điểm đến hot\n• So sánh giá tour\n• Giải đáp thắc mắc\n\nBạn muốn khám phá điểm đến nào? 🌍✈️',
@@ -617,35 +738,35 @@ const ChatBotWidget = () => {
       setMessages([welcomeMessage]);
       setShowSuggestions(true);
 
-      // Focus input
+      // Focus vào input
       setTimeout(() => {
         inputRef.current?.focus();
       }, 150);
     }
   };
 
-  // Toggle chat window
+  // Bật/tắt cửa sổ chat
   const toggleChat = useCallback(() => {
     setIsOpen(prev => {
       const newIsOpen = !prev;
       if (newIsOpen) {
         setIsMinimized(false);
-        // Hide welcome popup if opening chat
+        // Ẩn popup chào mừng nếu đang mở chat
         setShowWelcomePopup(false);
 
-        // If first-time user and no messages, add welcome message
+        // Nếu là người dùng lần đầu và không có tin nhắn, thêm tin nhắn chào mừng
         const currentState = getUserState();
         if (!currentState.hasInteracted && messages.length === 0) {
           const welcomeMessage = {
             id: Date.now(),
-            text: 'Xin chào! Tôi là trợ lý ảo của PYS Travel. Tôi có thể giúp bạn tìm kiếm và tư vấn các tour du lịch phù hợp. Bạn muốn đi du lịch ở đâu? 🌍✈️',
+            text: 'Xin chào! Tôi là trợ lý ảo của ND Travel. Tôi có thể giúp bạn tìm kiếm và tư vấn các tour du lịch phù hợp. Bạn muốn đi du lịch ở đâu? 🌍✈️',
             isUser: false,
             timestamp: new Date().toISOString()
           };
           setMessages([welcomeMessage]);
         }
 
-        // Focus input when opening with proper delay for animation
+        // Focus input khi mở với delay phù hợp cho animation
         setTimeout(() => {
           inputRef.current?.focus();
         }, 150);
@@ -654,7 +775,7 @@ const ChatBotWidget = () => {
     });
   }, [getUserState, messages.length]);
 
-  // Format timestamp
+  // Định dạng timestamp
   const formatTime = (timestamp) => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString('vi-VN', {
@@ -663,8 +784,8 @@ const ChatBotWidget = () => {
     });
   };
 
-  // Tour Action Buttons Component
-  const TourActionButtons = ({ tourData, messageId }) => {
+  // Component Nút Hành Động Tour
+  const TourActionButtons = ({ tourData }) => {
     if (!tourData) return null;
 
     return (
@@ -706,7 +827,7 @@ const ChatBotWidget = () => {
     );
   };
 
-  // Tour Image Gallery Component
+  // Component Thư Viện Hình Ảnh Tour
   const TourImageGallery = ({ images, messageId }) => {
     if (!images || images.length === 0) return null;
 
@@ -755,7 +876,7 @@ const ChatBotWidget = () => {
 
 
 
-  // Image Modal Component
+  // Component Modal Hình Ảnh
   const ImageModal = () => {
     if (!imageModal.isOpen) return null;
 
@@ -776,7 +897,7 @@ const ChatBotWidget = () => {
       }));
     }, [images.length]);
 
-    // Keyboard navigation
+    // Điều hướng bằng bàn phím
     useEffect(() => {
       const handleKeyDown = (e) => {
         if (!imageModal.isOpen) return;
@@ -867,7 +988,7 @@ const ChatBotWidget = () => {
     );
   };
 
-  // Generate dynamic CSS classes based on user state
+  // Tạo CSS classes động dựa trên trạng thái người dùng
   const getWidgetClasses = () => {
     const classes = ['chatbot-widget'];
     return classes.join(' ');
@@ -875,7 +996,7 @@ const ChatBotWidget = () => {
 
   return (
     <div className={getWidgetClasses()}>
-      {/* Chat Toggle Button */}
+      {/* Nút Bật/Tắt Chat */}
       <button
         className={`chatbot-toggle ${isOpen ? 'active' : ''}`}
         onClick={toggleChat}
@@ -898,7 +1019,7 @@ const ChatBotWidget = () => {
         )}
       </button>
 
-      {/* Chat Window */}
+      {/* Cửa Sổ Chat */}
       {isOpen && (
         <div className={`chatbot-window ${isMinimized ? 'minimized' : ''}`}>
           {/* Header */}
@@ -976,7 +1097,7 @@ const ChatBotWidget = () => {
 
           {!isMinimized && (
             <>
-              {/* Messages Container */}
+              {/* Container Tin Nhắn */}
               <div className="chatbot-messages" ref={chatContainerRef}>
                 {messages.map((message, index) => (
                   <div
@@ -995,12 +1116,7 @@ const ChatBotWidget = () => {
                     )}
                     <div className="message-content">
                       <div className="message-text">
-                        {message.text.split('\n').map((line, lineIndex) => (
-                          <React.Fragment key={lineIndex}>
-                            {line}
-                            {lineIndex < message.text.split('\n').length - 1 && <br />}
-                          </React.Fragment>
-                        ))}
+                        {parseAndCleanMarkdown(message.text)}
                       </div>
                       {message.tourData && message.tourData.images && (
                         <TourImageGallery
@@ -1021,7 +1137,7 @@ const ChatBotWidget = () => {
                   </div>
                 ))}
 
-                {/* Loading indicator */}
+                {/* Chỉ báo đang tải */}
                 {isLoading && (
                   <div className="message bot typing">
                     <div className="message-avatar">
@@ -1042,7 +1158,7 @@ const ChatBotWidget = () => {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Quick Suggestions */}
+              {/* Gợi Ý Nhanh */}
               {showSuggestions && quickSuggestions.length > 0 && (
                 <div className="quick-suggestions">
                   <h5>Gợi ý nhanh:</h5>
@@ -1061,7 +1177,7 @@ const ChatBotWidget = () => {
                 </div>
               )}
 
-              {/* Error Display */}
+              {/* Hiển Thị Lỗi */}
               {error && (
                 <div className="chatbot-error">
                   <span>{error}</span>
@@ -1069,7 +1185,7 @@ const ChatBotWidget = () => {
                 </div>
               )}
 
-              {/* Input Area */}
+              {/* Khu Vực Nhập Liệu */}
               <div className="chatbot-input">
 
                 <div className="input-container">
@@ -1105,10 +1221,10 @@ const ChatBotWidget = () => {
         </div>
       )}
 
-      {/* Image Modal */}
+      {/* Modal Hình Ảnh */}
       <ImageModal />
 
-      {/* Welcome Popup */}
+      {/* Popup Chào Mừng */}
       {showWelcomePopup && (
         <div className="chatbot-welcome-popup">
           <div className="welcome-popup-content">

@@ -27,16 +27,16 @@ export const API_ENDPOINTS = {
   TRANSPORTATIONS: "/api/public/transportations",
   // Lấy danh sách home sections
   HOME_SECTIONS: "/api/public/home-sections",
-  // Đăng nhập
-  LOGIN: "/api/auth/login",
-  // Đăng xuất
-  LOGOUT: "/api/auth/logout",
-  // Đăng ký tài khoản
-  REGISTER: "/api/auth/register",
-  // Lấy thông tin người dùng
-  USER_PROFILE: "/api/user/profile",
-  // Cập nhật thông tin người dùng
-  UPDATE_PROFILE: "/api/user/profile/update",
+  // // Đăng nhập
+  // LOGIN: "/api/auth/login",
+  // // Đăng xuất
+  // LOGOUT: "/api/auth/logout",
+  // // Đăng ký tài khoản
+  // REGISTER: "/api/auth/register",
+  // // Lấy thông tin người dùng
+  // USER_PROFILE: "/api/user/profile",
+  // // Cập nhật thông tin người dùng
+  // UPDATE_PROFILE: "/api/user/profile/update",
   // Tạo đơn hàng
   ORDER_CREATE: "/api/public/order/create",
   // Tra cứu đơn hàng

@@ -217,7 +217,7 @@ const TourList = () => {
       }
     }
     // Không set breadcrumb khi không có slug - để Tours page handle
-  }, [currentCategory, slug]);
+  }, [currentCategory, slug, setBreadcrumbData]);
 
   const formatPrice = (price) => new Intl.NumberFormat('vi-VN').format(price) + 'đ';
   //Định dạng ngày thành dd/mm/yyyy theo locale vi-VN.

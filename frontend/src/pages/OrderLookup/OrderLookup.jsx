@@ -15,7 +15,7 @@ const OrderLookupForm = ({ onSubmit, loading }) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: value.trim() 
     }));
   };
 
@@ -32,7 +32,7 @@ const OrderLookupForm = ({ onSubmit, loading }) => {
           <div className="search-icon">
             <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <circle cx="11" cy="11" r="8" stroke="#3498db" strokeWidth="2"/>
-              <path d="21 21l-4.35-4.35" stroke="#3498db" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M21 21l-4.35-4.35" stroke="#3498db" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
           {/* Decorative elements */}
@@ -335,11 +335,22 @@ const OrderLookup = () => {
     setError('');
 
     try {
-      const queryParams = new URLSearchParams({
-        orderId: formData.orderId,
-        ...(formData.email && { email: formData.email }),
-        ...(formData.phone && { phone: formData.phone })
-      });
+      const cleanedData = {
+        orderId: formData.orderId.trim(),
+        email: formData.email ? formData.email.trim() : '',
+        phone: formData.phone ? formData.phone.trim() : ''
+      };
+
+      // Build query parameters
+      const queryParams = new URLSearchParams();
+      queryParams.append('orderId', cleanedData.orderId);
+      
+      if (cleanedData.email) {
+        queryParams.append('email', cleanedData.email);
+      }
+      if (cleanedData.phone) {
+        queryParams.append('phone', cleanedData.phone);
+      }
 
       const response = await fetch(`${API_ENDPOINTS.ORDER_LOOKUP}?${queryParams}`, {
         method: 'GET',
@@ -350,7 +361,7 @@ const OrderLookup = () => {
 
       const data = await response.json();
 
-      if (data.success) {
+      if (response.ok && data.success) {
         setOrder(data.order);
       } else {
         setError(data.message || 'Không tìm thấy đơn hàng');

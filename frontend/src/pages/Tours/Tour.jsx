@@ -13,7 +13,7 @@ const Tour = () => {
       tourTitle: null,
       customItems: null
     });
-  }, []);
+  }, [setBreadcrumbData]);
 
   return (
       <>

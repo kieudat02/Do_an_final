@@ -20,7 +20,7 @@ const Home = () => {
       tourTitle: null,
       customItems: null
     });
-  }, []);
+  }, [setBreadcrumbData]);
 
   return (
     <>
