@@ -3,7 +3,7 @@
 <html lang="vi">
     <head>
         <meta charset="UTF-8" />
-        <title>Quản lý khu vực trang chủ</title>
+        <title>Quản lý section trang chủ</title>
         <!-- Embed Font -->
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -31,7 +31,7 @@
                     <%- include('partials/sidebar') %>
                     <div class="home-section">
                         <div class="home-section__header">
-                            <h2 class="home-section__title">Quản lý khu vực trang chủ</h2>
+                            <h2 class="home-section__title">Quản lý section trang chủ</h2>
                             <% if (userPermissions && userPermissions.includes('CREATE_HOME_SECTION')) { %>
                             <a
                                 href="/homeSection/add"
@@ -165,10 +165,10 @@
                                             <td colspan="7" class="text-center">
                                                 <div class="empty-state">
                                                     <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-                                                    <p class="text-muted">Chưa có khu vực trang chủ nào</p>
+                                                    <p class="text-muted">Chưa có section trang chủ nào</p>
                                                     <% if (userPermissions && userPermissions.includes('CREATE_HOME_SECTION')) { %>
                                                         <a href="/homeSection/add" class="btn btn-primary">
-                                                            <i class="fas fa-plus me-2"></i>Thêm khu vực trang chủ đầu tiên
+                                                            <i class="fas fa-plus me-2"></i>Thêm section trang chủ đầu tiên
                                                         </a>
                                                     <% } %>
                                                 </div>
@@ -183,7 +183,7 @@
                         <% if (totalPages > 1) { %>
                         <div class="home-section__pagination">
                             <div class="pagination-info">
-                                Hiển thị <%= (currentPage - 1) * limit + 1 %> - <%= Math.min(currentPage * limit, total) %> trong tổng số <%= total %> khu vực trang chủ
+                                Hiển thị <%= (currentPage - 1) * limit + 1 %> - <%= Math.min(currentPage * limit, total) %> trong tổng số <%= total %> section trang chủ
                             </div>
                             <nav aria-label="Pagination">
                                 <ul class="pagination">
@@ -228,7 +228,7 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <p class="mb-3">Bạn có chắc chắn muốn thay đổi trạng thái của khu vực trang chủ <strong id="homeSectionNameForStatus"></strong>?</p>
+                        <p class="mb-3">Bạn có chắc chắn muốn thay đổi trạng thái của section trang chủ <strong id="homeSectionNameForStatus"></strong>?</p>
                         <div class="alert alert-info d-flex align-items-center">
                             <i class="fas fa-info-circle me-2"></i>
                             <small>Thay đổi trạng thái sẽ ảnh hưởng đến hiển thị trên trang chủ.</small>
@@ -252,12 +252,12 @@
                 <div class="modal-content">
                     <div class="modal-header border-0">
                         <h5 class="modal-title" id="deleteModalLabel">
-                            Xóa khu vực trang chủ
+                            Xóa section trang chủ
                         </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <p class="mb-3">Bạn có chắc chắn muốn xóa khu vực trang chủ <strong id="homeSectionNameToDelete"></strong>?</p>
+                        <p class="mb-3">Bạn có chắc chắn muốn xóa section trang chủ <strong id="homeSectionNameToDelete"></strong>?</p>
                         <div class="alert alert-warning d-flex align-items-center">
                             <i class="fas fa-exclamation-triangle me-2"></i>
                             <small>Hành động này không thể hoàn tác!</small>

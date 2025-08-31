@@ -143,13 +143,13 @@ function executeDelete() {
                 row.style.transition = 'opacity 0.3s ease';
                 row.style.opacity = '0';
                 setTimeout(() => {
-                    showToast('Xóa khu vực trang chủ thành công!', 'success');
+                    showToast('Xóa section trang chủ thành công!', 'success');
                     setTimeout(() => {
                         location.reload();
                     }, 1000);
                 }, 300);
             } else {
-                showToast('Xóa khu vực trang chủ thành công!', 'success');
+                showToast('Xóa section trang chủ thành công!', 'success');
                 setTimeout(() => {
                     location.reload();
                 }, 1000);
@@ -160,7 +160,7 @@ function executeDelete() {
     })
     .catch(error => {
         console.error('Error:', error);
-        showToast('Có lỗi xảy ra khi xóa khu vực trang chủ', 'error');
+        showToast('Có lỗi xảy ra khi xóa section trang chủ', 'error');
     })
     .finally(() => {
         // Reset button state
