@@ -64,8 +64,7 @@ const reviewSchema = new mongoose.Schema({
 
 // Indexes for better performance
 reviewSchema.index({ tour: 1, createdAt: -1 });
-reviewSchema.index({ user: 1, tour: 1 }, { unique: true, sparse: true }); // Một user chỉ có thể review một tour một lần (sparse để cho phép null)
-reviewSchema.index({ booking: 1 }, { unique: true, sparse: true }); // Một booking chỉ có thể review một lần
+reviewSchema.index({ booking: 1 }, { unique: true, sparse: true }); 
 reviewSchema.index({ rating: 1 });
 reviewSchema.index({ status: 1 });
 
