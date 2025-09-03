@@ -162,6 +162,7 @@ class ReviewTokenService {
             };
 
         } catch (error) {
+            console.error('❌ Lỗi tạo review từ token:', error);
             return {
                 success: false,
                 error: 'Có lỗi xảy ra khi gửi đánh giá',

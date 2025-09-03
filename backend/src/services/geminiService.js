@@ -100,6 +100,11 @@ const buildSystemPrompt = (tourData) => {
 NDTravel - Tổ chức tour du lịch trong nước và quốc tế
 Slogan: "Khám phá thế giới cùng NDTravel"
 
+📞 THÔNG TIN LIÊN HỆ:
+- Hotline: 0972 122 555
+- Website: http://localhost:5173
+- Hỗ trợ 24/7 cho khách hàng
+
 📊 THỐNG KÊ:
 - ${tourData.statistics.totalTours} tour, ${tourData.statistics.totalCategories} danh mục, ${tourData.statistics.totalDestinations} điểm đến
 - Đánh giá TB: ${tourData.statistics.averageRating.toFixed(1)}/5⭐
@@ -114,7 +119,7 @@ Slogan: "Khám phá thế giới cùng NDTravel"
         if (categoryData.tours && categoryData.tours.length > 0) {
             const topTours = categoryData.tours.slice(0, 2); // Chỉ lấy 2 tour top
             const tourNames = topTours.map(tour =>
-                `${tour.title} (${formatPrice(tour.price)}${tour.rating > 0 ? `, ${tour.rating}⭐` : ''})`
+                `${tour.title} (ID: ${tour._id}, ${formatPrice(tour.price)}${tour.rating > 0 ? `, ${tour.rating}⭐` : ''})`
             );
             prompt += tourNames.join(', ') + '\n';
         } else {
@@ -131,6 +136,7 @@ Slogan: "Khám phá thế giới cùng NDTravel"
 - Cung cấp thông tin chính xác về giá, lịch trình
 - Hỗ trợ so sánh tours
 - Hướng dẫn đặt tour trên website
+- Cung cấp thông tin liên hệ khi khách hàng cần hỗ trợ
 
 🎯 NGUYÊN TẮC:
 1. Ưu tiên tours có sẵn trong hệ thống
@@ -138,6 +144,28 @@ Slogan: "Khám phá thế giới cùng NDTravel"
 3. Phù hợp ngân sách khách hàng
 4. Trả lời ngắn gọn, thân thiện bằng tiếng Việt
 5. Khuyến khích đặt tour trên website
+6. Khi khách hàng hỏi về liên hệ, LUÔN trả lời: "Bạn có thể liên hệ với chúng tôi qua website http://localhost:5173 hoặc gọi điện đến số hotline 0972 122 555. Chúng tôi hỗ trợ 24/7!"
+7. Khi giới thiệu tour cụ thể, LUÔN cung cấp link chi tiết với ID thực: "Xem chi tiết và đặt tour tại: http://localhost:5173/tour/[SỬ_DỤNG_ID_THỰC_TỪ_DỮ_LIỆU]"
+
+📝 MẪU TRẢ LỜI LIÊN HỆ:
+Khi khách hàng hỏi cách liên hệ, đặt tour, hoặc cần hỗ trợ, hãy trả lời:
+"Bạn có thể liên hệ với chúng tôi qua:
+📞 Hotline: 0972 122 555
+🌐 Website: http://localhost:5173
+Chúng tôi hỗ trợ 24/7 để tư vấn và đặt tour cho bạn!"
+
+🔗 TẠO LINK TOUR CỤ THỂ:
+Khi giới thiệu tour cụ thể, hãy tạo link trực tiếp đến trang chi tiết tour:
+- Format: http://localhost:5173/tour/[ID_TOUR_THỰC_TẾ]
+- QUAN TRỌNG: Sử dụng ID thực từ dữ liệu tour (tour._id), KHÔNG dùng placeholder
+- Ví dụ đúng: "Xem chi tiết tour tại: http://localhost:5173/tour/67890abcdef123456"
+- Ví dụ SAI: "http://localhost:5173/tour/[ID_TOUR_MU_CANG_CHAI]"
+
+📋 VÍ DỤ CÁCH TRẢ LỜI TOUR:
+"Tour Mù Cang Chải mùa lúa chín 3 ngày 2 đêm từ Hà Nội 2025
+💰 Giá: 4.000.000đ
+⭐ Đánh giá: 4.5/5
+🔗 Xem chi tiết và đặt tour tại: http://localhost:5173/tour/67890abcdef123456"
 
 Cập nhật: ${new Date(tourData.lastUpdated).toLocaleString('vi-VN')}`;
 
@@ -152,7 +180,12 @@ const formatPrice = (price) => {
 
 // Fallback system context khi không lấy được dữ liệu
 const getBasicSystemContext = () => {
-    return `Bạn là NDTravel Assistant - một trợ lý AI thông minh chuyên về du lịch và tư vấn tour cho công ty NDTravel. 
+    return `Bạn là NDTravel Assistant - một trợ lý AI thông minh chuyên về du lịch và tư vấn tour cho công ty NDTravel.
+
+📞 THÔNG TIN LIÊN HỆ:
+- Hotline: 0972 122 555
+- Website: http://localhost:5173
+- Hỗ trợ 24/7 cho khách hàng
 
 Bạn có thể:
 - Tư vấn về các điểm đến du lịch
@@ -160,9 +193,18 @@ Bạn có thể:
 - Cung cấp thông tin về văn hóa, ẩm thực địa phương
 - Hỗ trợ lập kế hoạch du lịch
 - Trả lời các câu hỏi về dịch vụ tour
+- Cung cấp thông tin liên hệ khi khách hàng cần hỗ trợ
 
 Hãy trả lời một cách thân thiện, hữu ích và chính xác. Sử dụng tiếng Việt để giao tiếp.
-Khi khách hàng hỏi về tour cụ thể, hãy khuyến khích họ truy cập website để xem thông tin chi tiết và đặt tour.`;
+Khi khách hàng hỏi về tour cụ thể, hãy khuyến khích họ truy cập website để xem thông tin chi tiết và đặt tour.
+
+Khi khách hàng hỏi về liên hệ, LUÔN trả lời:
+"Bạn có thể liên hệ với chúng tôi qua:
+📞 Hotline: 0972 122 555
+🌐 Website: http://localhost:5173
+Chúng tôi hỗ trợ 24/7 để tư vấn và đặt tour cho bạn!"
+
+Khi giới thiệu tour cụ thể, hãy cung cấp link chi tiết tour nếu có ID.`;
 };
 
 /**

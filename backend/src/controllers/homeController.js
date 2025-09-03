@@ -152,7 +152,7 @@ const getHomepage = async (req, res) => {
             monthlyRevenue: monthlyRevenue || Array(12).fill(0),
 
             // Doanh thu theo phương thức thanh toán
-            revenueByPaymentMethod: revenueByPaymentMethod || { cash: 0, bankTransfer: 0, eWallet: 0 },
+            revenueByPaymentMethod: revenueByPaymentMethod || { cash: 0, eWallet: 0 },
 
             currentUser,
             message,
@@ -242,9 +242,9 @@ async function getMonthlyRevenue() {
         const startDate = new Date(currentYear, 0, 1); // 1/1/currentYear
         const endDate = new Date(currentYear, 11, 31, 23, 59, 59); // 31/12/currentYear
         
-        // Lấy tất cả đơn hàng đã xác nhận trong năm hiện tại
+        // Lấy tất cả đơn hàng đã hoàn thành trong năm hiện tại
         const orders = await Order.find({
-            status: "confirmed",
+            status: "completed",
             createdAt: { $gte: startDate, $lte: endDate }
         });
         
@@ -271,17 +271,16 @@ async function getRevenueByPaymentMethod() {
         const startDate = new Date(currentYear, 0, 1);
         const endDate = new Date(currentYear, 11, 31, 23, 59, 59);
 
-        // Lấy tất cả đơn hàng đã xác nhận trong năm hiện tại
+        // Lấy tất cả đơn hàng đã hoàn thành trong năm hiện tại
         const orders = await Order.find({
-            status: "confirmed",
+            status: "completed",
             createdAt: { $gte: startDate, $lte: endDate }
         });
 
         // Tính doanh thu theo phương thức thanh toán
         const revenueByPayment = {
             cash: 0,        // Tiền mặt
-            bankTransfer: 0, // Chuyển khoản
-            eWallet: 0      // Ví điện tử
+            eWallet: 0      // Ví điện tử (MoMo)
         };
 
         orders.forEach(order => {
@@ -292,14 +291,8 @@ async function getRevenueByPaymentMethod() {
                 case 'Tiền mặt':
                     revenueByPayment.cash += amount;
                     break;
-                case 'Chuyển khoản':
-                case 'bank_transfer':
-                    revenueByPayment.bankTransfer += amount;
-                    break;
-                case 'Mã QR':
+                case 'MoMo':
                 case 'momo':
-                case 'vnpay':
-                case 'zalopay':
                     revenueByPayment.eWallet += amount;
                     break;
                 default:
@@ -312,7 +305,7 @@ async function getRevenueByPaymentMethod() {
         return revenueByPayment;
     } catch (error) {
         console.error("Error getting revenue by payment method:", error);
-        return { cash: 0, bankTransfer: 0, eWallet: 0 };
+        return { cash: 0, eWallet: 0 };
     }
 }
 

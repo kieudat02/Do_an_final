@@ -68,7 +68,10 @@ export const generateQuickSuggestions = (context) => {
   // Thêm suggestions dựa trên danh mục có sẵn
   if (context?.toursByCategory) {
     Object.keys(context.toursByCategory).slice(0, 2).forEach(category => {
-      if (!suggestions.some(s => s.toLowerCase().includes(category.toLowerCase()))) {
+      // Kiểm tra category là string trước khi gọi toLowerCase
+      if (typeof category === 'string' && !suggestions.some(s =>
+        typeof s === 'string' && s.toLowerCase().includes(category.toLowerCase())
+      )) {
         suggestions.push(`🎯 Tour ${category}`);
       }
     });
@@ -83,6 +86,15 @@ export const generateQuickSuggestions = (context) => {
  * @returns {Object} Intent và entities
  */
 export const analyzeUserIntent = (message) => {
+  // Kiểm tra và chuyển đổi message thành string
+  if (!message || typeof message !== 'string') {
+    return {
+      intent: 'GENERAL',
+      entities: {},
+      originalMessage: message || ''
+    };
+  }
+
   const lowerMessage = message.toLowerCase();
   
   const intents = {
@@ -123,6 +135,9 @@ export const analyzeUserIntent = (message) => {
  * @returns {Object|null} Khoảng giá
  */
 const extractPriceRange = (message) => {
+  // Kiểm tra input
+  if (!message || typeof message !== 'string') return null;
+
   // Tìm số tiền trong tin nhắn
   const pricePatterns = [
     /(\d+)\s*triệu/gi,
@@ -163,6 +178,9 @@ const extractPriceRange = (message) => {
  * @returns {Array} Danh sách điểm đến
  */
 const extractDestinations = (message) => {
+  // Kiểm tra input
+  if (!message || typeof message !== 'string') return [];
+
   const commonDestinations = [
     'hà nội', 'sài gòn', 'tp hcm', 'đà nẵng', 'hội an', 'huế',
     'nha trang', 'đà lạt', 'phú quốc', 'hạ long', 'sapa',
@@ -182,6 +200,9 @@ const extractDestinations = (message) => {
  * @returns {Object|null} Thông tin thời gian
  */
 const extractDuration = (message) => {
+  // Kiểm tra input
+  if (!message || typeof message !== 'string') return null;
+
   const durationPatterns = [
     /(\d+)\s*ngày/gi,
     /(\d+)\s*đêm/gi,
