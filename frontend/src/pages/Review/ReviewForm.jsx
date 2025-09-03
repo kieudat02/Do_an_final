@@ -186,6 +186,14 @@ const ReviewForm = () => {
           <button 
             className="btn btn-primary"
             onClick={() => navigate('/')}
+            style={{
+              border: "1px solid #1e78bd",
+              padding: "15px",
+              borderRadius: "10px",
+              background: "#1e78bd",
+              color: "#ffffff",
+              fontWeight: 600,
+            }}
           >
             Về trang chủ
           </button>

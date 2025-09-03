@@ -16,7 +16,8 @@ const sessionSecurityMiddleware = {
             '/api/email/otp',
             '/api/otp',
             '/api/public',
-            '/api/chat'
+            '/api/chat',
+            '/api/review'
         ];
         const isPublicRoute = publicRoutes.some(route => req.path.startsWith(route));
         
