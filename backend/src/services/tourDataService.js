@@ -57,17 +57,18 @@ class TourDataService {
                     status: true,
                     deleted: false
                 })
-                .select('title price minPrice maxPrice highlights averageRating')
+                .select('_id title price minPrice maxPrice highlights averageRating')
                 .limit(5) // Lấy tối đa 5 tour mỗi danh mục
                 .lean();
 
                 result[category.name] = {
                     description: category.description || category.pageTitle,
                     tours: tours.map(tour => ({
+                        _id: tour._id,
                         title: tour.title,
                         price: tour.price || tour.minPrice,
                         rating: tour.averageRating,
-                        highlights: tour.highlights?.slice(0, 3) 
+                        highlights: tour.highlights?.slice(0, 3)
                     }))
                 };
             }

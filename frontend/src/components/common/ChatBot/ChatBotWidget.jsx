@@ -7,8 +7,7 @@ import {
   ChatStorage
 } from '../../../services/geminiService';
 import {
-  generateQuickSuggestions,
-  analyzeUserIntent
+  generateQuickSuggestions
 } from '../../../utils/chatbotUtils';
 import { PLACEHOLDER_IMAGES } from '../../../utils/placeholderImage';
 import { stripHtmlTags, decodeHtmlEntities } from '../../../utils/htmlUtils';
@@ -52,7 +51,10 @@ const parseAndCleanMarkdown = (text) => {
   // Bước 4: Loại bỏ tất cả dấu * còn lại
   processedText = processedText.replace(/\*/g, '');
 
-  // Bước 5: Chia thành các dòng và xử lý
+  // Bước 5: Xử lý links - đánh dấu để xử lý sau
+  processedText = processedText.replace(/(https?:\/\/[^\s]+)/g, '|||LINK_START|||$1|||LINK_END|||');
+
+  // Bước 6: Chia thành các dòng và xử lý
   const lines = processedText.split('\n');
   const elements = [];
 
@@ -68,11 +70,13 @@ const parseAndCleanMarkdown = (text) => {
     let partKey = 0;
 
     // Tìm tất cả markers
-    const markerRegex = /\|\|\|(BOLD_START|BOLD_END|ITALIC_START|ITALIC_END)\|\|\|/g;
+    const markerRegex = /\|\|\|(BOLD_START|BOLD_END|ITALIC_START|ITALIC_END|LINK_START|LINK_END)\|\|\|/g;
     let match;
     let isInBold = false;
     let isInItalic = false;
+    let isInLink = false;
     let currentText = '';
+    let linkUrl = '';
 
     while ((match = markerRegex.exec(line)) !== null) {
       // Thêm text trước marker
@@ -118,6 +122,45 @@ const parseAndCleanMarkdown = (text) => {
           }
           isInItalic = false;
           break;
+        case 'LINK_START':
+          if (currentText) {
+            if (isInBold) {
+              parts.push(<strong key={`bold-${lineIndex}-${partKey++}`} className="markdown-bold">{currentText}</strong>);
+            } else if (isInItalic) {
+              parts.push(<em key={`italic-${lineIndex}-${partKey++}`} className="markdown-italic">{currentText}</em>);
+            } else {
+              parts.push(<span key={`text-${lineIndex}-${partKey++}`}>{currentText}</span>);
+            }
+            currentText = '';
+          }
+          isInLink = true;
+          break;
+        case 'LINK_END':
+          if (currentText) {
+            linkUrl = currentText;
+            parts.push(
+              <a
+                key={`link-${lineIndex}-${partKey++}`}
+                href={linkUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="message-link"
+                onClick={(e) => {
+                  // Cho phép Ctrl+Click mở tab mới, click thường mở cùng tab
+                  if (!e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    window.location.href = linkUrl;
+                  }
+                }}
+              >
+                {linkUrl}
+              </a>
+            );
+            currentText = '';
+            linkUrl = '';
+          }
+          isInLink = false;
+          break;
       }
 
       currentIndex = match.index + match[0].length;
@@ -129,7 +172,10 @@ const parseAndCleanMarkdown = (text) => {
     }
 
     if (currentText) {
-      if (isInBold) {
+      if (isInLink) {
+        // Nếu đang trong link nhưng chưa có LINK_END, xử lý như text thường
+        parts.push(<span key={`text-${lineIndex}-${partKey++}`}>{currentText}</span>);
+      } else if (isInBold) {
         parts.push(<strong key={`bold-${lineIndex}-${partKey++}`} className="markdown-bold">{currentText}</strong>);
       } else if (isInItalic) {
         parts.push(<em key={`italic-${lineIndex}-${partKey++}`} className="markdown-italic">{currentText}</em>);
@@ -165,7 +211,7 @@ const ChatBotWidget = () => {
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState(null);
-  const [error, setError] = useState(null);
+
   const [isMinimized, setIsMinimized] = useState(false);
   const [quickSuggestions, setQuickSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(true);
@@ -173,11 +219,11 @@ const ChatBotWidget = () => {
   const [loadingImages, setLoadingImages] = useState(new Set());
   const [showSystemMenu, setShowSystemMenu] = useState(false);
   const [showWelcomePopup, setShowWelcomePopup] = useState(false);
-  const [welcomePopupDismissed, setWelcomePopupDismissed] = useState(false);
+
 
   // Quản lý trạng thái người dùng
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
-  const [userState, setUserState] = useState(null);
+
 
   // Refs
   const messagesEndRef = useRef(null);
@@ -191,7 +237,7 @@ const ChatBotWidget = () => {
 
   // Tạo ID thiết bị duy nhất
   const generateDeviceId = useCallback(() => {
-    return 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    return 'device_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11);
   }, []);
 
   // Dịch vụ LocalStorage để quản lý trạng thái người dùng
@@ -289,14 +335,12 @@ const ChatBotWidget = () => {
 
     if (saveUserState(updatedState)) {
       setHasUserInteracted(true);
-      setUserState(updatedState);
     }
   }, [getUserState, saveUserState]);
 
   // Khởi tạo trạng thái người dùng
   const initializeUserExperience = useCallback(() => {
     const state = getUserState();
-    setUserState(state);
 
     if (state.hasInteracted) {
       // Người dùng quay lại đã từng tương tác với chatbot
@@ -332,12 +376,7 @@ const ChatBotWidget = () => {
       tourInfo: null
     };
 
-    // Tìm kiếm các pattern thông tin tour trong tin nhắn
-    const tourPatterns = [
-      /tour\s+([^,\n]+)/gi,
-      /địa\s+điểm[:\s]+([^,\n]+)/gi,
-      /giá[:\s]+([^,\n]+)/gi
-    ];
+
 
     // Trích xuất hình ảnh từ tin nhắn nếu chứa URL hình ảnh hoặc tham chiếu tour
     const imageUrlPattern = /(https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp))/gi;
@@ -396,12 +435,10 @@ const ChatBotWidget = () => {
     switch (action) {
       case 'book':
         // Xử lý hành động đặt tour
-        console.log('Đặt tour:', tourData);
         // Bạn có thể tích hợp với hệ thống đặt tour ở đây
         break;
       case 'details':
         // Xử lý hành động xem chi tiết
-        console.log('Xem chi tiết tour:', tourData);
         // Bạn có thể hiển thị thông tin chi tiết tour
         break;
       case 'gallery':
@@ -486,7 +523,15 @@ const ChatBotWidget = () => {
 
   // Xử lý gửi tin nhắn
   const handleSendMessage = async (messageText = null) => {
-    const messageToSend = messageText || inputMessage.trim();
+    // Đảm bảo messageToSend là string và xử lý edge cases
+    let messageToSend;
+    if (messageText !== null && messageText !== undefined) {
+      // Nếu messageText được truyền vào, chuyển thành string
+      messageToSend = String(messageText).trim();
+    } else {
+      // Nếu không, sử dụng inputMessage
+      messageToSend = String(inputMessage || '').trim();
+    }
 
     if (!messageToSend || isLoading) return;
 
@@ -498,9 +543,7 @@ const ChatBotWidget = () => {
     // Ẩn gợi ý sau tin nhắn đầu tiên
     setShowSuggestions(false);
 
-    // Phân tích ý định người dùng (để cải tiến trong tương lai)
-    const intent = analyzeUserIntent(messageToSend);
-    console.log('Ý định người dùng:', intent);
+
 
     const userMessage = {
       id: Date.now(),
@@ -513,7 +556,6 @@ const ChatBotWidget = () => {
     setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
     setIsLoading(true);
-    setError(null);
 
     try {
       // Gửi tin nhắn đến API
@@ -605,7 +647,13 @@ const ChatBotWidget = () => {
   const handleSuggestionClick = (suggestion) => {
     // Loại bỏ emoji và gửi tin nhắn sạch
     const cleanMessage = suggestion.replace(/[^\w\s\u00C0-\u024F\u1E00-\u1EFF]/g, '').trim();
-    handleSendMessage(cleanMessage);
+
+    // Kiểm tra nếu tin nhắn rỗng sau khi clean (fallback)
+    const messageToSend = cleanMessage || suggestion.trim();
+
+    if (messageToSend) {
+      handleSendMessage(messageToSend);
+    }
   };
 
   // Xử lý nhấn phím
@@ -634,16 +682,6 @@ const ChatBotWidget = () => {
         localStorage.removeItem('chatbot_user_state');
 
         // Reset tất cả states
-        setUserState({
-          hasInteracted: false,
-          hasSeenWelcomePopup: false,
-          firstVisitDate: Date.now(),
-          lastVisitDate: Date.now(),
-          chatHistory: [],
-          isDisabled: false,
-          deviceId: generateDeviceId(),
-          totalInteractions: 0
-        });
         setHasUserInteracted(false);
         setSessionId(null);
         setShowSuggestions(true);
@@ -680,23 +718,12 @@ const ChatBotWidget = () => {
         localStorage.removeItem('chatbot_user_state');
 
         // Reset trạng thái người dùng
-        setUserState({
-          hasInteracted: false,
-          hasSeenWelcomePopup: false,
-          firstVisitDate: Date.now(),
-          lastVisitDate: Date.now(),
-          chatHistory: [],
-          isDisabled: false,
-          deviceId: generateDeviceId(),
-          totalInteractions: 0
-        });
         setHasUserInteracted(false);
 
         // Thiết lập phiên mới
         setSessionId(newSessionId);
         ChatStorage.saveSessionId(newSessionId);
         setMessages([]);
-        setError(null);
         setShowSuggestions(true); // Hiển thị gợi ý lại
 
         // Thêm tin nhắn chào mừng thân thiện cho cuộc hội thoại mới
@@ -1178,12 +1205,12 @@ const ChatBotWidget = () => {
               )}
 
               {/* Hiển Thị Lỗi */}
-              {error && (
+              {/* {error && (
                 <div className="chatbot-error">
                   <span>{error}</span>
                   <button onClick={() => setError(null)}>×</button>
                 </div>
-              )}
+              )} */}
 
               {/* Khu Vực Nhập Liệu */}
               <div className="chatbot-input">
@@ -1201,9 +1228,10 @@ const ChatBotWidget = () => {
                   />
                   <button
                     className="send-btn"
-                    onClick={handleSendMessage}
+                    onClick={() => handleSendMessage()}
                     disabled={!inputMessage.trim() || isLoading}
                     aria-label="Gửi tin nhắn"
+                    type="button"
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                       <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>

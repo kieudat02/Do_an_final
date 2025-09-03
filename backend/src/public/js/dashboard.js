@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
         inactiveDestinations: 0,
         activeTransportations: 0,
         inactiveTransportations: 0,
-        revenueByPaymentMethod: { cash: 0, bankTransfer: 0, eWallet: 0 }
+        revenueByPaymentMethod: { cash: 0, eWallet: 0 }
     };
 
     try {
@@ -225,12 +225,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Sử dụng dữ liệu thật từ database
                     const paymentData = dashboardData.revenueByPaymentMethod;
                     const cashRevenue = paymentData.cash || 0;
-                    const bankTransferRevenue = paymentData.bankTransfer || 0;
                     const eWalletRevenue = paymentData.eWallet || 0;
 
-                    orderStatusChart.data.labels = ['Tiền mặt', 'Chuyển khoản', 'Ví điện tử'];
-                    orderStatusChart.data.datasets[0].data = [cashRevenue, bankTransferRevenue, eWalletRevenue];
-                    orderStatusChart.data.datasets[0].backgroundColor = ['#FF9F40', '#4BC0C0', '#9966FF'];
+                    orderStatusChart.data.labels = ['Tiền mặt', 'MoMo'];
+                    orderStatusChart.data.datasets[0].data = [cashRevenue, eWalletRevenue];
+                    orderStatusChart.data.datasets[0].backgroundColor = ['#FF9F40', '#9966FF'];
 
                     // Cập nhật tooltip để hiển thị số tiền và phần trăm
                     orderStatusChart.options.plugins.tooltip.callbacks.label = function(context) {
