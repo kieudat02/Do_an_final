@@ -1,14 +1,12 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import { ChevronDown, Home, Clock, Calendar, Filter, Phone } from 'lucide-react';
 import { getTours, getToursBySlug } from '../../../services/TourService';
 import { getDepartures } from '../../../services/DepartureService';
-import { getCategories } from '../../../services/CategoriesService';
 import { getDestinations } from '../../../services/DestinationService';
 import { useDebounce } from '../../../hooks/useDebounce';
 import Loading from '../../common/Loading/Loading';
 import { PLACEHOLDER_IMAGES } from '../../../utils/placeholderImage';
-import { createFrontendSlug } from '../../../utils/slugUtils';
 import { useBreadcrumb } from '../../../contexts/BreadcrumbContext';
 import './TourList.scss';
 import WhyChooseNDTravel from '../../common/WhyChooseNDTravel/WhyChooseNDTravel';
@@ -35,9 +33,46 @@ const TruncatedText = ({ text, maxLength = 150, className = "", element = "p" })
 };
 
 const TourList = () => {
-  const navigate = useNavigate();
   const { slug } = useParams();
   const { setBreadcrumbData } = useBreadcrumb();
+  const topRef = useRef(null);
+
+  // Utility function để cuộn lên đầu trang
+  const scrollToTop = (immediate = false) => {
+    const scrollToTopAction = () => {
+      // Method 1: Scroll bằng ref
+      if (topRef.current) {
+        topRef.current.scrollIntoView({
+          behavior: immediate ? 'auto' : 'smooth',
+          block: 'start'
+        });
+      }
+
+      // Method 2: Window scroll
+      if (immediate) {
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    };
+
+    // Execute immediately
+    scrollToTopAction();
+
+    // Execute with requestAnimationFrame for better performance
+    requestAnimationFrame(() => {
+      scrollToTopAction();
+    });
+
+    // Final fallback
+    setTimeout(() => {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }, immediate ? 50 : 500);
+  };
   //Bộ lọc hiển thị trên thiết bị di động
   const [filterVisible, setFilterVisible] = useState(false);
   //Các tham số bộ lọc
@@ -47,20 +82,18 @@ const TourList = () => {
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedDestination, setSelectedDestination] = useState('');
+  const [selectedDestination, setSelectedDestination] = useState(''); // Có thể là string (single ID) hoặc array (multiple IDs)
   const [selectedDestinationType, setSelectedDestinationType] = useState('');
   const [phone, setPhone] = useState('');
   //Dữ liệu API
   const [tours, setTours] = useState([]);
   const [departures, setDepartures] = useState([]);
-  const [destinations, setDestinations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadingCategory, setLoadingCategory] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMoreTours, setHasMoreTours] = useState(true);
-  const [totalTours, setTotalTours] = useState(0);
   const [currentCategory, setCurrentCategory] = useState(null);
 
   // State cho dropdown menu châu lục và miền
@@ -96,7 +129,10 @@ const TourList = () => {
       minPrice: parseNumber(debouncedMinPrice),
       maxPrice: parseNumber(debouncedMaxPrice),
       category: slug ? undefined : (selectedCategory || undefined),
-      destination: selectedDestination || undefined,
+      // Xử lý destination: nếu là array thì join bằng dấu phẩy, nếu không thì giữ nguyên
+      destination: selectedDestination ?
+        (Array.isArray(selectedDestination) ? selectedDestination.join(',') : selectedDestination) :
+        undefined,
       destinationType: selectedDestinationType || undefined,
     };
     // Xóa các khoá có giá trị undefined để không gửi thừa param
@@ -112,10 +148,10 @@ const TourList = () => {
   const fetchTours = async (page = 1, isLoadMore = false, isCategoryFilter = false) => {
     try {
       if (!isLoadMore) {
-        if (isCategoryFilter && !loadingCategory) {
-          // Chỉ set loading nếu chưa được set trước đó
+        if (isCategoryFilter) {
+          // Set loading cho category filter
           setLoadingCategory(true);
-        } else if (!isCategoryFilter) {
+        } else {
           setLoading(true);
         }
         setError(null);
@@ -151,7 +187,6 @@ const TourList = () => {
       // Cập nhật danh sách tour
       setTours((prevTours) => (isLoadMore ? [...prevTours, ...data] : data));
       setCurrentPage(page);
-      setTotalTours(pagination.totalItems);
       setHasMoreTours(pagination.hasNext || false);
       setCurrentCategory(categoryInfo || category || null);
     } catch (err) {
@@ -159,7 +194,6 @@ const TourList = () => {
       setError('Không thể tải danh sách tour. Vui lòng thử lại sau.');
       if (!isLoadMore) {
         setTours([]);
-        setTotalTours(0);
         setHasMoreTours(false);
         setCurrentCategory(null);
       }
@@ -183,6 +217,9 @@ const TourList = () => {
 
   //Tải dữ liệu ban đầu khi component mount
   useEffect(() => {
+    // Cuộn lên đầu trang khi component mount
+    scrollToTop(true);
+
     fetchTours(1, false);
     fetchDepartures();
 
@@ -215,13 +252,26 @@ const TourList = () => {
         // Trang tổng hợp tours
         fetchTours(1, false, true);
       } else {
-        // Trang category có slug - vẫn fetch khi có destination filter
-        if (selectedDestination || selectedDestinationType) {
-          fetchTours(1, false, true);
-        }
+        // Trang category có slug - luôn fetch khi có thay đổi filter (bao gồm cả seasonal tours)
+        fetchTours(1, false, true);
       }
     }
   }, [selectedCategory, selectedDestination, selectedDestinationType]);
+
+  // Cuộn lên đầu trang khi tours được load xong (sau khi filter)
+  useEffect(() => {
+    if (!loadingCategory && !loading && tours.length > 0) {
+      // Đảm bảo cuộn lên đầu trang sau khi tours được render
+      scrollToTop();
+    }
+  }, [tours, loadingCategory, loading]);
+
+  // Cuộn lên đầu trang khi slug thay đổi (chuyển category)
+  useEffect(() => {
+    if (slug) {
+      scrollToTop();
+    }
+  }, [slug]);
 
   // Cập nhật breadcrumb khi currentCategory thay đổi (chỉ khi có slug)
   useEffect(() => {
@@ -296,21 +346,16 @@ const TourList = () => {
 
 
   // Handler cho seasonal tours
-  const handleDestinationTypeFilter = async (destinationType) => {
+  const handleDestinationTypeFilter = (destinationType) => {
     setSelectedDestinationType(destinationType);
-    setSelectedDestination('');
+    setSelectedDestination(''); // Reset về empty string
     setCurrentPage(1);
-    setLoadingCategory(true);
 
-    // Scroll to top để user thấy kết quả
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Cuộn lên đầu trang khi chọn danh mục
+    scrollToTop();
 
-    // Fetch tours ngay lập tức với destination type filter
-    try {
-      await fetchTours(1, false, true);
-    } catch (error) {
-      console.error('Error fetching tours by destination type:', error);
-    }
+    // Không gọi fetchTours trực tiếp ở đây, để useEffect xử lý
+    // useEffect sẽ tự động trigger khi selectedDestinationType thay đổi
   };
 
 
@@ -429,11 +474,34 @@ const TourList = () => {
   // Logic xác định loại menu dựa trên slug và category
   const determineMenuType = (slug, currentCategory) => {
     if (!slug) return 'full'; // Trang tổng hợp tours
+
+    // Kiểm tra slug cho các loại tour cụ thể
     if (slug.includes('trong-nuoc')) return 'domestic-only';
     if (slug.includes('nuoc-ngoai')) return 'international-only';
-    if (slug.includes('mua-thu') || slug.includes('le-2-9') ||
-        currentCategory?.name?.includes('mùa') ||
-        currentCategory?.name?.includes('lễ')) return 'seasonal';
+
+    // Kiểm tra seasonal tours - mở rộng các pattern cho tour mùa thu và lễ 2/9
+    const seasonalPatterns = [
+      'mua-thu', 'le-2-9', 'le-30-4', 'le-1-5', 'tet', 'noel', 'giang-sinh',
+      'summer', 'winter', 'spring', 'autumn', 'festival', 'holiday',
+      'quoc-khanh', 'doc-lap', 'thong-nhat', 'phu-nu', 'lao-dong'
+    ];
+
+    const isSeasonalSlug = seasonalPatterns.some(pattern => slug.includes(pattern));
+    const isSeasonalCategory = currentCategory?.name && (
+      currentCategory.name.toLowerCase().includes('mùa') ||
+      currentCategory.name.toLowerCase().includes('lễ') ||
+      currentCategory.name.toLowerCase().includes('tết') ||
+      currentCategory.name.toLowerCase().includes('festival') ||
+      currentCategory.name.toLowerCase().includes('holiday') ||
+      currentCategory.name.toLowerCase().includes('quốc khánh') ||
+      currentCategory.name.toLowerCase().includes('độc lập') ||
+      currentCategory.name.toLowerCase().includes('2/9') ||
+      currentCategory.name.toLowerCase().includes('30/4') ||
+      currentCategory.name.toLowerCase().includes('1/5')
+    );
+
+    if (isSeasonalSlug || isSeasonalCategory) return 'seasonal';
+
     return 'full'; // fallback
   };
 
@@ -455,30 +523,29 @@ const TourList = () => {
     setExpandedContinent(expandedContinent === continent ? null : continent);
   };
 
-  // Xử lý filter theo destination (quốc gia/tỉnh thành)
-  const handleDestinationFilter = async (destinationId) => {
-    setSelectedDestination(destinationId);
+  // Xử lý filter theo destination (quốc gia/tỉnh thành) - lấy tất cả destinations của tỉnh
+  const handleDestinationFilter = (destinations) => {
+    // Lấy tất cả destination IDs của tỉnh/quốc gia này
+    const destinationIds = destinations.map(dest => dest._id);
+    setSelectedDestination(destinationIds); // Lưu array thay vì single ID
     setSelectedCategory(''); // Clear category filter khi chọn destination
+    setSelectedDestinationType(''); // Clear destination type filter (cho seasonal tours)
     setCurrentPage(1);
-    setLoadingCategory(true);
 
-    // Scroll to top để user thấy kết quả
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Cuộn lên đầu trang khi chọn danh mục
+    scrollToTop();
 
-    // Fetch tours ngay lập tức với destination filter
-    try {
-      await fetchTours(1, false, true);
-    } catch (error) {
-      console.error('Error fetching tours by destination:', error);
-    }
+    // Không gọi fetchTours trực tiếp ở đây, để useEffect xử lý
+    // useEffect sẽ tự động trigger khi selectedDestination thay đổi
   };
 
-  // Helper function để lấy destination đầu tiên của tỉnh/quốc gia
-  const getFirstDestinationByProvince = (province, destinations) => {
-    if (destinations && destinations.length > 0) {
-      return destinations[0]._id;
+  // Helper function để kiểm tra xem tỉnh có được chọn không
+  const isProvinceSelected = (destinations) => {
+    if (!selectedDestination || !Array.isArray(selectedDestination)) {
+      return false;
     }
-    return null;
+    const destinationIds = destinations.map(dest => dest._id);
+    return destinationIds.some(id => selectedDestination.includes(id));
   };
 
   // Render functions cho từng loại menu
@@ -500,12 +567,11 @@ const TourList = () => {
           {expandedContinent === region && (
             <div className="categories__submenu">
               {Object.entries(provinces).map(([province, destinations]) => {
-                const firstDestinationId = getFirstDestinationByProvince(province, destinations);
                 return (
                   <div key={province} className="categories__submenu-item">
                     <div
-                      className={`categories__submenu-link ${selectedDestination === firstDestinationId ? 'categories__submenu-link--active' : ''}`}
-                      onClick={() => firstDestinationId && handleDestinationFilter(firstDestinationId)}
+                      className={`categories__submenu-link ${isProvinceSelected(destinations) ? 'categories__submenu-link--active' : ''}`}
+                      onClick={() => handleDestinationFilter(destinations)}
                       style={{ cursor: 'pointer' }}
                     >
                       <span>{province}</span>
@@ -538,12 +604,11 @@ const TourList = () => {
           {expandedContinent === continent && (
             <div className="categories__submenu">
               {Object.entries(countries).map(([country, destinations]) => {
-                const firstDestinationId = getFirstDestinationByProvince(country, destinations);
                 return (
                   <div key={country} className="categories__submenu-item">
                     <div
-                      className={`categories__submenu-link ${selectedDestination === firstDestinationId ? 'categories__submenu-link--active' : ''}`}
-                      onClick={() => firstDestinationId && handleDestinationFilter(firstDestinationId)}
+                      className={`categories__submenu-link ${isProvinceSelected(destinations) ? 'categories__submenu-link--active' : ''}`}
+                      onClick={() => handleDestinationFilter(destinations)}
                       style={{ cursor: 'pointer' }}
                     >
                       <span>{country}</span>
@@ -559,8 +624,54 @@ const TourList = () => {
   );
 
   const renderSeasonalMenu = () => {
-    const categoryName = currentCategory?.name || '';
-    const seasonName = categoryName.replace('Tour ', '').replace('tour ', '');
+    // Lấy tên seasonal từ category hoặc từ slug
+    let seasonName = '';
+
+    if (currentCategory?.name) {
+      // Xử lý tên category để lấy phần seasonal
+      seasonName = currentCategory.name
+        .replace(/^Tour\s+/i, '')
+        .replace(/^tour\s+/i, '')
+        .trim();
+    } else if (slug) {
+      // Fallback từ slug nếu không có category name - mở rộng cho tour mùa thu và lễ 2/9
+      const seasonalMappings = {
+        'mua-thu': 'Mùa thu',
+        'le-2-9': 'Lễ 2/9',
+        'le-30-4': 'Lễ 30/4',
+        'le-1-5': 'Lễ 1/5',
+        'tet': 'Tết',
+        'noel': 'Noel',
+        'giang-sinh': 'Giáng sinh',
+        'summer': 'Mùa hè',
+        'winter': 'Mùa đông',
+        'spring': 'Mùa xuân',
+        'autumn': 'Mùa thu',
+        'quoc-khanh': 'Quốc khánh',
+        'doc-lap': 'Độc lập',
+        'thong-nhat': 'Thống nhất',
+        'phu-nu': 'Phụ nữ',
+        'lao-dong': 'Lao động'
+      };
+
+      // Tìm mapping phù hợp từ slug
+      for (const [key, value] of Object.entries(seasonalMappings)) {
+        if (slug.includes(key)) {
+          seasonName = value;
+          break;
+        }
+      }
+
+      // Nếu không tìm thấy mapping, sử dụng slug làm fallback
+      if (!seasonName) {
+        seasonName = slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      }
+    }
+
+    // Fallback cuối cùng
+    if (!seasonName) {
+      seasonName = 'Tour đặc biệt';
+    }
 
     return (
       <>
@@ -616,12 +727,11 @@ const TourList = () => {
                 {expandedContinent === region && (
                   <div className="categories__submenu-countries">
                     {Object.entries(provinces).map(([province, destinations]) => {
-                      const firstDestinationId = getFirstDestinationByProvince(province, destinations);
                       return (
                         <div key={province} className="categories__province-group">
                           <div
-                            className={`categories__province-title ${selectedDestination === firstDestinationId ? 'categories__province-title--active' : ''}`}
-                            onClick={() => firstDestinationId && handleDestinationFilter(firstDestinationId)}
+                            className={`categories__province-title ${isProvinceSelected(destinations) ? 'categories__province-title--active' : ''}`}
+                            onClick={() => handleDestinationFilter(destinations)}
                             style={{ cursor: 'pointer' }}
                           >
                             {province}
@@ -668,12 +778,11 @@ const TourList = () => {
                 {expandedContinent === continent && (
                   <div className="categories__submenu-countries">
                     {Object.entries(countries).map(([country, destinations]) => {
-                      const firstDestinationId = getFirstDestinationByProvince(country, destinations);
                       return (
                         <div key={country} className="categories__province-group">
                           <div
-                            className={`categories__province-title ${selectedDestination === firstDestinationId ? 'categories__province-title--active' : ''}`}
-                            onClick={() => firstDestinationId && handleDestinationFilter(firstDestinationId)}
+                            className={`categories__province-title ${isProvinceSelected(destinations) ? 'categories__province-title--active' : ''}`}
+                            onClick={() => handleDestinationFilter(destinations)}
                             style={{ cursor: 'pointer' }}
                           >
                             {country}
@@ -811,7 +920,7 @@ const TourList = () => {
   }
 
   return (
-    <div className="tour-listing">
+    <div className="tour-listing" ref={topRef}>
       <div className="tour-listing__container">
         {/* Header */}
           <header className="tour-listing__header">
@@ -856,10 +965,10 @@ const TourList = () => {
               {tours.length === 0 && !loadingCategory ? (
                 <div className="tour-listing__no-results">
                   <p>
-                    {selectedDestination
+                    {(selectedDestination && (Array.isArray(selectedDestination) ? selectedDestination.length > 0 : selectedDestination))
                       ? 'Không tìm thấy tour nào cho điểm đến này.'
                       : selectedDestinationType
-                        ? `Không tìm thấy tour ${selectedDestinationType.toLowerCase()} nào cho danh mục này.`
+                        ? `Không tìm thấy tour ${selectedDestinationType.toLowerCase()} nào cho ${currentCategory?.name || 'danh mục này'}.`
                         : 'Không tìm thấy tour nào phù hợp với tiêu chí tìm kiếm.'
                     }
                   </p>
