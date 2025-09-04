@@ -20,8 +20,7 @@ const DropDownHeader = ({ categories, activeCategory, onCategoryHover, onDropdow
     const [activeRegion, setActiveRegion] = useState(null);
     const [hoveredGroup, setHoveredGroup] = useState(null); 
 
-    const [checkingTour, setCheckingTour] = useState(null); 
-    const [noTourMessage, setNoTourMessage] = useState({}); 
+    const [checkingTour, setCheckingTour] = useState(null);
 
     const dropdownRef = useRef(null);
     const hoverTimeoutRef = useRef(null);
@@ -260,6 +259,37 @@ const DropDownHeader = ({ categories, activeCategory, onCategoryHover, onDropdow
         setCurrentSlide(0);
     }, [activeCategory]);
 
+    // Function để kiểm tra destination có tour hay không
+    const checkDestinationHasTours = async (destinationId) => {
+        try {
+            const response = await getToursByDestination(destinationId);
+            return response.data.success && response.data.data && response.data.data.length > 0;
+        } catch (error) {
+            console.error(`Error checking tours for destination ${destinationId}:`, error);
+            return false;
+        }
+    };
+
+    // Function để lọc destinations có tour (song song để tối ưu hiệu suất)
+    const filterDestinationsWithTours = async (destinationsData) => {
+        if (!destinationsData || !Array.isArray(destinationsData)) {
+            return [];
+        }
+
+        // Kiểm tra tất cả destinations song song
+        const tourCheckPromises = destinationsData.map(async (destination) => {
+            const hasTours = await checkDestinationHasTours(destination._id);
+            return { destination, hasTours };
+        });
+
+        const results = await Promise.all(tourCheckPromises);
+
+        // Chỉ trả về những destinations có tour
+        return results
+            .filter(result => result.hasTours)
+            .map(result => result.destination);
+    };
+
     // Fetch destinations data cho sidebar động
     const fetchDestinations = async (type) => {
         if (destinations[type] || destinationsLoading) {
@@ -270,9 +300,12 @@ const DropDownHeader = ({ categories, activeCategory, onCategoryHover, onDropdow
         try {
             const response = await getDestinations({ type });
             if (response.data.success && response.data.data) {
+                // Lọc chỉ những destinations có tour
+                const filteredData = await filterDestinationsWithTours(response.data.data);
+
                 setDestinations(prev => ({
                     ...prev,
-                    [type]: response.data.data
+                    [type]: filteredData
                 }));
             }
         } catch (error) {
@@ -401,20 +434,11 @@ const DropDownHeader = ({ categories, activeCategory, onCategoryHover, onDropdow
                 }
                 navigate(`/tour/${firstTour._id}`);
             } else {
-                // Không có tour - hiển thị thông báo nhỏ dưới destination
-                setNoTourMessage(prev => ({
-                    ...prev,
-                    [destination._id]: `Hiện tại chưa có tour nào đến ${destination.name}. Vui lòng liên hệ để được tư vấn thêm.`
-                }));
-
-                // Tự động ẩn thông báo sau 5 giây
-                setTimeout(() => {
-                    setNoTourMessage(prev => {
-                        const newState = { ...prev };
-                        delete newState[destination._id];
-                        return newState;
-                    });
-                }, 5000);
+                // Không có tour - điều hướng đến trang tìm kiếm tour
+                if (onCloseDropdown) {
+                    onCloseDropdown();
+                }
+                navigate(`/tours?destination=${destination._id}`);
             }
         } catch (error) {
             console.error('Error checking tours for destination:', error);
@@ -846,11 +870,6 @@ const DropDownHeader = ({ categories, activeCategory, onCategoryHover, onDropdow
                                                             {isChecking && (
                                                                 <div className="dropdown-header__destination-spinner"></div>
                                                             )}
-                                                            {noTourMessage[destination._id] && (
-                                                                <div className="dropdown-header__no-tour-message">
-                                                                    {noTourMessage[destination._id]}
-                                                                </div>
-                                                            )}
                                                         </div>
                                                     );
                                                 })}
@@ -1001,7 +1020,7 @@ const GroupList = React.memo(({ groups, activeGroup, onGroupHover, title }) => {
 });
 
 // Component hiển thị danh sách các điểm đến
-const DestinationList = React.memo(({ destinations, onDestinationClick, title, checkingTour, noTourMessages }) => {
+const DestinationList = React.memo(({ destinations, onDestinationClick, title, checkingTour }) => {
     if (!destinations || destinations.length === 0) {
         return (
             <div className="dropdown-header__no-tours">
@@ -1045,15 +1064,7 @@ const DestinationList = React.memo(({ destinations, onDestinationClick, title, c
                                 </span>
                             )}
 
-                            {/* Thông báo nhỏ khi không có tour */}
-                            {noTourMessages && noTourMessages[destination._id] && (
-                                <div className="dropdown-header__no-tour-message">
-                                    <div className="dropdown-header__no-tour-icon">ℹ️</div>
-                                    <span className="dropdown-header__no-tour-text">
-                                        {noTourMessages[destination._id]}
-                                    </span>
-                                </div>
-                            )}
+
                         </div>
                     );
                 })}

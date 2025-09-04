@@ -10,6 +10,7 @@ const transportationController = require('../controllers/transportationControlle
 const reviewController = require('../controllers/reviewController');
 const homeSectionController = require('../controllers/homeSectionController');
 const authMiddleware = require('../middleware/authMiddleware');
+const { verifyRecaptcha } = require('../middleware/recaptchaMiddleware');
 
 // Auth status endpoint
 router.get('/auth/status', (req, res) => {
@@ -274,8 +275,8 @@ router.get('/home-sections', async (req, res) => {
     }
 });
 
-// Public Order API - Tạo đơn hàng không cần đăng nhập
-router.post('/order/create', async (req, res) => {
+// Public Order API - Tạo đơn hàng không cần đăng nhập (có bảo vệ reCAPTCHA)
+router.post('/order/create', verifyRecaptcha, async (req, res) => {
     try {
         const orderController = require('../controllers/orderController');
         await orderController.createOrderPublic(req, res);
@@ -299,6 +300,36 @@ router.get('/order/lookup', async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Lỗi server khi tra cứu đơn hàng',
+            error: error.message
+        });
+    }
+});
+
+// Gửi OTP cho tra cứu đơn hàng
+router.post('/order/send-otp', async (req, res) => {
+    try {
+        const orderController = require('../controllers/orderController');
+        await orderController.sendOTPForOrderLookup(req, res);
+    } catch (error) {
+        console.error('Error in send OTP for order lookup API:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi server khi gửi mã OTP',
+            error: error.message
+        });
+    }
+});
+
+// Tra cứu đơn hàng với xác thực OTP
+router.post('/order/lookup-with-otp', async (req, res) => {
+    try {
+        const orderController = require('../controllers/orderController');
+        await orderController.lookupOrderWithOTP(req, res);
+    } catch (error) {
+        console.error('Error in order lookup with OTP API:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi server khi tra cứu đơn hàng với OTP',
             error: error.message
         });
     }

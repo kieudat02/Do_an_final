@@ -1476,15 +1476,36 @@ exports.getAllTours = async (req, res) => {
             ];
         }
 
-        // Filter theo destination ID (ưu tiên)
+        // Filter theo destination ID (ưu tiên) - hỗ trợ multiple destinations
         if (destinationId) {
             try {
-                // Kiểm tra destination ID có hợp lệ không
                 const mongoose = require('mongoose');
-                if (mongoose.Types.ObjectId.isValid(destinationId)) {
-                    const destination = await Destination.findById(destinationId);
-                    if (destination && destination.status === 'Hoạt động') {
-                        searchQuery.destination = destinationId;
+
+                // Kiểm tra nếu destinationId là chuỗi chứa nhiều ID phân tách bằng dấu phẩy
+                if (typeof destinationId === 'string' && destinationId.includes(',')) {
+                    const destinationIds = destinationId.split(',').map(id => id.trim()).filter(id => id);
+                    const validDestinationIds = [];
+
+                    // Kiểm tra từng destination ID
+                    for (const id of destinationIds) {
+                        if (mongoose.Types.ObjectId.isValid(id)) {
+                            const destination = await Destination.findById(id);
+                            if (destination && destination.status === 'Hoạt động') {
+                                validDestinationIds.push(id);
+                            }
+                        }
+                    }
+
+                    if (validDestinationIds.length > 0) {
+                        searchQuery.destination = { $in: validDestinationIds };
+                    }
+                } else {
+                    // Xử lý single destination ID như trước
+                    if (mongoose.Types.ObjectId.isValid(destinationId)) {
+                        const destination = await Destination.findById(destinationId);
+                        if (destination && destination.status === 'Hoạt động') {
+                            searchQuery.destination = destinationId;
+                        }
                     }
                 }
             } catch (error) {
@@ -2975,6 +2996,44 @@ exports.getToursBySlug = async (req, res) => {
         // Lọc theo departure
         if (req.query.departure) searchQuery.departure = req.query.departure;
 
+        // Lọc theo destination - hỗ trợ multiple destinations
+        if (req.query.destination) {
+            try {
+                const mongoose = require('mongoose');
+                const destinationId = req.query.destination;
+
+                // Kiểm tra nếu destinationId là chuỗi chứa nhiều ID phân tách bằng dấu phẩy
+                if (typeof destinationId === 'string' && destinationId.includes(',')) {
+                    const destinationIds = destinationId.split(',').map(id => id.trim()).filter(id => id);
+                    const validDestinationIds = [];
+
+                    // Kiểm tra từng destination ID
+                    for (const id of destinationIds) {
+                        if (mongoose.Types.ObjectId.isValid(id)) {
+                            const destination = await Destination.findById(id);
+                            if (destination && destination.status === 'Hoạt động') {
+                                validDestinationIds.push(id);
+                            }
+                        }
+                    }
+
+                    if (validDestinationIds.length > 0) {
+                        searchQuery.destination = { $in: validDestinationIds };
+                    }
+                } else {
+                    // Xử lý single destination ID như trước
+                    if (mongoose.Types.ObjectId.isValid(destinationId)) {
+                        const destination = await Destination.findById(destinationId);
+                        if (destination && destination.status === 'Hoạt động') {
+                            searchQuery.destination = destinationId;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error processing destination ID in getToursBySlug:', error);
+            }
+        }
+
         // Lọc theo price range
         if (req.query.minPrice || req.query.maxPrice) {
             searchQuery.price = {};
@@ -3007,6 +3066,13 @@ exports.getToursBySlug = async (req, res) => {
         // Kiểm tra query parameters cần aggregation
         if (req.query.sortBy === "DURATION_ASC" || req.query.sortBy === "DURATION_DESC" || req.query.duration) {
             needsAggregation = true;
+        }
+
+        // Kiểm tra destinationType filter - cần aggregation để join với destinations
+        if (req.query.destinationType) {
+            needsAggregation = true;
+            needsDestinationFilter = true;
+            destinationFilters.destinationType = req.query.destinationType;
         }
 
         // Sort mặc định
@@ -3112,6 +3178,12 @@ exports.getToursBySlug = async (req, res) => {
 
                 if (destinationFilters.region) {
                     destinationMatch['destinationInfo.region'] = { $regex: destinationFilters.region, $options: 'i' };
+                }
+
+                // Xử lý destinationType từ query parameter (cho seasonal tours)
+                if (destinationFilters.destinationType) {
+                    // Exact match cho destinationType vì giá trị trong DB là "Trong nước" và "Nước ngoài"
+                    destinationMatch['destinationInfo.type'] = destinationFilters.destinationType;
                 }
 
                 if (Object.keys(destinationMatch).length > 0) {
@@ -3245,6 +3317,12 @@ exports.getToursBySlug = async (req, res) => {
 
                 if (destinationFilters.region) {
                     destinationMatch['destinationInfo.region'] = { $regex: destinationFilters.region, $options: 'i' };
+                }
+
+                // Xử lý destinationType từ query parameter (cho seasonal tours) - count pipeline
+                if (destinationFilters.destinationType) {
+                    // Exact match cho destinationType vì giá trị trong DB là "Trong nước" và "Nước ngoài"
+                    destinationMatch['destinationInfo.type'] = destinationFilters.destinationType;
                 }
 
                 if (Object.keys(destinationMatch).length > 0) {

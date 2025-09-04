@@ -212,6 +212,20 @@
       color: #6c757d;
       margin-bottom: 25px;
       font-style: italic;
+
+      .security-note {
+        display: block;
+        margin-top: 8px;
+        color: #28a745;
+        font-weight: 500;
+        font-style: normal;
+        font-size: 13px;
+
+        i {
+          margin-right: 5px;
+          color: #28a745;
+        }
+      }
     }
 
     .btn-lookup {

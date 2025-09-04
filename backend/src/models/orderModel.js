@@ -56,13 +56,52 @@ const orderSchema = new mongoose.Schema({
     }],
     paymentMethod: {
         type: String,
-        enum: ['Tiền mặt', 'Mã QR'],
+        enum: ['Tiền mặt', 'MoMo', 'VNPay'],
         default: 'Tiền mặt'
     },
     paymentStatus: {
         type: String,
-        enum: ['pending', 'completed'],
+        enum: ['pending', 'completed', 'failed'],
         default: 'pending'
+    },
+    // Thông tin thanh toán MoMo
+    momoRequestId: {
+        type: String
+    },
+    momoTransId: {
+        type: String
+    },
+    momoResponseTime: {
+        type: String
+    },
+    momoFailureReason: {
+        type: String
+    },
+    // Thông tin thanh toán VNPay
+    vnpayTxnRef: {
+        type: String
+    },
+    vnpayTransactionNo: {
+        type: String
+    },
+    vnpayBankCode: {
+        type: String
+    },
+    vnpayPayDate: {
+        type: String
+    },
+    vnpayCreateDate: {
+        type: String
+    },
+    vnpayFailureReason: {
+        type: String
+    },
+    paidAt: {
+        type: Date
+    },
+    stockDeducted: {
+        type: Boolean,
+        default: false
     },
     notes: {
         type: String
@@ -104,26 +143,63 @@ orderSchema.pre('save', async function(next) {
         const year = now.getFullYear().toString().substr(-2);
         const month = (now.getMonth() + 1).toString().padStart(2, '0');
         const day = now.getDate().toString().padStart(2, '0');
-        const prefix = `ORD${year}${month}${day}`;
+        const prefix = `ND${year}${month}${day}`;
         
-        // Find the latest order with the same prefix
-        const latestOrder = await this.constructor.findOne(
-            { orderId: new RegExp('^' + prefix) },
-            {},
-            { sort: { orderId: -1 } }
-        );
+        let attempts = 0;
+        let orderId;
+        const maxAttempts = 10;
         
-        // Generate the sequential number
-        let sequentialNum = 1;
-        if (latestOrder && latestOrder.orderId) {
-            const latestSeq = parseInt(latestOrder.orderId.substring(9));
-            if (!isNaN(latestSeq)) {
-                sequentialNum = latestSeq + 1;
+        // Retry logic để tránh race condition
+        while (attempts < maxAttempts) {
+            try {
+                // Find the latest order with the same prefix
+                const latestOrder = await this.constructor.findOne(
+                    { orderId: new RegExp('^' + prefix) },
+                    {},
+                    { sort: { orderId: -1 } }
+                );
+                
+                // Generate the sequential number
+                let sequentialNum = 1;
+                if (latestOrder && latestOrder.orderId) {
+                    const latestSeq = parseInt(latestOrder.orderId.substring(8));
+                    if (!isNaN(latestSeq)) {
+                        sequentialNum = latestSeq + 1;
+                    }
+                }
+                
+                // Create short orderId 
+                const seqStr = sequentialNum.toString().padStart(3, '0');
+                orderId = `${prefix}${seqStr}`;
+                
+                // Kiểm tra xem orderId đã tồn tại chưa
+                const existingOrder = await this.constructor.findOne({ orderId });
+                if (!existingOrder) {
+                    this.orderId = orderId;
+                    break;
+                }
+                
+                attempts++;
+                // Delay ngắn trước khi retry
+                if (attempts < maxAttempts) {
+                    await new Promise(resolve => setTimeout(resolve, Math.random() * 10));
+                }
+            } catch (error) {
+                attempts++;
+                if (attempts >= maxAttempts) {
+                    const fallbackSeq = now.getTime().toString().slice(-3);
+                    const fallbackId = `${prefix}${fallbackSeq}`;
+                    this.orderId = fallbackId;
+                    break;
+                }
             }
         }
         
-        // Create the orderId
-        this.orderId = `${prefix}${sequentialNum.toString().padStart(4, '0')}`;
+        // Nếu vẫn không tạo được orderId, dùng fallback với timestamp
+        if (!this.orderId) {
+            const fallbackSeq = now.getTime().toString().slice(-3);
+            this.orderId = `${prefix}${fallbackSeq}`;
+        }
     }
     
     next();

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_ENDPOINTS } from '../../constants/ApiEndPoints';
+import OrderLookupOTP from '../../components/OrderLookupOTP/OrderLookupOTP';
 import './OrderLookup.scss';
 
 // Component form tra cứu đơn hàng
@@ -100,6 +101,11 @@ const OrderLookupForm = ({ onSubmit, loading }) => {
 
           <p className="form-note">
             * Vui lòng nhập ít nhất một trong hai: Email hoặc Số điện thoại
+            <br />
+            <span className="security-note">
+              <i className="fas fa-shield-alt"></i>
+              Nếu nhập email, bạn sẽ cần xác thực OTP để bảo mật thông tin
+            </span>
           </p>
 
           <button
@@ -329,15 +335,24 @@ const OrderLookup = () => {
   const [loading, setLoading] = useState(false);
   const [order, setOrder] = useState(null);
   const [error, setError] = useState('');
+  const [showOTPVerification, setShowOTPVerification] = useState(false);
+  const [lookupData, setLookupData] = useState(null);
 
   const handleLookup = async (formData) => {
+    // Nếu có email, yêu cầu xác thực OTP
+    if (formData.email && formData.email.trim()) {
+      setLookupData(formData);
+      setShowOTPVerification(true);
+      return;
+    }
+
+    // Nếu không có email, sử dụng phương thức cũ (chỉ với phone)
     setLoading(true);
     setError('');
 
     try {
       const cleanedData = {
         orderId: formData.orderId.trim(),
-        email: formData.email ? formData.email.trim() : '',
         phone: formData.phone ? formData.phone.trim() : ''
       };
 
@@ -345,8 +360,8 @@ const OrderLookup = () => {
       const queryParams = new URLSearchParams();
       queryParams.append('orderId', cleanedData.orderId);
       
-      if (cleanedData.email) {
-        queryParams.append('email', cleanedData.email);
+      if (cleanedData.phone) {
+        queryParams.append('phone', cleanedData.phone);
       }
       if (cleanedData.phone) {
         queryParams.append('phone', cleanedData.phone);
@@ -374,10 +389,38 @@ const OrderLookup = () => {
     }
   };
 
+  // Xử lý khi OTP được xác minh thành công
+  const handleOTPSuccess = (orderData) => {
+    setOrder(orderData);
+    setShowOTPVerification(false);
+    setLookupData(null);
+  };
+
+  // Xử lý quay lại từ OTP verification
+  const handleBackFromOTP = () => {
+    setShowOTPVerification(false);
+    setLookupData(null);
+    setError('');
+  };
+
   const handleBackToSearch = () => {
     setOrder(null);
     setError('');
+    setShowOTPVerification(false);
+    setLookupData(null);
   };
+
+  // Hiển thị OTP verification
+  if (showOTPVerification && lookupData) {
+    return (
+      <OrderLookupOTP
+        orderId={lookupData.orderId}
+        email={lookupData.email}
+        onSuccess={handleOTPSuccess}
+        onBack={handleBackFromOTP}
+      />
+    );
+  }
 
   return (
     <div className="order-lookup-page">

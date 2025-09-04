@@ -8,17 +8,15 @@ const createOrders = async () => {
   try {
     // Delete existing orders
     await Order.deleteMany({});
-    console.log('Existing orders deleted');
 
     // Get some tour IDs to reference in orders
     const tours = await Tour.find().limit(3);
     if (tours.length === 0) {
-      console.log('No tours found. Please run tour seeder first.');
       process.exit(1);
     }
 
     // Sample payment methods (phải khớp với enum trong model)
-    const paymentMethods = ['Tiền mặt', 'VNPay', 'Visa', 'Momo', 'ZaloPay'];
+    const paymentMethods = ['Tiền mặt', 'MoMo'];
     
     // Sample order statuses
     const orderStatuses = ['pending', 'confirmed', 'cancelled'];
@@ -148,14 +146,10 @@ const createOrders = async () => {
       }
     ];
 
-    // Insert orders one by one to trigger the pre-save middleware for orderId generation
-    console.log('Creating orders...');
     for (const orderItem of orderData) {
       const order = new Order(orderItem);
       await order.save();
     }
-    
-    console.log('5 sample orders created successfully');
 
     // Disconnect from database only if this file is run directly
     if (require.main === module) {
@@ -186,12 +180,10 @@ if (require.main === module) {
   mongoose
     .connect(process.env.DB_HOST, options)
     .then(() => {
-      console.log("✅ Đã kết nối database");
       return createOrders();
     })
     .then(() => {
       mongoose.disconnect();
-      console.log("🔌 Đã ngắt kết nối database");
     })
     .catch((error) => {
       console.error("❌ Lỗi:", error);
