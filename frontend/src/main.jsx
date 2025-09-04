@@ -1,4 +1,4 @@
-import { StrictMode } from "react";
+import { StrictMode, lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.jsx";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
@@ -12,9 +12,13 @@ import "./styles/main.scss";
 import TourList from "./components/tour/TourList/TourList.jsx";
 import TourDetail from "./pages/TourDetail/TourDetail.jsx";
 import Success from "./pages/Success/Success.jsx";
+import Payment from "./pages/Payment/Payment.jsx";
 import OrderLookup from "./pages/OrderLookup/OrderLookup.jsx";
 import Tours from "./pages/Tours/Tour.jsx";
 import ReviewForm from "./pages/Review/ReviewForm.jsx";
+
+// Lazy load VNPayReturn component
+const VNPayReturn = lazy(() => import("./pages/Payment/VNPayReturn.jsx"));
 
 
 const router = createBrowserRouter([
@@ -41,6 +45,22 @@ const router = createBrowserRouter([
       {
         path: "/success",
         element: <Success />,
+      },
+      {
+        path: "/payment/success",
+        element: <Payment />,
+      },
+      {
+        path: "/payment/success/:orderId",
+        element: <Payment />,
+      },
+      {
+        path: "/payment/vnpay-return",
+        element: (
+          <Suspense fallback={<div>Đang tải...</div>}>
+            <VNPayReturn />
+          </Suspense>
+        ),
       },
       {
         path: "/tours",

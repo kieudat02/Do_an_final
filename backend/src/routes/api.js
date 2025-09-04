@@ -77,6 +77,10 @@ router.put('/user/profile', (req, res) => {
 router.post('/order/create', jwtAuthMiddleware.authenticateJwt, orderController.createOrder);
 router.get('/user/orders', jwtAuthMiddleware.authenticateJwt, orderController.getUserOrders);
 
+// MoMo payment routes
+const momoRoute = require('./momoRoute');
+router.use('/momo', momoRoute);
+
 // Cấu hình Cloudinary Storage cho avatar
 const avatarStorage = new CloudinaryStorage({
     cloudinary: cloudinary,

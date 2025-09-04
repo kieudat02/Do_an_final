@@ -68,7 +68,7 @@ const ThankYouBlock = ({ orderInfo, countdown, onBackToHome }) => {
                   </span>
                 </div>
               )}
-              {/* {orderInfo.status && (
+              {orderInfo.status && (
                 <div className="order-detail-item">
                   <span className="detail-label">Trạng thái:</span>
                   <span className={`detail-value status-${orderInfo.status}`}>
@@ -77,7 +77,7 @@ const ThankYouBlock = ({ orderInfo, countdown, onBackToHome }) => {
                      orderInfo.status === 'cancelled' ? 'Đã hủy' : orderInfo.status}
                   </span>
                 </div>
-              )} */}
+              )}
               {orderInfo.createdAt && (
                 <div className="order-detail-item">
                   <span className="detail-label">Thời gian đặt:</span>

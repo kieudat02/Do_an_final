@@ -4,6 +4,8 @@ import vi from 'date-fns/locale/vi';
 import 'react-datepicker/dist/react-datepicker.css';
 import './TourBookingForm.scss';
 import { API_ENDPOINTS } from '../../../constants/ApiEndPoints';
+import ReCaptchaComponent from '../../common/ReCaptcha/ReCaptcha';
+import { useRecaptcha } from '../../../hooks/useRecaptcha';
 
 // Đăng ký locale Việt Nam
 registerLocale('vi', vi);
@@ -65,6 +67,9 @@ const TourBookingForm = ({ tour, isOpen, onClose, onSubmit }) => {
   const [errors, setErrors] = useState({});
   const [currentPricing, setCurrentPricing] = useState(null);
   const [isLoadingPrice, setIsLoadingPrice] = useState(false);
+
+  // reCAPTCHA hook
+  const { recaptchaRef, executeRecaptcha, resetRecaptcha } = useRecaptcha();
 
   // Function để gọi API lấy giá theo ngày (memoized)
   const fetchPricingByDate = useCallback(async (date) => {
@@ -232,8 +237,8 @@ const TourBookingForm = ({ tour, isOpen, onClose, onSubmit }) => {
       newErrors.startDate = 'Ngày khởi hành đã chọn không có trong lịch trình tour hoặc đã hết chỗ';
     }
 
-    if (formData.adults < 2) {
-      newErrors.participants = 'Phải có ít nhất 2 người lớn tham gia';
+    if (formData.adults < 1) {
+      newErrors.participants = 'Phải có ít nhất 1 người lớn tham gia';
     }
 
     if (!formData.customerName.trim()) {
@@ -267,6 +272,17 @@ const TourBookingForm = ({ tour, isOpen, onClose, onSubmit }) => {
     setIsSubmitting(true);
 
     try {
+      // Thực thi reCAPTCHA trước khi gửi form
+      let recaptchaToken = null;
+      try {
+        recaptchaToken = await executeRecaptcha();
+      } catch (recaptchaError) {
+        console.error('reCAPTCHA error:', recaptchaError);
+        setErrors({ recaptcha: recaptchaError.message || 'Xác minh reCAPTCHA thất bại. Vui lòng thử lại.' });
+        resetRecaptcha();
+        return;
+      }
+
       const orderData = {
         customer: formData.customerName,
         email: formData.email,
@@ -287,11 +303,21 @@ const TourBookingForm = ({ tour, isOpen, onClose, onSubmit }) => {
         }]
       };
 
-      await onSubmit(orderData);
+      // Gửi orderData cùng với recaptcha token
+      await onSubmit(orderData, recaptchaToken);
       // onClose() - Let parent component handle closing and navigation
     } catch (error) {
       console.error('Error submitting booking:', error);
-      setErrors({ submit: 'Có lỗi xảy ra khi đặt tour. Vui lòng thử lại.' });
+      
+      // Kiểm tra nếu lỗi là do reCAPTCHA
+      if (error?.response?.data?.validationErrors?.recaptcha) {
+        setErrors({ recaptcha: error.response.data.validationErrors.recaptcha });
+      } else {
+        setErrors({ submit: 'Có lỗi xảy ra khi đặt tour. Vui lòng thử lại.' });
+      }
+      
+      // Reset reCAPTCHA để user có thể thử lại
+      resetRecaptcha();
     } finally {
       setIsSubmitting(false);
     }
@@ -349,8 +375,8 @@ const TourBookingForm = ({ tour, isOpen, onClose, onSubmit }) => {
                 <div className="quantity-control">
                   <button
                     type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, adults: Math.max(2, prev.adults - 1) }))}
-                    disabled={formData.adults <= 2}
+                    onClick={() => setFormData(prev => ({ ...prev, adults: Math.max(1, prev.adults - 1) }))}
+                    disabled={formData.adults <= 1}
                   >
                     -
                   </button>
@@ -359,7 +385,7 @@ const TourBookingForm = ({ tour, isOpen, onClose, onSubmit }) => {
                     name="adults"
                     value={formData.adults}
                     onChange={handleInputChange}
-                    min="2"
+                    min="1"
                     readOnly
                   />
                   <button
@@ -454,7 +480,8 @@ const TourBookingForm = ({ tour, isOpen, onClose, onSubmit }) => {
                   className="payment-select"
                 >
                   <option value="Tiền mặt">Tiền mặt</option>
-                  <option value="Mã QR">Mã QR</option>
+                  <option value="Ví điện tử MoMo">Ví điện tử MoMo</option>
+                  <option value="Ví điện tử VNPay">Ví điện tử VNPay</option>
                 </select>
               </div>
             </div>
@@ -509,7 +536,11 @@ const TourBookingForm = ({ tour, isOpen, onClose, onSubmit }) => {
               </div>
             </div>
 
+            {errors.recaptcha && <div className="error-text">{errors.recaptcha}</div>}
             {errors.submit && <div className="error-text">{errors.submit}</div>}
+
+            {/* reCAPTCHA Component - Invisible */}
+            <ReCaptchaComponent recaptchaRef={recaptchaRef} />
 
             {/* Submit Button */}
             <button

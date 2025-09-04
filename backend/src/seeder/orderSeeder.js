@@ -18,7 +18,7 @@ const createOrders = async () => {
     }
 
     // Sample payment methods (phải khớp với enum trong model)
-    const paymentMethods = ['Tiền mặt', 'VNPay', 'Visa', 'Momo', 'ZaloPay'];
+    const paymentMethods = ['Tiền mặt', 'MoMo'];
     
     // Sample order statuses
     const orderStatuses = ['pending', 'confirmed', 'cancelled'];

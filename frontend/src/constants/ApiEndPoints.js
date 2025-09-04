@@ -41,8 +41,19 @@ export const API_ENDPOINTS = {
   ORDER_CREATE: "/api/public/order/create",
   // Tra cứu đơn hàng
   ORDER_LOOKUP: "/api/public/order/lookup",
+  // Gửi OTP cho tra cứu đơn hàng
+  ORDER_SEND_OTP: "/api/public/order/send-otp",
+  // Tra cứu đơn hàng với OTP
+  ORDER_LOOKUP_WITH_OTP: "/api/public/order/lookup-with-otp",
   // Lấy danh sách đơn hàng của người dùng
   USER_ORDERS: "/api/user/orders",
+  // MoMo payment endpoints
+  MOMO_CREATE_PAYMENT: "/api/momo/create-payment",
+  MOMO_CHECK_STATUS: "/api/momo/status",
+  // VNPay payment endpoints
+  VNPAY_CREATE_PAYMENT: "/api/momo/vnpay/create-payment",
+  VNPAY_RETURN: "/api/momo/vnpay/return",
+  VNPAY_CHECK_STATUS: "/api/momo/vnpay/status",
   // Review endpoints (public, token-based)
   REVIEW_CHECK_LINK: "/api/review/check-link",
   REVIEW_SUBMIT: "/api/review/submit",

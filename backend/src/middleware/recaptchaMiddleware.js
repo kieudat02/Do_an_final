@@ -55,7 +55,7 @@ exports.verifyRecaptcha = async (req, res, next) => {
         // Check verification result
         const { success, score } = response.data;
 
-        // For reCAPTCHA v3, check score (0.0 to 1.0, 1.0 being very likely a human)
+        // For reCAPTCHA v2, score is undefined and we only check success
         if (success && (score === undefined || score >= 0.5)) {
             return next();
         }

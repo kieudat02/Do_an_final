@@ -132,30 +132,133 @@ const TourDetail = ({ tourData, isLoading = false, isError = false, error = null
     setBookingResult(null);
   };
 
-  const handleBookingSubmit = async (orderData) => {
+  const handleBookingSubmit = async (orderData, recaptchaToken) => {
     try {
-
-      const result = await createOrder(orderData);
+      const result = await createOrder(orderData, recaptchaToken);
 
       // Close modal immediately
       setIsBookingModalOpen(false);
       setBookingResult(null);
 
-      // Navigate to success page with order information
-      navigate('/thank-you', {
-        state: {
-          orderInfo: {
-            orderId: result.order?.orderId || 'N/A',
-            customer: result.order?.customer || orderData.customer,
-            email: result.order?.email || orderData.email,
-            phone: result.order?.phone || orderData.phone,
-            totalAmount: result.order?.totalAmount,
-            status: result.order?.status,
-            createdAt: result.order?.createdAt
+      // Kiểm tra phương thức thanh toán
+      if (orderData.paymentMethod === 'Ví điện tử MoMo') {
+        // Xử lý thanh toán MoMo - chuyển hướng trực tiếp
+        const { createMoMoPayment } = await import('../../../services/OrderService');
+        
+        let retryCount = 0;
+        const maxRetries = 2;
+        
+        while (retryCount <= maxRetries) {
+          try {
+            const paymentData = {
+              orderId: result.order.orderId,
+              amount: result.order.totalAmount,
+              orderInfo: `Thanh toán tour du lịch - ${result.order.orderId}`
+            };
+
+            const paymentResult = await createMoMoPayment(paymentData);
+            
+            if (paymentResult.success) {
+              // Chuyển hướng trực tiếp đến trang thanh toán MoMo
+              window.location.href = paymentResult.data.payUrl;
+              return; // Dừng thực thi để chuyển hướng
+            } else {
+              // Kiểm tra nếu là lỗi orderId trùng và còn retry
+              if (paymentResult.resultCode === 41 && retryCount < maxRetries) {
+                retryCount++;
+                // Đợi một chút trước khi retry
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                continue;
+              }
+              
+              throw new Error(paymentResult.message || 'Không thể tạo thanh toán MoMo');
+            }
+          } catch (paymentError) {
+            
+            if (retryCount < maxRetries) {
+              retryCount++;
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              continue;
+            }
+            
+            // Đã hết retry, chuyển đến trang thành công với thông báo lỗi
+            navigate('/thank-you', {
+              state: {
+                orderInfo: {
+                  orderId: result.order?.orderId || 'N/A',
+                  customer: result.order?.customer || orderData.customer,
+                  email: result.order?.email || orderData.email,
+                  phone: result.order?.phone || orderData.phone,
+                  totalAmount: result.order?.totalAmount,
+                  status: result.order?.status,
+                  createdAt: result.order?.createdAt,
+                  paymentError: 'Có lỗi xảy ra với thanh toán MoMo sau nhiều lần thử. Vui lòng liên hệ hỗ trợ hoặc thử lại sau.'
+                }
+              },
+              replace: true
+            });
+            return;
           }
-        },
-        replace: true
-      });
+        }
+      } else if (orderData.paymentMethod === 'Ví điện tử VNPay') {
+        // Xử lý thanh toán VNPay - chuyển hướng trực tiếp
+        const { createVNPayPayment } = await import('../../../services/OrderService');
+        
+        try {
+          const paymentData = {
+            orderId: result.order.orderId,
+            amount: result.order.totalAmount,
+            orderInfo: `Thanh toán tour du lịch - ${result.order.orderId}`,
+            bankCode: '' // Để trống sẽ hiển thị trang chọn phương thức thanh toán VNPay
+          };
+
+          const paymentResult = await createVNPayPayment(paymentData);
+          
+          if (paymentResult.success && paymentResult.data.paymentUrl) {
+            // Chuyển hướng trực tiếp đến trang thanh toán VNPay
+            window.location.href = paymentResult.data.paymentUrl;
+            return; // Dừng thực thi để chuyển hướng
+          } else {
+            throw new Error(paymentResult.message || 'Không thể tạo thanh toán VNPay');
+          }
+        } catch (paymentError) {
+          console.error('❌ Lỗi thanh toán VNPay:', paymentError);
+          
+          // Chuyển đến trang thành công với thông báo lỗi VNPay
+          navigate('/thank-you', {
+            state: {
+              orderInfo: {
+                orderId: result.order?.orderId || 'N/A',
+                customer: result.order?.customer || orderData.customer,
+                email: result.order?.email || orderData.email,
+                phone: result.order?.phone || orderData.phone,
+                totalAmount: result.order?.totalAmount,
+                status: result.order?.status,
+                createdAt: result.order?.createdAt,
+                paymentError: 'Có lỗi xảy ra với thanh toán VNPay. Vui lòng liên hệ hỗ trợ hoặc thử lại sau.'
+              }
+            },
+            replace: true
+          });
+          return;
+        }
+      } else {
+        // Các phương thức thanh toán khác
+        navigate('/thank-you', {
+          state: {
+            orderInfo: {
+              orderId: result.order?.orderId || 'N/A',
+              customer: result.order?.customer || orderData.customer,
+              email: result.order?.email || orderData.email,
+              phone: result.order?.phone || orderData.phone,
+              totalAmount: result.order?.totalAmount,
+              status: result.order?.status,
+              createdAt: result.order?.createdAt
+            }
+          },
+          replace: true
+        });
+      }
 
     } catch (error) {
       console.error('Error creating order:', error);
@@ -1110,6 +1213,7 @@ const TourDetail = ({ tourData, isLoading = false, isError = false, error = null
           </div>
         </div>
       )}
+
           {/* Suggested Tours */}
           {suggestedTours && suggestedTours.length > 0 && (
             <SuggestedTours

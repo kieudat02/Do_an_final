@@ -6,6 +6,19 @@ const { isPhoneVerified } = require('../controllers/otpController');
 const { validatePhoneNumber } = require('../utils/otpUtil');
 const bookingNotificationService = require('../services/bookingNotificationService');
 const ReviewTokenService = require('../services/reviewTokenService');
+const { deductStock, restoreStock, validateStock } = require('../utils/stockManager');
+
+// Helper function để chuyển đổi paymentMethod từ frontend sang model
+const normalizePaymentMethod = (paymentMethod) => {
+    switch (paymentMethod) {
+        case 'Ví điện tử VNPay':
+            return 'VNPay';
+        case 'Ví điện tử MoMo':
+            return 'MoMo';
+        default:
+            return paymentMethod;
+    }
+};
 
 // Xem danh sách đơn hàng
 exports.getOrdersPage = async (req, res) => {
@@ -369,6 +382,9 @@ exports.createOrder = async (req, res) => {
             }
         }
 
+        // Chuyển đổi paymentMethod từ frontend sang giá trị được chấp nhận bởi model
+        const normalizedPaymentMethod = normalizePaymentMethod(paymentMethod);
+
         // Tạo đơn hàng mới với tổng tiền đã tính
         const order = new Order({
             customer,
@@ -377,10 +393,20 @@ exports.createOrder = async (req, res) => {
             address: notes || 'Địa chỉ sẽ được cập nhật sau', // Use notes as address or default
             totalAmount: computedTotal,
             items: computedItems,
-            paymentMethod,
+            paymentMethod: normalizedPaymentMethod,
             notes,
             createdBy: req.user ? req.user.fullName || req.user.email : 'System'
         });
+
+        // Kiểm tra stock một lần nữa trước khi lưu (để tránh race condition)
+        const stockValidation = await validateStock(computedItems);
+        if (!stockValidation.isValid) {
+            return res.status(400).json({
+                success: false,
+                message: 'Stock không đủ để tạo đơn hàng',
+                errors: stockValidation.errors
+            });
+        }
         
         // Lưu đơn hàng
         await order.save();
@@ -581,18 +607,31 @@ exports.createOrderPublic = async (req, res) => {
             }
         }
 
+        // Chuyển đổi paymentMethod từ frontend sang giá trị được chấp nhận bởi model
+        const normalizedPaymentMethod = normalizePaymentMethod(paymentMethod);
+
         // Tạo đơn hàng mới với tổng tiền đã tính
         const order = new Order({
             customer,
             email,
             phone,
-            address: notes || 'Địa chỉ sẽ được cập nhật sau', // Use notes as address or default
+            address: notes || 'Địa chỉ sẽ được cập nhật sau', 
             totalAmount: computedTotal,
             items: computedItems,
-            paymentMethod,
+            paymentMethod: normalizedPaymentMethod,
             notes,
-            createdBy: 'Public Order' // Đánh dấu đây là đơn hàng công khai
+            createdBy: 'Public Order' 
         });
+
+        // Kiểm tra stock một lần nữa trước khi lưu (để tránh race condition)
+        const stockValidation = await validateStock(computedItems);
+        if (!stockValidation.isValid) {
+            return res.status(400).json({
+                success: false,
+                message: 'Stock không đủ để tạo đơn hàng',
+                errors: stockValidation.errors
+            });
+        }
 
         // Lưu đơn hàng
         await order.save();
@@ -656,6 +695,7 @@ exports.updateOrderStatus = async (req, res) => {
 
         // Lưu trạng thái cũ để so sánh
         const oldStatus = order.status;
+        const oldPaymentStatus = order.paymentStatus;
 
         // Cập nhật trạng thái
         if (status) order.status = status;
@@ -664,6 +704,33 @@ exports.updateOrderStatus = async (req, res) => {
 
         // Lưu đơn hàng đã cập nhật
         await order.save();
+
+        // Trừ stock chỉ khi thanh toán thành công (chỉ trừ 1 lần)
+        const shouldDeductStock = (
+            paymentStatus === 'completed' && oldPaymentStatus !== 'completed'
+        ) && !order.stockDeducted; // Chỉ trừ nếu chưa từng trừ
+
+        // Cộng lại stock khi hủy đơn (nếu đã trừ stock trước đó)
+        const shouldRestoreStock = (
+            status === 'cancelled' && oldStatus !== 'cancelled' &&
+            order.stockDeducted // Chỉ cộng lại nếu đã trừ trước đó
+        );
+
+        if (shouldDeductStock) {
+            const stockResult = await deductStock(order.items, 'manual status update');
+            if (stockResult) {
+                // Đánh dấu đã trừ stock
+                order.stockDeducted = true;
+                await order.save();
+            }
+        } else if (shouldRestoreStock) {
+            const stockResult = await restoreStock(order.items, 'status cancelled');
+            if (stockResult) {
+                // Đánh dấu chưa trừ stock
+                order.stockDeducted = false;
+                await order.save();
+            }
+        }
 
         // Xử lý logic đặc biệt khi status thay đổi
         if (status && status !== oldStatus) {
@@ -686,7 +753,6 @@ exports.updateOrderStatus = async (req, res) => {
                             // Gửi email với review link
                             emailResult = await bookingNotificationService.sendReviewInvitationEmail(order, reviewUrl);
 
-                            console.log(`✅ Đã tạo review token và gửi email cho order ${order.orderId}`);
                         } catch (reviewError) {
                             console.error(`❌ Lỗi tạo review token cho order ${order.orderId}:`, reviewError.message);
                             // Không throw error để không làm fail toàn bộ request
@@ -746,12 +812,25 @@ exports.cancelOrder = async (req, res) => {
             });
         }
 
+        // Kiểm tra xem đã trừ stock chưa (nếu đã confirmed hoặc paid)
+        const wasStockDeducted = order.stockDeducted;
+
         // Cập nhật trạng thái thành cancelled
         order.status = 'cancelled';
         order.updatedBy = req.user ? req.user.fullName || req.user.email : 'System';
 
         // Lưu đơn hàng đã cập nhật
         await order.save();
+
+        // Cộng lại stock nếu đã bị trừ trước đó
+        if (wasStockDeducted && order.items && order.items.length > 0) {
+            const stockResult = await restoreStock(order.items, 'order cancelled');
+            if (stockResult) {
+                // Đánh dấu chưa trừ stock
+                order.stockDeducted = false;
+                await order.save();
+            }
+        }
 
         // Gửi email thông báo hủy đơn
         try {
@@ -816,7 +895,194 @@ exports.deleteOrder = async (req, res) => {
     }
 };
 
-// Tra cứu đơn hàng
+// Tra cứu đơn hàng với xác thực OTP
+exports.lookupOrderWithOTP = async (req, res) => {
+    try {
+        const { orderId, email, phone, otpCode } = req.body;
+
+        // Kiểm tra tham số đầu vào
+        if (!orderId || !email || !otpCode) {
+            return res.status(400).json({
+                success: false,
+                message: 'Vui lòng cung cấp đầy đủ mã đơn hàng, email và mã OTP',
+                validationErrors: {
+                    orderId: !orderId ? 'Mã đơn hàng không được để trống' : null,
+                    email: !email ? 'Email không được để trống' : null,
+                    otpCode: !otpCode ? 'Mã OTP không được để trống' : null
+                }
+            });
+        }
+
+        // Import VerifiedEmail model để kiểm tra OTP
+        const VerifiedEmail = require('../models/verifiedEmailModel');
+        const EmailOtp = require('../models/emailOtpModel');
+        
+        const normalizedEmail = email.toLowerCase();
+
+        // Kiểm tra OTP trước khi tra cứu đơn hàng
+        const otp = await EmailOtp.findOne({
+            email: normalizedEmail,
+            code: otpCode,
+            isUsed: false,
+            createdAt: { $gte: new Date(Date.now() - 15 * 60 * 1000) } // OTP có hiệu lực 15 phút
+        }).sort({ createdAt: -1 });
+
+        if (!otp) {
+            return res.status(400).json({
+                success: false,
+                message: 'Mã OTP không chính xác hoặc đã hết hạn',
+                validationErrors: {
+                    otpCode: 'Mã OTP không chính xác hoặc đã hết hạn'
+                }
+            });
+        }
+
+        // Đánh dấu OTP đã được sử dụng
+        otp.isUsed = true;
+        await otp.save();
+
+        // Tạo hoặc cập nhật trạng thái email đã xác minh
+        await VerifiedEmail.findOneAndUpdate(
+            { email: normalizedEmail },
+            {
+                email: normalizedEmail,
+                verifiedAt: new Date(),
+                expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 ngày
+            },
+            { upsert: true, new: true }
+        );
+
+        // Xây dựng query tìm kiếm đơn hàng
+        let searchQuery = { orderId: orderId, email: normalizedEmail };
+
+        // Tìm đơn hàng
+        const order = await Order.findOne(searchQuery);
+
+        if (!order) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy đơn hàng với thông tin đã cung cấp'
+            });
+        }
+
+        // Lấy thông tin tour nếu có
+        let tourInfo = null;
+        if (order.items && order.items.length > 0 && order.items[0].tourId) {
+            tourInfo = await Tour.findById(order.items[0].tourId).select('title code images');
+        }
+
+        // Trả về thông tin đơn hàng
+        const orderResponse = {
+            orderId: order.orderId,
+            customer: order.customer,
+            email: order.email,
+            phone: order.phone,
+            status: order.status,
+            totalAmount: order.totalAmount,
+            items: order.items,
+            paymentMethod: order.paymentMethod,
+            paymentStatus: order.paymentStatus,
+            notes: order.notes,
+            createdAt: order.createdAt,
+            updatedAt: order.updatedAt,
+            tourInfo: tourInfo
+        };
+
+        res.status(200).json({
+            success: true,
+            order: orderResponse
+        });
+
+    } catch (error) {
+        console.error('Error in lookupOrderWithOTP:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Có lỗi xảy ra khi tra cứu đơn hàng',
+            error: error.message
+        });
+    }
+};
+
+// Gửi OTP cho tra cứu đơn hàng
+exports.sendOTPForOrderLookup = async (req, res) => {
+    try {
+        const { orderId, email } = req.body;
+
+        // Kiểm tra tham số đầu vào
+        if (!orderId || !email) {
+            return res.status(400).json({
+                success: false,
+                message: 'Vui lòng cung cấp mã đơn hàng và email',
+                validationErrors: {
+                    orderId: !orderId ? 'Mã đơn hàng không được để trống' : null,
+                    email: !email ? 'Email không được để trống' : null
+                }
+            });
+        }
+
+        // Validate email format
+        const { validateEmail } = require('../utils/emailUtils');
+        if (!validateEmail(email)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Địa chỉ email không hợp lệ',
+                validationErrors: {
+                    email: 'Địa chỉ email không đúng định dạng'
+                }
+            });
+        }
+
+        const normalizedEmail = email.toLowerCase();
+
+        // Kiểm tra xem đơn hàng có tồn tại với email này không
+        const order = await Order.findOne({ 
+            orderId: orderId, 
+            email: normalizedEmail 
+        });
+
+        if (!order) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy đơn hàng với thông tin đã cung cấp',
+                validationErrors: {
+                    orderId: 'Mã đơn hàng không tồn tại hoặc không khớp với email'
+                }
+            });
+        }
+
+        // Gửi OTP qua email
+        const emailOtpController = require('./emailOtpController');
+        const mockReq = {
+            body: { email: normalizedEmail }
+        };
+        const mockRes = {
+            status: (code) => ({
+                json: (data) => {
+                    if (data.success) {
+                        return res.status(200).json({
+                            success: true,
+                            message: 'Mã OTP đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư.',
+                            orderId: orderId
+                        });
+                    } else {
+                        return res.status(code).json(data);
+                    }
+                }
+            })
+        };
+
+        await emailOtpController.sendOTP(mockReq, mockRes);
+
+    } catch (error) {
+        console.error('Error in sendOTPForOrderLookup:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Có lỗi xảy ra khi gửi mã OTP'
+        });
+    }
+};
+
+// Tra cứu đơn hàng (phương thức cũ - không có OTP)
 exports.lookupOrderPublic = async (req, res) => {
     try {
         const { orderId, email, phone } = req.query;
