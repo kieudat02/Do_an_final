@@ -4,6 +4,7 @@ const Order = require('../models/orderModel');
 const { deductStock } = require('../utils/stockManager');
 const moment = require('moment');
 const qs = require('qs');
+const paymentEmailService = require('../services/paymentEmailService');
 
 // Cấu hình MoMo 
 const MOMO_CONFIG = {
@@ -329,19 +330,37 @@ exports.handleMoMoCallback = async (req, res) => {
                     );
                 }
             }
+
+            // Gửi email thanh toán thành công
+            try {
+                await paymentEmailService.sendOnlinePaymentSuccess(updatedOrder);
+                console.log(`✅ Đã gửi email thanh toán thành công cho đơn ${orderId}`);
+            } catch (emailError) {
+                console.error(`❌ Lỗi gửi email thanh toán thành công cho đơn ${orderId}:`, emailError.message);
+            }
             
         } else {
             // Thanh toán thất bại
-            await Order.findOneAndUpdate(
+            const failedOrder = await Order.findOneAndUpdate(
                 { orderId: orderId },
-                { 
+                {
                     paymentStatus: 'failed',
                     momoTransId: transId,
                     momoResponseTime: responseTime,
                     momoFailureReason: message,
                     updatedBy: 'MoMo System'
-                }
+                },
+                { new: true }
             );
+
+            // Gửi email thanh toán thất bại với link thanh toán lại
+            try {
+                const retryPaymentUrl = `${process.env.FRONTEND_URL}/payment/retry/${orderId}`;
+                await paymentEmailService.sendOnlinePaymentFailed(failedOrder, message, retryPaymentUrl);
+                console.log(`✅ Đã gửi email thanh toán thất bại cho đơn ${orderId}`);
+            } catch (emailError) {
+                console.error(`❌ Lỗi gửi email thanh toán thất bại cho đơn ${orderId}:`, emailError.message);
+            }
         }
 
         // Trả về response cho MoMo
@@ -656,6 +675,14 @@ exports.handleVNPayReturn = async (req, res) => {
                     }
                 }
 
+                // Gửi email thanh toán thành công
+                try {
+                    await paymentEmailService.sendOnlinePaymentSuccess(updatedOrder);
+                    console.log(`✅ Đã gửi email thanh toán VNPay thành công cho đơn ${orderId}`);
+                } catch (emailError) {
+                    console.error(`❌ Lỗi gửi email thanh toán VNPay thành công cho đơn ${orderId}:`, emailError.message);
+                }
+
                 return res.status(200).json({
                     success: true,
                     message: 'Xử lý VNPay return thành công - Thanh toán thành công',
@@ -671,16 +698,27 @@ exports.handleVNPayReturn = async (req, res) => {
                 
             } else {
                 // Thanh toán thất bại
-                await Order.findOneAndUpdate(
+                const failedOrder = await Order.findOneAndUpdate(
                     { orderId: orderId },
-                    { 
+                    {
                         paymentStatus: 'failed',
                         vnpayTransactionNo: vnpParams['vnp_TransactionNo'],
                         vnpayBankCode: vnpParams['vnp_BankCode'],
                         vnpayFailureReason: `Mã lỗi VNPay: ${responseCode}`,
                         updatedBy: 'VNPay Return System'
-                    }
+                    },
+                    { new: true }
                 );
+
+                // Gửi email thanh toán thất bại với link thanh toán lại
+                try {
+                    const retryPaymentUrl = `${process.env.FRONTEND_URL}/payment/retry/${orderId}`;
+                    const failureReason = `Mã lỗi VNPay: ${responseCode}`;
+                    await paymentEmailService.sendOnlinePaymentFailed(failedOrder, failureReason, retryPaymentUrl);
+                    console.log(`✅ Đã gửi email thanh toán VNPay thất bại cho đơn ${orderId}`);
+                } catch (emailError) {
+                    console.error(`❌ Lỗi gửi email thanh toán VNPay thất bại cho đơn ${orderId}:`, emailError.message);
+                }
 
                 return res.status(200).json({
                     success: true,

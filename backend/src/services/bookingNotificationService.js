@@ -1,4 +1,5 @@
 const { sendBookingConfirmationEmail, sendBookingNotificationToStaff, sendBookingStatusEmail } = require('../utils/emailUtils');
+const paymentEmailService = require('./paymentEmailService');
 
 class BookingNotificationService {
 
@@ -331,39 +332,78 @@ class BookingNotificationService {
     }
 
     
-    // Gửi email chờ xác nhận (pending)
+    // Gửi email chờ xác nhận (pending) - sử dụng hệ thống email mới
     async sendPendingEmail(order, tourDetails = null) {
-        return await this.sendStatusChangeEmail(order, 'pending', '', tourDetails);
+        try {
+            // Kiểm tra phương thức thanh toán
+            const isOnlinePayment = ['MoMo', 'VNPay'].includes(order.paymentMethod);
+
+            if (isOnlinePayment) {
+                // Thanh toán trực tuyến không cần gửi email pending
+                return { success: true, message: 'Thanh toán trực tuyến không cần email pending' };
+            } else {
+                // Thanh toán tiền mặt - sử dụng email service mới
+                return await paymentEmailService.sendCashPaymentPending(order);
+            }
+        } catch (error) {
+            console.error(`❌ Lỗi gửi email pending cho đơn ${order.orderId}:`, error.message);
+            return { success: false, error: error.message };
+        }
     }
 
-    
-    // Gửi email xác nhận thành công (confirmed)
+
+    // Gửi email xác nhận thành công (confirmed) - sử dụng hệ thống email mới
     async sendConfirmedEmail(order, tourDetails = null) {
-        return await this.sendStatusChangeEmail(order, 'confirmed', '', tourDetails);
+        try {
+            // Kiểm tra phương thức thanh toán
+            const isOnlinePayment = ['MoMo', 'VNPay'].includes(order.paymentMethod);
+
+            if (isOnlinePayment) {
+                // Thanh toán trực tuyến đã được xử lý trong callback
+                return { success: true, message: 'Email thanh toán trực tuyến đã được gửi' };
+            } else {
+                // Thanh toán tiền mặt - sử dụng email service mới
+                return await paymentEmailService.sendCashPaymentConfirmed(order);
+            }
+        } catch (error) {
+            console.error(`❌ Lỗi gửi email confirmed cho đơn ${order.orderId}:`, error.message);
+            return { success: false, error: error.message };
+        }
     }
 
-    // Gửi email thông báo hủy tour (cancelled)
+    // Gửi email thông báo hủy tour (cancelled) - sử dụng hệ thống email mới
     async sendCancelledEmail(order, cancellationReason = '', tourDetails = null) {
-        return await this.sendStatusChangeEmail(order, 'cancelled', cancellationReason, tourDetails);
+        try {
+            // Kiểm tra phương thức thanh toán
+            const isOnlinePayment = ['MoMo', 'VNPay'].includes(order.paymentMethod);
+
+            if (isOnlinePayment) {
+                // Thanh toán trực tuyến - luôn gửi link hoàn tiền (cho cả trường hợp đã thanh toán và chưa thanh toán)
+                const refundFormUrl = `${process.env.FRONTEND_URL}/refund-form/${order.orderId}`;
+                return await paymentEmailService.sendOnlinePaymentRefund(order, cancellationReason, refundFormUrl);
+            } else {
+                // Thanh toán tiền mặt - sử dụng email service mới
+                return await paymentEmailService.sendCashPaymentCancelled(order, cancellationReason);
+            }
+        } catch (error) {
+            console.error(`❌ Lỗi gửi email cancelled cho đơn ${order.orderId}:`, error.message);
+            return { success: false, error: error.message };
+        }
     }
 
-    // Gửi email mời đánh giá tour (completed)
+    // Gửi email mời đánh giá tour (completed) - sử dụng hệ thống email mới
     async sendReviewInvitationEmail(order, reviewUrl, tourDetails = null) {
         try {
-            // Chuẩn bị dữ liệu booking
-            const bookingData = await this.prepareBookingData(order, tourDetails);
+            // Kiểm tra phương thức thanh toán
+            const isOnlinePayment = ['MoMo', 'VNPay'].includes(order.paymentMethod);
 
-            // Thêm review URL vào data
-            bookingData.reviewUrl = reviewUrl;
-
-            // Gửi email review invitation
-            const { sendReviewInvitationEmail } = require('../utils/emailUtils');
-            const result = await sendReviewInvitationEmail(bookingData);
-
-            return {
-                success: true,
-                result: result
-            };
+            if (isOnlinePayment) {
+                // Thanh toán trực tuyến - sử dụng email service mới
+                return await paymentEmailService.sendOnlinePaymentCompleted(order, reviewUrl);
+            } else {
+                // Thanh toán tiền mặt - sử dụng email service mới
+                return await paymentEmailService.sendCashPaymentCompleted(order, reviewUrl);
+            }
 
         } catch (error) {
             console.error(`❌ Lỗi gửi email mời đánh giá cho đơn ${order.orderId}:`, error.message);
