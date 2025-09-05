@@ -16,6 +16,8 @@ import Payment from "./pages/Payment/Payment.jsx";
 import OrderLookup from "./pages/OrderLookup/OrderLookup.jsx";
 import Tours from "./pages/Tours/Tour.jsx";
 import ReviewForm from "./pages/Review/ReviewForm.jsx";
+import RetryPayment from "./components/payment/RetryPayment.jsx";
+import RefundForm from "./components/refund/RefundForm.jsx";
 
 // Lazy load VNPayReturn component
 const VNPayReturn = lazy(() => import("./pages/Payment/VNPayReturn.jsx"));
@@ -74,7 +76,18 @@ const router = createBrowserRouter([
         path: "/review",
         element: <ReviewForm />,
       },
-
+      {
+        path: "/payment/retry/:orderId",
+        element: <RetryPayment />,
+      },
+      {
+        path: "/refund-form/:orderId",
+        element: <RefundForm />,
+      },
+      {
+        path: "/order-lookup",
+        element: <OrderLookup />,
+      },
     ],
   },
 ]);

@@ -790,11 +790,11 @@ const sendReviewInvitationEmail = async (bookingData) => {
         };
 
         const result = await transporter.sendMail(mailOptions);
-        return result;
+        return { success: true, data: result };
 
     } catch (error) {
         console.error(`❌ Lỗi gửi email mời đánh giá:`, error);
-        throw error;
+        return { success: false, error: error.message };
     }
 };
 
@@ -807,5 +807,8 @@ module.exports = {
     sendReviewInvitationEmail,
     generateOTP,
     validateEmail,
-    isRateLimited
+    isRateLimited,
+    createTransporter,
+    generateContactInfo,
+    generateEmailFooter
 };

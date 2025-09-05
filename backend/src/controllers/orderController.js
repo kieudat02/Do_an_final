@@ -755,18 +755,23 @@ exports.updateOrderStatus = async (req, res) => {
 
                         } catch (reviewError) {
                             console.error(`❌ Lỗi tạo review token cho order ${order.orderId}:`, reviewError.message);
-                            // Không throw error để không làm fail toàn bộ request
+                            // Đặt emailResult để tránh undefined
+                            emailResult = { success: false, error: reviewError.message };
                         }
                         break;
                     case 'cancelled':
                         emailResult = await bookingNotificationService.sendCancelledEmail(order, cancellationReason);
                         break;
                     default:
-                        // No email template for this status
+                        // Không có email nào được gửi cho status này
+                        emailResult = { success: true, message: `Không có email nào được gửi cho status: ${status}` };
+                        break;
                 }
 
                 if (emailResult && !emailResult.success) {
-                    console.warn(`⚠️ Gửi email thông báo trạng thái thất bại cho đơn ${order.orderId}: ${emailResult.error}`);
+                    console.warn(`⚠️ Gửi email thông báo trạng thái thất bại cho đơn ${order.orderId}: ${emailResult.error || 'Lỗi không xác định'}`);
+                } else if (emailResult && emailResult.success) {
+                    console.log(`✅ Gửi email thông báo trạng thái thành công cho đơn ${order.orderId}`);
                 }
             } catch (emailError) {
                 // Log lỗi nhưng không làm fail request chính
@@ -836,8 +841,10 @@ exports.cancelOrder = async (req, res) => {
         try {
             const emailResult = await bookingNotificationService.sendCancelledEmail(order, cancellationReason);
 
-            if (!emailResult.success) {
-                console.warn(`⚠️ Gửi email thông báo hủy đơn thất bại cho ${order.orderId}: ${emailResult.error}`);
+            if (emailResult && !emailResult.success) {
+                console.warn(`⚠️ Gửi email thông báo hủy đơn thất bại cho ${order.orderId}: ${emailResult.error || 'Lỗi không xác định'}`);
+            } else if (emailResult && emailResult.success) {
+                console.log(`✅ Gửi email thông báo hủy đơn thành công cho ${order.orderId}`);
             }
         } catch (emailError) {
             // Log lỗi nhưng không làm fail request chính

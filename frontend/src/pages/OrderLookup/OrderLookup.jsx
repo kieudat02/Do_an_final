@@ -465,6 +465,8 @@ const OrderLookup = () => {
   // Hook reCAPTCHA
   const { recaptchaRef, executeRecaptcha, resetRecaptcha } = useRecaptcha();
 
+
+
   // Handle field change to clear individual validation errors
   const handleFieldChange = (fieldName, error) => {
     setValidationErrors(prev => {
@@ -493,6 +495,8 @@ const OrderLookup = () => {
       }
     }
   };
+
+
 
   const handleLookup = async (formData) => {
     // Reset errors trước khi bắt đầu

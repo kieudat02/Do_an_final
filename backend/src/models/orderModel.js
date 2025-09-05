@@ -99,6 +99,15 @@ const orderSchema = new mongoose.Schema({
     paidAt: {
         type: Date
     },
+    // Thông tin hoàn tiền
+    refundBankInfo: {
+        bankName: String,
+        accountNumber: String,
+        accountHolderName: String,
+        customerPhone: String,
+        notes: String,
+        submittedAt: Date
+    },
     stockDeducted: {
         type: Boolean,
         default: false

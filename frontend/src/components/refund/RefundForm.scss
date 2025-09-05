@@ -1,0 +1,305 @@
+.refund-form-container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .loading, .error {
+        background: white;
+        padding: 40px;
+        border-radius: 10px;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    }
+
+    .refund-form-wrapper {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        max-width: 800px;
+        width: 100%;
+        margin: 20px;
+
+        .form-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 30px;
+            text-align: center;
+
+            h1 {
+                margin: 0 0 10px 0;
+                font-size: 2rem;
+                font-weight: 600;
+            }
+
+            p {
+                margin: 0;
+                opacity: 0.9;
+                font-size: 1.1rem;
+            }
+        }
+
+        .order-info {
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+
+            h3 {
+                margin: 0 0 20px 0;
+                color: #495057;
+                font-size: 1.3rem;
+            }
+
+            .order-main-info {
+                background: white;
+                border-radius: 8px;
+                border: 1px solid #e9ecef;
+                overflow: hidden;
+
+                .order-header {
+                    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+                    padding: 20px;
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 20px;
+                    border-bottom: 1px solid #e9ecef;
+
+                    .order-id, .order-amount {
+                        text-align: center;
+
+                        .label {
+                            display: block;
+                            font-size: 0.85rem;
+                            color: #6c757d;
+                            font-weight: 500;
+                            margin-bottom: 5px;
+                            text-transform: uppercase;
+                            letter-spacing: 0.5px;
+                        }
+
+                        .value {
+                            display: block;
+                            font-size: 1.1rem;
+                            color: #495057;
+                            font-weight: 600;
+                        }
+
+                        .amount {
+                            display: block;
+                            font-size: 1.4rem;
+                            color: #f39c12;
+                            font-weight: 700;
+                        }
+                    }
+                }
+
+                .order-details {
+                    padding: 20px;
+
+                    .detail-item {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        padding: 10px 0;
+                        border-bottom: 1px solid #f8f9fa;
+
+                        &:last-child {
+                            border-bottom: none;
+                        }
+
+                        .label {
+                            font-weight: 500;
+                            color: #6c757d;
+                            min-width: 120px;
+                        }
+
+                        .value {
+                            color: #495057;
+                            font-weight: 500;
+                            text-align: right;
+                            flex: 1;
+                        }
+                    }
+                }
+            }
+        }
+
+        .refund-form {
+            padding: 30px;
+
+            h3 {
+                margin: 0 0 25px 0;
+                color: #495057;
+                font-size: 1.3rem;
+            }
+
+            .form-group {
+                margin-bottom: 20px;
+
+                label {
+                    display: block;
+                    margin-bottom: 8px;
+                    font-weight: 600;
+                    color: #495057;
+
+                    .required {
+                        color: #dc3545;
+                        margin-left: 3px;
+                    }
+                }
+
+                input, select, textarea {
+                    width: 100%;
+                    padding: 12px 15px;
+                    border: 2px solid #e9ecef;
+                    border-radius: 8px;
+                    font-size: 1rem;
+                    transition: all 0.3s ease;
+                    box-sizing: border-box;
+
+                    &:focus {
+                        outline: none;
+                        border-color: #667eea;
+                        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+                    }
+
+                    &::placeholder {
+                        color: #adb5bd;
+                    }
+                }
+
+                textarea {
+                    resize: vertical;
+                    min-height: 80px;
+                }
+            }
+
+            .form-actions {
+                display: flex;
+                gap: 15px;
+                justify-content: flex-end;
+                margin-top: 30px;
+                padding-top: 20px;
+                border-top: 1px solid #e9ecef;
+
+                button {
+                    padding: 12px 30px;
+                    border: none;
+                    border-radius: 8px;
+                    font-size: 1rem;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    min-width: 150px;
+
+                    &.btn-primary {
+                        background: linear-gradient(135deg, #667eea, #764ba2);
+                        color: white;
+
+                        &:hover:not(:disabled) {
+                            transform: translateY(-2px);
+                            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+                        }
+
+                        &:disabled {
+                            opacity: 0.6;
+                            cursor: not-allowed;
+                        }
+                    }
+
+                    &.btn-secondary {
+                        background: #6c757d;
+                        color: white;
+
+                        &:hover {
+                            background: #5a6268;
+                            transform: translateY(-2px);
+                        }
+                    }
+                }
+            }
+        }
+
+        .form-note {
+            padding: 25px 30px;
+            background: #fff3cd;
+            border-top: 1px solid #ffeaa7;
+
+            h4 {
+                margin: 0 0 15px 0;
+                color: #856404;
+                font-size: 1.1rem;
+            }
+
+            ul {
+                margin: 0;
+                padding-left: 20px;
+                color: #856404;
+
+                li {
+                    margin-bottom: 8px;
+                    line-height: 1.5;
+                }
+            }
+        }
+    }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+    .refund-form-container {
+        padding: 10px;
+
+        .refund-form-wrapper {
+            margin: 10px;
+
+            .form-header {
+                padding: 20px;
+
+                h1 {
+                    font-size: 1.5rem;
+                }
+
+                p {
+                    font-size: 1rem;
+                }
+            }
+
+            .order-info, .refund-form, .form-note {
+                padding: 20px;
+            }
+
+            .order-info .order-main-info .order-header {
+                grid-template-columns: 1fr;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .refund-form .form-actions {
+                flex-direction: column;
+
+                button {
+                    width: 100%;
+                }
+            }
+        }
+    }
+}
