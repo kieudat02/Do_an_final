@@ -2,27 +2,58 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_ENDPOINTS } from '../../constants/ApiEndPoints';
 import OrderLookupOTP from '../../components/OrderLookupOTP/OrderLookupOTP';
+import ReCaptchaComponent from '../../components/common/ReCaptcha/ReCaptcha';
+import { useRecaptcha } from '../../hooks/useRecaptcha';
 import './OrderLookup.scss';
 
 // Component form tra cứu đơn hàng
-const OrderLookupForm = ({ onSubmit, loading }) => {
+const OrderLookupForm = ({ onSubmit, loading, recaptchaRef, validationErrors, onFieldChange }) => {
   const [formData, setFormData] = useState({
     orderId: '',
     email: '',
     phone: ''
   });
+  const [touched, setTouched] = useState({});
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    const trimmedValue = value.trim();
+    
     setFormData(prev => ({
       ...prev,
-      [name]: value.trim() 
+      [name]: trimmedValue
+    }));
+
+    // Clear validation error khi user bắt đầu nhập
+    if (onFieldChange && trimmedValue && validationErrors?.[name]) {
+      onFieldChange(name, null);
+    }
+  };
+
+  const handleBlur = (e) => {
+    const { name } = e.target;
+    setTouched(prev => ({
+      ...prev,
+      [name]: true
     }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // Mark all fields as touched when submitting
+    setTouched({
+      orderId: true,
+      email: true,
+      phone: true
+    });
+
     onSubmit(formData);
+  };
+
+  // Chỉ hiển thị lỗi khi field đã được touch hoặc đã submit
+  const shouldShowError = (fieldName) => {
+    return touched[fieldName] && validationErrors?.[fieldName];
   };
 
   return (
@@ -61,10 +92,18 @@ const OrderLookupForm = ({ onSubmit, loading }) => {
               name="orderId"
               value={formData.orderId}
               onChange={handleChange}
+              onBlur={handleBlur}
               placeholder="Nhập mã đơn hàng"
-              className="form-input"
+              className={`form-input ${shouldShowError('orderId') ? 'error' : ''}`}
               required
+              autoComplete="off"
             />
+            {shouldShowError('orderId') && (
+              <div className="field-error">
+                <i className="fas fa-exclamation-circle"></i>
+                {validationErrors.orderId}
+              </div>
+            )}
           </div>
 
           <div className="form-row">
@@ -78,9 +117,17 @@ const OrderLookupForm = ({ onSubmit, loading }) => {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
+                onBlur={handleBlur}
                 placeholder="Nhập email đặt tour"
-                className="form-input"
+                className={`form-input ${shouldShowError('email') ? 'error' : ''}`}
+                autoComplete="email"
               />
+              {shouldShowError('email') && (
+                <div className="field-error">
+                  <i className="fas fa-exclamation-circle"></i>
+                  {validationErrors.email}
+                </div>
+              )}
             </div>
 
             <div className="form-group">
@@ -93,9 +140,17 @@ const OrderLookupForm = ({ onSubmit, loading }) => {
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
+                onBlur={handleBlur}
                 placeholder="Nhập số điện thoại"
-                className="form-input"
+                className={`form-input ${shouldShowError('phone') ? 'error' : ''}`}
+                autoComplete="tel"
               />
+              {shouldShowError('phone') && (
+                <div className="field-error">
+                  <i className="fas fa-exclamation-circle"></i>
+                  {validationErrors.phone}
+                </div>
+              )}
             </div>
           </div>
 
@@ -126,6 +181,9 @@ const OrderLookupForm = ({ onSubmit, loading }) => {
             )}
           </button>
         </form>
+
+        {/* ReCAPTCHA component - Invisible */}
+        <ReCaptchaComponent recaptchaRef={recaptchaRef} />
 
         {/* Hotline */}
         <div className="hotline-info">
@@ -168,6 +226,57 @@ const OrderResult = ({ order, onBackToSearch }) => {
         return 'status-cancelled';
       default:
         return '';
+    }
+  };
+
+  const getPaymentStatusText = (paymentStatus) => {
+    switch (paymentStatus) {
+      case 'pending':
+        return 'Chờ thanh toán';
+      case 'paid':
+      case 'completed':
+        return 'Đã thanh toán';
+      case 'failed':
+        return 'Thanh toán thất bại';
+      case 'refunded':
+      case 'refund':
+        return 'Đã hoàn tiền';
+      case 'cancelled':
+        return 'Đã hủy thanh toán';
+      default:
+        return paymentStatus || 'Chưa xác định';
+    }
+  };
+
+  const getPaymentStatusClass = (paymentStatus) => {
+    switch (paymentStatus) {
+      case 'pending':
+        return 'payment-status-pending';
+      case 'paid':
+      case 'completed':
+        return 'payment-status-paid';
+      case 'failed':
+        return 'payment-status-failed';
+      case 'refunded':
+      case 'refund':
+        return 'payment-status-refunded';
+      case 'cancelled':
+        return 'payment-status-cancelled';
+      default:
+        return '';
+    }
+  };
+
+  const handleTourClick = (tourId, event) => {
+    if (tourId) {
+      // Kiểm tra nếu nhấn Ctrl (hoặc Cmd trên Mac) + Click
+      if (event.ctrlKey || event.metaKey) {
+        // Mở trong tab mới
+        window.open(`/tour/${tourId}`, '_blank');
+      } else {
+        // Điều hướng bình thường
+        navigate(`/tour/${tourId}`);
+      }
     }
   };
 
@@ -219,6 +328,12 @@ const OrderResult = ({ order, onBackToSearch }) => {
               </span>
             </div>
             <div className="order-detail-item">
+              <span className="detail-label">Trạng thái thanh toán:</span>
+              <span className={`detail-value ${getPaymentStatusClass(order.paymentStatus)}`}>
+                {getPaymentStatusText(order.paymentStatus)}
+              </span>
+            </div>
+            <div className="order-detail-item">
               <span className="detail-label">Tổng tiền:</span>
               <span className="detail-value total-amount">
                 {order.totalAmount?.toLocaleString('vi-VN')} VNĐ
@@ -252,7 +367,16 @@ const OrderResult = ({ order, onBackToSearch }) => {
             {order.items.map((item, index) => (
               <div key={index} className="tour-item">
                 <div className="tour-header">
-                  <h4 className="tour-name">{item.name}</h4>
+                  <h4 
+                    className={`tour-name ${item.tourId ? 'tour-name-clickable' : ''}`}
+                    onClick={(event) => item.tourId && handleTourClick(item.tourId, event)}
+                    title={item.tourId ? 'Click để xem chi tiết tour, Ctrl+Click để mở tab mới' : ''}
+                  >
+                    {item.name}
+                    {item.tourId && (
+                      <i className="fas fa-external-link-alt tour-link-icon"></i>
+                    )}
+                  </h4>
                   <span className="tour-quantity">x{item.quantity || 1}</span>
                 </div>
 
@@ -334,44 +458,141 @@ const OrderResult = ({ order, onBackToSearch }) => {
 const OrderLookup = () => {
   const [loading, setLoading] = useState(false);
   const [order, setOrder] = useState(null);
-  const [error, setError] = useState('');
+  const [validationErrors, setValidationErrors] = useState({});
   const [showOTPVerification, setShowOTPVerification] = useState(false);
   const [lookupData, setLookupData] = useState(null);
+  
+  // Hook reCAPTCHA
+  const { recaptchaRef, executeRecaptcha, resetRecaptcha } = useRecaptcha();
+
+  // Handle field change to clear individual validation errors
+  const handleFieldChange = (fieldName, error) => {
+    setValidationErrors(prev => {
+      const newErrors = { ...prev };
+      if (error === null) {
+        delete newErrors[fieldName];
+      } else {
+        newErrors[fieldName] = error;
+      }
+      return newErrors;
+    });
+  };
+
+  // Focus to first error field
+  const focusToFirstError = (errors) => {
+    const errorFields = Object.keys(errors);
+    if (errorFields.length > 0) {
+      const firstErrorField = errorFields[0];
+      const element = document.getElementById(firstErrorField);
+      if (element) {
+        element.focus();
+        element.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+      }
+    }
+  };
 
   const handleLookup = async (formData) => {
-    // Nếu có email, yêu cầu xác thực OTP
-    if (formData.email && formData.email.trim()) {
-      setLookupData(formData);
-      setShowOTPVerification(true);
+    // Reset errors trước khi bắt đầu
+    setValidationErrors({});
+    
+    // Thực thi reCAPTCHA trước khi gửi form
+    let recaptchaToken = null;
+    try {
+      recaptchaToken = await executeRecaptcha();
+    } catch (recaptchaError) {
+      console.error('reCAPTCHA error:', recaptchaError);
+      setValidationErrors({ 
+        orderId: recaptchaError.message || 'Xác minh reCAPTCHA thất bại. Vui lòng thử lại.' 
+      });
+      resetRecaptcha();
       return;
     }
 
-    // Nếu không có email, sử dụng phương thức cũ (chỉ với phone)
     setLoading(true);
-    setError('');
 
     try {
       const cleanedData = {
         orderId: formData.orderId.trim(),
-        phone: formData.phone ? formData.phone.trim() : ''
+        email: formData.email ? formData.email.trim() : '',
+        phone: formData.phone ? formData.phone.trim() : '',
+        recaptchaToken
       };
 
-      // Build query parameters
+      // Nếu có email, trước tiên validate thông tin trước khi gửi OTP
+      if (cleanedData.email) {
+        // Validate thông tin đơn hàng và email trước
+        const validateResponse = await fetch(`${API_ENDPOINTS.ORDER_LOOKUP}?${new URLSearchParams({
+          orderId: cleanedData.orderId,
+          email: cleanedData.email
+        })}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            recaptchaToken: cleanedData.recaptchaToken,
+            validateOnly: true 
+          })
+        });
+
+        const validateData = await validateResponse.json();
+
+        if (!validateResponse.ok || !validateData.success) {
+          // Parse validation errors từ backend
+          let newValidationErrors = {};
+          if (validateData.validationErrors) {
+            newValidationErrors = validateData.validationErrors;
+          } else {
+            // Phân tích message để xác định field bị lỗi
+            const message = validateData.message || 'Không tìm thấy đơn hàng với thông tin đã cung cấp';
+            if (message.toLowerCase().includes('email')) {
+              newValidationErrors.email = 'Email không khớp với đơn hàng';
+            } else if (message.toLowerCase().includes('mã đơn hàng')) {
+              newValidationErrors.orderId = 'Mã đơn hàng không tồn tại';
+            } else {
+              newValidationErrors = { 
+                orderId: 'Mã đơn hàng không tồn tại',
+                email: 'Email không khớp với đơn hàng'
+              };
+            }
+          }
+          
+          setValidationErrors(newValidationErrors);
+          
+          // Focus to first error field
+          setTimeout(() => focusToFirstError(newValidationErrors), 100);
+          
+          resetRecaptcha();
+          setLoading(false);
+          return;
+        }
+
+        // Nếu validate thành công, chuyển đến OTP
+        setLookupData({ ...formData, recaptchaToken });
+        setShowOTPVerification(true);
+        setLoading(false);
+        return;
+      }
+
+      // Nếu không có email, sử dụng phương thức cũ (chỉ với phone)
       const queryParams = new URLSearchParams();
       queryParams.append('orderId', cleanedData.orderId);
       
       if (cleanedData.phone) {
         queryParams.append('phone', cleanedData.phone);
       }
-      if (cleanedData.phone) {
-        queryParams.append('phone', cleanedData.phone);
-      }
 
       const response = await fetch(`${API_ENDPOINTS.ORDER_LOOKUP}?${queryParams}`, {
-        method: 'GET',
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          recaptchaToken: cleanedData.recaptchaToken
+        })
       });
 
       const data = await response.json();
@@ -379,11 +600,37 @@ const OrderLookup = () => {
       if (response.ok && data.success) {
         setOrder(data.order);
       } else {
-        setError(data.message || 'Không tìm thấy đơn hàng');
+        // Parse validation errors cho phone lookup
+        let newValidationErrors = {};
+        if (data.validationErrors) {
+          newValidationErrors = data.validationErrors;
+        } else {
+          const message = data.message || 'Không tìm thấy đơn hàng';
+          if (message.toLowerCase().includes('số điện thoại')) {
+            newValidationErrors.phone = 'Số điện thoại không khớp với đơn hàng';
+          } else if (message.toLowerCase().includes('mã đơn hàng')) {
+            newValidationErrors.orderId = 'Mã đơn hàng không tồn tại';
+          } else {
+            newValidationErrors = { 
+              orderId: 'Mã đơn hàng không tồn tại',
+              phone: 'Số điện thoại không khớp với đơn hàng'
+            };
+          }
+        }
+        
+        setValidationErrors(newValidationErrors);
+        
+        // Focus to first error field
+        setTimeout(() => focusToFirstError(newValidationErrors), 100);
+        
+        resetRecaptcha(); // Reset reCAPTCHA khi có lỗi
       }
     } catch (error) {
       console.error('Error looking up order:', error);
-      setError('Có lỗi xảy ra khi tra cứu đơn hàng. Vui lòng thử lại.');
+      setValidationErrors({ 
+        orderId: 'Có lỗi xảy ra khi tra cứu đơn hàng. Vui lòng thử lại.' 
+      });
+      resetRecaptcha(); // Reset reCAPTCHA khi có lỗi
     } finally {
       setLoading(false);
     }
@@ -400,14 +647,15 @@ const OrderLookup = () => {
   const handleBackFromOTP = () => {
     setShowOTPVerification(false);
     setLookupData(null);
-    setError('');
+    setValidationErrors({});
   };
 
   const handleBackToSearch = () => {
     setOrder(null);
-    setError('');
+    setValidationErrors({});
     setShowOTPVerification(false);
     setLookupData(null);
+    resetRecaptcha(); // Reset reCAPTCHA khi quay lại form
   };
 
   // Hiển thị OTP verification
@@ -416,6 +664,7 @@ const OrderLookup = () => {
       <OrderLookupOTP
         orderId={lookupData.orderId}
         email={lookupData.email}
+        recaptchaToken={lookupData.recaptchaToken}
         onSuccess={handleOTPSuccess}
         onBack={handleBackFromOTP}
       />
@@ -428,14 +677,13 @@ const OrderLookup = () => {
         {order ? (
           <OrderResult order={order} onBackToSearch={handleBackToSearch} />
         ) : (
-          <OrderLookupForm onSubmit={handleLookup} loading={loading} />
-        )}
-
-        {error && (
-          <div className="error-message">
-            <i className="fas fa-exclamation-triangle"></i>
-            {error}
-          </div>
+          <OrderLookupForm 
+            onSubmit={handleLookup} 
+            loading={loading} 
+            recaptchaRef={recaptchaRef}
+            validationErrors={validationErrors}
+            onFieldChange={handleFieldChange}
+          />
         )}
       </div>
     </div>

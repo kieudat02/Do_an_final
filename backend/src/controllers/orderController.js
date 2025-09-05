@@ -285,7 +285,7 @@ exports.createOrder = async (req, res) => {
                         });
 
                         if (!validDate) {
-                            validationErrors.items = `Ngày khởi hành ${new Date(item.startDate).toLocaleDateString('vi-VN')} không hợp lệ hoặc đã hết chỗ ở item ${i + 1}`;
+                            validationErrors.items = `Vui lòng chọn ngày khác, đã hết chỗ`;
                             break;
                         }
                     } catch (error) {
@@ -403,7 +403,7 @@ exports.createOrder = async (req, res) => {
         if (!stockValidation.isValid) {
             return res.status(400).json({
                 success: false,
-                message: 'Stock không đủ để tạo đơn hàng',
+                message: 'Vui lòng chọn ngày khác, đã hết chỗ',
                 errors: stockValidation.errors
             });
         }
@@ -628,7 +628,7 @@ exports.createOrderPublic = async (req, res) => {
         if (!stockValidation.isValid) {
             return res.status(400).json({
                 success: false,
-                message: 'Stock không đủ để tạo đơn hàng',
+                message: 'Vui lòng chọn ngày khác, đã hết chỗ',
                 errors: stockValidation.errors
             });
         }
@@ -1082,10 +1082,11 @@ exports.sendOTPForOrderLookup = async (req, res) => {
     }
 };
 
-// Tra cứu đơn hàng (phương thức cũ - không có OTP)
+// Tra cứu đơn hàng
 exports.lookupOrderPublic = async (req, res) => {
     try {
-        const { orderId, email, phone } = req.query;
+        // Hỗ trợ cả query parameters và request body
+        const { orderId, email, phone, validateOnly } = { ...req.query, ...req.body };
 
         // Kiểm tra tham số đầu vào
         if (!orderId || (!email && !phone)) {
@@ -1114,9 +1115,41 @@ exports.lookupOrderPublic = async (req, res) => {
         const order = await Order.findOne(searchQuery);
 
         if (!order) {
-            return res.status(404).json({
-                success: false,
-                message: 'Không tìm thấy đơn hàng với thông tin đã cung cấp'
+            // Kiểm tra xem có đơn hàng nào với mã đơn hàng này không
+            const orderExists = await Order.findOne({ orderId: orderId });
+            
+            if (!orderExists) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Mã đơn hàng không tồn tại',
+                    validationErrors: {
+                        orderId: 'Mã đơn hàng không tồn tại'
+                    }
+                });
+            } else {
+                // Đơn hàng tồn tại nhưng email/phone không khớp
+                const errorResponse = {
+                    success: false,
+                    message: 'Thông tin không khớp với đơn hàng',
+                    validationErrors: {}
+                };
+                
+                if (email) {
+                    errorResponse.validationErrors.email = 'Email không khớp với đơn hàng này';
+                }
+                if (phone) {
+                    errorResponse.validationErrors.phone = 'Số điện thoại không khớp với đơn hàng này';
+                }
+                
+                return res.status(404).json(errorResponse);
+            }
+        }
+
+        // Nếu chỉ validate, trả về success mà không cần dữ liệu đầy đủ
+        if (validateOnly) {
+            return res.status(200).json({
+                success: true,
+                message: 'Thông tin đơn hàng hợp lệ'
             });
         }
 

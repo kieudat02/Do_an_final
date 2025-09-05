@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { API_ENDPOINTS } from '../../constants/ApiEndPoints';
+import ReCaptchaComponent from '../common/ReCaptcha/ReCaptcha';
+import { useRecaptcha } from '../../hooks/useRecaptcha';
 import './OrderLookupOTP.scss';
 
-const OrderLookupOTP = ({ orderId, email, onSuccess, onBack }) => {
+const OrderLookupOTP = ({ orderId, email, recaptchaToken, onSuccess, onBack }) => {
   const [otpCode, setOtpCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [countdown, setCountdown] = useState(0);
   const [canResend, setCanResend] = useState(false);
+  
+  // Hook reCAPTCHA cho resend
+  const { recaptchaRef, executeRecaptcha, resetRecaptcha } = useRecaptcha();
 
   // Countdown timer cho resend OTP
   useEffect(() => {
@@ -24,8 +29,21 @@ const OrderLookupOTP = ({ orderId, email, onSuccess, onBack }) => {
     sendOTP();
   }, []);
 
-  const sendOTP = async () => {
+  const sendOTP = async (isResend = false) => {
     try {
+      // Nếu là resend, cần thực thi reCAPTCHA
+      let tokenToUse = recaptchaToken;
+      if (isResend) {
+        try {
+          tokenToUse = await executeRecaptcha();
+        } catch (recaptchaError) {
+          console.error('reCAPTCHA error:', recaptchaError);
+          setError(recaptchaError.message || 'Xác minh reCAPTCHA thất bại. Vui lòng thử lại.');
+          resetRecaptcha();
+          return;
+        }
+      }
+
       const response = await fetch(API_ENDPOINTS.ORDER_SEND_OTP, {
         method: 'POST',
         headers: {
@@ -33,7 +51,8 @@ const OrderLookupOTP = ({ orderId, email, onSuccess, onBack }) => {
         },
         body: JSON.stringify({
           orderId,
-          email
+          email,
+          recaptchaToken: tokenToUse
         })
       });
 
@@ -45,15 +64,17 @@ const OrderLookupOTP = ({ orderId, email, onSuccess, onBack }) => {
         setError('');
       } else {
         setError(data.message || 'Không thể gửi mã OTP');
+        if (isResend) resetRecaptcha(); 
       }
     } catch (error) {
       console.error('Error sending OTP:', error);
       setError('Có lỗi xảy ra khi gửi mã OTP');
+      if (isResend) resetRecaptcha(); 
     }
   };
 
   const handleOTPChange = (e) => {
-    const value = e.target.value.replace(/\D/g, ''); // Chỉ cho phép số
+    const value = e.target.value.replace(/\D/g, ''); 
     if (value.length <= 6) {
       setOtpCode(value);
       setError('');
@@ -101,7 +122,7 @@ const OrderLookupOTP = ({ orderId, email, onSuccess, onBack }) => {
 
   const handleResendOTP = () => {
     if (canResend) {
-      sendOTP();
+      sendOTP(true); 
     }
   };
 
@@ -208,6 +229,9 @@ const OrderLookupOTP = ({ orderId, email, onSuccess, onBack }) => {
             )}
           </div>
         </form>
+
+        {/* ReCAPTCHA component - Invisible cho resend */}
+        <ReCaptchaComponent recaptchaRef={recaptchaRef} />
 
         {/* Info */}
         <div className="otp-info">

@@ -335,6 +335,10 @@
             background: #28a745;
             color: #fff;
         }
+        &--refund {
+            background: #fd7e14;
+            color: #fff;
+        }
     }
 
     // Pagination
@@ -734,7 +738,6 @@
     }
 }
 
-// ===== ORDER DETAIL RESPONSIVE STYLES =====
 /* Responsive cho màn hình nhỏ */
 @media screen and (max-width: 768px) {
     .order-detail__row {

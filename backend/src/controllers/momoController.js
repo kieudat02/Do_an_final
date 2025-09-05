@@ -458,7 +458,8 @@ exports.checkMoMoPaymentStatus = async (req, res) => {
                     endDate: order.endDate,
                     adults: order.adults,
                     children: order.children,
-                    infants: order.infants
+                    infants: order.infants,
+                    items: order.items // Thêm thông tin items chứa tourId
                 }
             });
         }
@@ -485,7 +486,8 @@ exports.checkMoMoPaymentStatus = async (req, res) => {
                 endDate: order.endDate,
                 adults: order.adults,
                 children: order.children,
-                infants: order.infants
+                infants: order.infants,
+                items: order.items // Thêm thông tin items chứa tourId
             }
         });
 
@@ -694,7 +696,11 @@ exports.handleVNPayReturn = async (req, res) => {
             }
 
         } else {
-            console.error('❌ Signature không hợp lệ từ VNPay return');
+            console.error('❌ Signature không hợp lệ từ VNPay return', {
+                signData: vnpParams,
+                signed: signed,
+                secureHash: secureHash
+            });
             return res.status(400).json({
                 success: false,
                 message: 'Signature không hợp lệ từ VNPay'
@@ -762,7 +768,8 @@ exports.checkVNPayPaymentStatus = async (req, res) => {
                     endDate: order.endDate,
                     adults: order.adults,
                     children: order.children,
-                    infants: order.infants
+                    infants: order.infants,
+                    items: order.items 
                 }
             });
         }
@@ -789,7 +796,8 @@ exports.checkVNPayPaymentStatus = async (req, res) => {
                 endDate: order.endDate,
                 adults: order.adults,
                 children: order.children,
-                infants: order.infants
+                infants: order.infants,
+                items: order.items 
             }
         });
 

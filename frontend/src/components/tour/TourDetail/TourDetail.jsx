@@ -1199,7 +1199,7 @@ const TourDetail = ({ tourData, isLoading = false, isError = false, error = null
       {bookingResult && (
         <div className={`booking-notification ${bookingResult.success ? 'booking-notification--success' : 'booking-notification--error'}`}>
           <div className="booking-notification__content">
-            <h4>{bookingResult.success ? '✅ Thành công!' : '❌ Lỗi!'}</h4>
+            <h4>{bookingResult.success ? 'Thành công!' : 'Lỗi!'}</h4>
             <p>{bookingResult.message}</p>
             {bookingResult.orderId && (
               <p><strong>Mã đơn hàng:</strong> {bookingResult.orderId}</p>

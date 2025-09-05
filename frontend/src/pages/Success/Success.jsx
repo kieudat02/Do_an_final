@@ -151,16 +151,16 @@ const Success = () => {
   }, []);
 
   // Auto redirect countdown
-  useEffect(() => {
-    if (countdown > 0) {
-      const timer = setTimeout(() => {
-        setCountdown(countdown - 1);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else {
-      navigate('/', { replace: true });
-    }
-  }, [countdown, navigate]);
+  // useEffect(() => {
+  //   if (countdown > 0) {
+  //     const timer = setTimeout(() => {
+  //       setCountdown(countdown - 1);
+  //     }, 1000);
+  //     return () => clearTimeout(timer);
+  //   } else {
+  //     navigate('/', { replace: true });
+  //   }
+  // }, [countdown, navigate]);
 
   const handleBackToHome = () => {
     navigate('/', { replace: true });

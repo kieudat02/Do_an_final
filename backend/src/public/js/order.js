@@ -287,6 +287,10 @@ function getPaymentStatusBadge(status) {
             return '<span class="order__badge order__badge--unpaid">Chưa thanh toán</span>';
         case 'completed':
             return '<span class="order__badge order__badge--completed">Đã thanh toán</span>';
+        case 'failed':
+            return '<span class="order__badge order__badge--cancelled">Thanh toán thất bại</span>';
+        case 'refund':
+            return '<span class="order__badge order__badge--refund">Hoàn tiền</span>';
         default:
             return '<span class="order__badge">Không xác định</span>';
     }

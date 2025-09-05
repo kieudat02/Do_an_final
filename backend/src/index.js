@@ -85,7 +85,7 @@ app.use(viewContextMiddleware);
 // Routes
 app.use('/api/public', publicApi);
 app.use('/api/review', reviewPublicRoute);
-app.use('/api/chat', chatbotRoute); // Chatbot API routes
+app.use('/api/chat', chatbotRoute);
 app.use('/api', apiRoute);
 app.use('/ckeditor', ckeditorRoute);
 app.use("/", authRoute);
@@ -99,6 +99,15 @@ app.use('/transportation', transportationRoute);
 app.use('/roles', roleRoute);
 app.use('/account', accountRoute);
 app.use('/orders', orderRoute);
+
+// Route fallback cho VNPay return
+app.get('/payment/vnpay-return', (req, res) => {
+    const queryString = new URLSearchParams(req.query).toString();
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const redirectUrl = `${frontendUrl}/payment/vnpay-return?${queryString}`;
+    
+    res.redirect(redirectUrl);
+});
 
 // Error handling
 app.use((req, res) => {

@@ -5,7 +5,7 @@ const authController = require('../controllers/authController');
 const { redirectIfAuthenticated } = require('../middleware/authMiddleware');
 const { loginRateLimit } = require('../middleware/securityMiddleware');
 
-// Rate limiting chỉ cho POST login (chỉ khi production)
+// Rate limiting chỉ cho POST login
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 phút
     max: process.env.NODE_ENV === 'production' ? 5 : 1000, // Dev: 1000 lần, Prod: 5 lần

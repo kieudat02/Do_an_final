@@ -290,8 +290,8 @@ router.post('/order/create', verifyRecaptcha, async (req, res) => {
     }
 });
 
-// Tra cứu đơn hàng
-router.get('/order/lookup', async (req, res) => {
+// Tra cứu đơn hàng với reCAPTCHA protection
+router.post('/order/lookup', verifyRecaptcha, async (req, res) => {
     try {
         const orderController = require('../controllers/orderController');
         await orderController.lookupOrderPublic(req, res);
@@ -305,8 +305,8 @@ router.get('/order/lookup', async (req, res) => {
     }
 });
 
-// Gửi OTP cho tra cứu đơn hàng
-router.post('/order/send-otp', async (req, res) => {
+// Gửi OTP cho tra cứu đơn hàng với reCAPTCHA
+router.post('/order/send-otp', verifyRecaptcha, async (req, res) => {
     try {
         const orderController = require('../controllers/orderController');
         await orderController.sendOTPForOrderLookup(req, res);

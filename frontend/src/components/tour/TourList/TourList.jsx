@@ -82,7 +82,7 @@ const TourList = () => {
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedDestination, setSelectedDestination] = useState(''); // Có thể là string (single ID) hoặc array (multiple IDs)
+  const [selectedDestination, setSelectedDestination] = useState(''); 
   const [selectedDestinationType, setSelectedDestinationType] = useState('');
   const [phone, setPhone] = useState('');
   //Dữ liệu API
@@ -244,7 +244,7 @@ const TourList = () => {
     fetchDestinationsList();
   }, [slug]);
 
-  //Cập nhật tour khi bộ lọc thay đổi (sau debounce)
+  //Cập nhật tour khi bộ lọc thay đổi
   useEffect(() => {
     if (!loading) {
       // Fetch tours khi có thay đổi filter, bất kể có slug hay không
@@ -252,7 +252,7 @@ const TourList = () => {
         // Trang tổng hợp tours
         fetchTours(1, false, true);
       } else {
-        // Trang category có slug - luôn fetch khi có thay đổi filter (bao gồm cả seasonal tours)
+        // Trang category có slug 
         fetchTours(1, false, true);
       }
     }
@@ -341,21 +341,16 @@ const TourList = () => {
     }
   };
 
-
-
-
-
   // Handler cho seasonal tours
   const handleDestinationTypeFilter = (destinationType) => {
     setSelectedDestinationType(destinationType);
-    setSelectedDestination(''); // Reset về empty string
+    setSelectedDestination(''); 
     setCurrentPage(1);
 
     // Cuộn lên đầu trang khi chọn danh mục
     scrollToTop();
 
     // Không gọi fetchTours trực tiếp ở đây, để useEffect xử lý
-    // useEffect sẽ tự động trigger khi selectedDestinationType thay đổi
   };
 
 
@@ -468,7 +463,7 @@ const TourList = () => {
       }
     }
 
-    return name; // Trả về tên gốc nếu không tìm thấy mapping
+    return name; 
   };
 
   // Logic xác định loại menu dựa trên slug và category
@@ -479,7 +474,7 @@ const TourList = () => {
     if (slug.includes('trong-nuoc')) return 'domestic-only';
     if (slug.includes('nuoc-ngoai')) return 'international-only';
 
-    // Kiểm tra seasonal tours - mở rộng các pattern cho tour mùa thu và lễ 2/9
+    // Kiểm tra seasonal tours 
     const seasonalPatterns = [
       'mua-thu', 'le-2-9', 'le-30-4', 'le-1-5', 'tet', 'noel', 'giang-sinh',
       'summer', 'winter', 'spring', 'autumn', 'festival', 'holiday',
@@ -502,7 +497,7 @@ const TourList = () => {
 
     if (isSeasonalSlug || isSeasonalCategory) return 'seasonal';
 
-    return 'full'; // fallback
+    return 'full'; 
   };
 
   const menuType = useMemo(() => {
@@ -536,7 +531,6 @@ const TourList = () => {
     scrollToTop();
 
     // Không gọi fetchTours trực tiếp ở đây, để useEffect xử lý
-    // useEffect sẽ tự động trigger khi selectedDestination thay đổi
   };
 
   // Helper function để kiểm tra xem tỉnh có được chọn không
@@ -634,7 +628,7 @@ const TourList = () => {
         .replace(/^tour\s+/i, '')
         .trim();
     } else if (slug) {
-      // Fallback từ slug nếu không có category name - mở rộng cho tour mùa thu và lễ 2/9
+      // Fallback từ slug nếu không có category name
       const seasonalMappings = {
         'mua-thu': 'Mùa thu',
         'le-2-9': 'Lễ 2/9',

@@ -1042,7 +1042,31 @@ body {
 .top-tours .tour-table tr:hover td {
   background-color: #f8f9fa;
 }
+.top-tours .tour-table .text-center {
+  color: #6c757d;
+  font-style: italic;
+}
+.top-tours .tour-table .text-center i {
+  opacity: 0.7;
+}
 
+.quantity-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 20px;
+  background-color: #28a745;
+  color: white;
+  text-align: center;
+  min-width: 40px;
+}
+.quantity-badge.revenue {
+  background-color: #007bff;
+}
+.quantity-badge.cancelled {
+  background-color: #dc3545;
+}
 
 @media (max-width: 1200px) {
   .stats-cards {
@@ -6971,6 +6995,10 @@ body {
 }
 .order__badge--completed {
   background: #28a745;
+  color: #fff;
+}
+.order__badge--refund {
+  background: #fd7e14;
   color: #fff;
 }
 .order__pagination {

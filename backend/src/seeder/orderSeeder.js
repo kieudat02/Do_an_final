@@ -22,7 +22,7 @@ const createOrders = async () => {
     const orderStatuses = ['pending', 'confirmed', 'cancelled'];
     
     // Sample payment statuses
-    const paymentStatuses = ['pending', 'completed'];
+    const paymentStatuses = ['pending', 'completed', 'failed', 'refund'];
 
     // Create 5 sample orders
     const orderData = [
@@ -142,6 +142,50 @@ const createOrders = async () => {
         paymentMethod: paymentMethods[1], // bank_transfer
         paymentStatus: paymentStatuses[1], // completed
         notes: 'Đoàn khách gia đình lớn, yêu cầu sắp xếp phòng gần nhau',
+        createdBy: 'admin'
+      },
+      {
+        customer: 'Phạm Thị F',
+        email: 'phamthif@example.com',
+        phone: '0934567890',
+        address: '303 Đường Nguyễn Thái Bình, Quận Tân Bình, TP.HCM',
+        status: orderStatuses[2], // cancelled
+        totalAmount: 18000000,
+        items: [
+          {
+            tourId: tours[1]._id,
+            name: tours[1].title,
+            price: tours[1].price,
+            quantity: 1,
+            adults: 3,
+            children: 1
+          }
+        ],
+        paymentMethod: paymentMethods[1], // MoMo
+        paymentStatus: paymentStatuses[2], // failed
+        notes: 'Thanh toán thất bại do thẻ không đủ số dư',
+        createdBy: 'admin'
+      },
+      {
+        customer: 'Võ Văn G',
+        email: 'vovang@example.com',
+        phone: '0987123456',
+        address: '404 Đường Võ Văn Tần, Quận 3, TP.HCM',
+        status: orderStatuses[2], // cancelled
+        totalAmount: 22000000,
+        items: [
+          {
+            tourId: tours[2]._id,
+            name: tours[2].title,
+            price: tours[2].price,
+            quantity: 1,
+            adults: 2,
+            children: 2
+          }
+        ],
+        paymentMethod: paymentMethods[0], // Tiền mặt
+        paymentStatus: paymentStatuses[3], // refund
+        notes: 'Khách hàng yêu cầu hủy tour và hoàn tiền do lý do gia đình',
         createdBy: 'admin'
       }
     ];

@@ -61,7 +61,7 @@ const sendOTPEmail = async (email, otp) => {
         const mailOptions = {
             from: `"ND Travel" <${process.env.EMAIL_USER}>`,
             to: email,
-            subject: 'Mã xác thực đăng ký tài khoản',
+            subject: 'Mã xác thực tra cứu mã đơn',
             html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
                     <div style="text-align: center; margin-bottom: 20px;">
@@ -69,7 +69,7 @@ const sendOTPEmail = async (email, otp) => {
                     </div>
                     <div style="margin-bottom: 20px;">
                         <p>Xin chào,</p>
-                        <p>Cảm ơn bạn đã đăng ký tài khoản tại ND Travel. Để hoàn tất quá trình đăng ký, vui lòng sử dụng mã xác thực sau:</p>
+                        <p>Cảm ơn bạn đã đăng ký tài khoản tại ND Travel. Để hoàn tất quá trình tra cứu đơn hàng, vui lòng sử dụng mã xác thực sau:</p>
                     </div>
                     <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; text-align: center; margin-bottom: 20px;">
                         <h1 style="font-size: 32px; letter-spacing: 5px; margin: 0; color: #3498db;">${otp}</h1>

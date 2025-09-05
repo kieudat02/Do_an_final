@@ -150,7 +150,7 @@ const validateStock = async (orderItems) => {
 
             if (tourDetail.stock < totalPeople) {
                 result.isValid = false;
-                result.errors.push(`Stock không đủ cho tour detail ${item.tourDetailId}. Còn lại: ${tourDetail.stock}, cần: ${totalPeople}`);
+                result.errors.push(`Vui lòng chọn ngày khác, đã hết chỗ`);
             }
         } catch (error) {
             result.isValid = false;

@@ -61,7 +61,7 @@ const orderSchema = new mongoose.Schema({
     },
     paymentStatus: {
         type: String,
-        enum: ['pending', 'completed', 'failed'],
+        enum: ['pending', 'completed', 'failed', 'refund'],
         default: 'pending'
     },
     // Thông tin thanh toán MoMo
@@ -104,6 +104,13 @@ const orderSchema = new mongoose.Schema({
         default: false
     },
     notes: {
+        type: String
+    },
+    // Thông tin hủy đơn hàng
+    cancelledAt: {
+        type: Date
+    },
+    cancelReason: {
         type: String
     },
     //Các trường hệ thống xem xét
