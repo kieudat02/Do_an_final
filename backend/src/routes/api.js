@@ -77,9 +77,11 @@ router.put('/user/profile', (req, res) => {
 router.post('/order/create', jwtAuthMiddleware.authenticateJwt, orderController.createOrder);
 router.get('/user/orders', jwtAuthMiddleware.authenticateJwt, orderController.getUserOrders);
 
-// MoMo payment routes
+// Payment routes
 const momoRoute = require('./momoRoute');
+const vnpayRoute = require('./vnpayRoute');
 router.use('/momo', momoRoute);
+router.use('/vnpay', vnpayRoute);
 
 // Cấu hình Cloudinary Storage cho avatar
 const avatarStorage = new CloudinaryStorage({
@@ -403,5 +405,9 @@ router.patch('/admin/reviews/:id/approve', checkPermission("UPDATE_REVIEW"), rev
 router.patch('/admin/reviews/:id/hide', checkPermission("UPDATE_REVIEW"), reviewController.hideReview);
 router.delete('/admin/reviews/:id', checkPermission("DELETE_REVIEW"), reviewController.softDeleteReview);
 router.patch('/admin/reviews/:id/restore', checkPermission("UPDATE_REVIEW"), reviewController.restoreReview);
+
+//------- Cleanup Job Management --------
+const { getCleanupJobRoutes } = require('../jobs/cleanupJob');
+getCleanupJobRoutes(router);
 
 module.exports = router;

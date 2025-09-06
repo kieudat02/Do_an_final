@@ -868,9 +868,27 @@ body {
 
 .stats-cards {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
   margin-bottom: 2rem;
+}
+.stats-cards .stats-card:nth-child(n+5) {
+  grid-column: span 1;
+}
+@media (max-width: 1200px) {
+  .stats-cards {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (max-width: 768px) {
+  .stats-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 480px) {
+  .stats-cards {
+    grid-template-columns: 1fr;
+  }
 }
 
 .stats-card {
@@ -934,6 +952,40 @@ body {
 .stats-card__numbers span.inactive {
   background: rgba(149, 165, 166, 0.1);
   color: #95a5a6;
+}
+.stats-card__numbers span.csat-score {
+  background: rgba(40, 167, 69, 0.1);
+  color: #28a745;
+  font-weight: 600;
+}
+.stats-card__numbers span.csat-count {
+  background: rgba(108, 117, 125, 0.1);
+  color: #6c757d;
+}
+.stats-card__numbers span.payment-momo {
+  background: rgba(214, 51, 132, 0.1);
+  color: #d63384;
+}
+.stats-card__numbers span.payment-vnpay {
+  background: rgba(13, 110, 253, 0.1);
+  color: #0d6efd;
+}
+.stats-card__numbers span.response-time {
+  background: rgba(255, 193, 7, 0.1);
+  color: #ffc107;
+}
+.stats-card__numbers span.expired-orders {
+  background: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+}
+.stats-card--csat .stats-card__icon {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+.stats-card--payment .stats-card__icon {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+.stats-card--performance .stats-card__icon {
+  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
 }
 
 .dashboard-charts {
@@ -1050,6 +1102,150 @@ body {
   opacity: 0.7;
 }
 
+.extended-analytics {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  margin-bottom: 2rem;
+  overflow: hidden;
+}
+
+.analytics-tabs {
+  display: flex;
+  border-bottom: 1px solid #e9ecef;
+  background: #f8f9fa;
+}
+
+.analytics-tab {
+  flex: 1;
+  padding: 1rem 1.5rem;
+  border: none;
+  background: transparent;
+  color: #6c757d;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-bottom: 3px solid transparent;
+}
+.analytics-tab:hover {
+  background: rgba(0, 123, 255, 0.05);
+  color: #007bff;
+}
+.analytics-tab.active {
+  background: white;
+  color: #007bff;
+  border-bottom-color: #007bff;
+}
+
+.analytics-content {
+  padding: 1.5rem;
+}
+
+.analytics-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+.analytics-header h4 {
+  margin: 0;
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+.csat-summary {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.csat-gauge {
+  position: relative;
+  width: 200px;
+  height: 100px;
+}
+
+.feedback-table-container,
+.slow-requests-table-container,
+.expired-orders-table-container {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.feedback-table,
+.slow-requests-table,
+.expired-orders-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.feedback-table th,
+.slow-requests-table th,
+.expired-orders-table th {
+  background: #f8f9fa;
+  padding: 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  color: #495057;
+  border-bottom: 1px solid #e9ecef;
+}
+.feedback-table td,
+.slow-requests-table td,
+.expired-orders-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #f8f9fa;
+  vertical-align: middle;
+}
+.feedback-table tr:hover,
+.slow-requests-table tr:hover,
+.expired-orders-table tr:hover {
+  background: rgba(0, 123, 255, 0.02);
+}
+
+.rating-stars {
+  color: #ffc107;
+  font-size: 1.1rem;
+}
+
+.performance-summary,
+.expired-summary {
+  display: flex;
+  gap: 2rem;
+}
+
+.performance-metrics,
+.expired-metrics {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  min-width: 100px;
+}
+.metric .metric-label {
+  font-size: 0.875rem;
+  color: #6c757d;
+  margin-bottom: 0.5rem;
+}
+.metric .metric-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.performance-chart-container,
+.expired-chart-container {
+  height: 300px;
+  margin: 1.5rem 0;
+  position: relative;
+}
+
 .quantity-badge {
   display: inline-block;
   padding: 0.25rem 0.75rem;
@@ -1085,6 +1281,30 @@ body {
 @media (max-width: 768px) {
   .stats-cards {
     grid-template-columns: repeat(2, 1fr);
+  }
+  .analytics-tabs {
+    flex-direction: column;
+  }
+  .analytics-tab {
+    border-bottom: 1px solid #e9ecef;
+    border-right: none;
+  }
+  .analytics-tab.active {
+    border-bottom-color: #e9ecef;
+    border-left: 3px solid #007bff;
+  }
+  .performance-summary,
+  .expired-summary {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .performance-metrics,
+  .expired-metrics {
+    justify-content: center;
+  }
+  .csat-summary {
+    flex-direction: column;
+    align-items: flex-start;
   }
   .top-tours .tour-table {
     font-size: 0.875rem;

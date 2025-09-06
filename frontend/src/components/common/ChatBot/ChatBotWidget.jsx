@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   sendMessage,
   createNewSession,
-  clearChatHistory,
   getChatbotContext,
   ChatStorage
 } from '../../../services/geminiService';
@@ -11,6 +10,9 @@ import {
 } from '../../../utils/chatbotUtils';
 import { PLACEHOLDER_IMAGES } from '../../../utils/placeholderImage';
 import { stripHtmlTags, decodeHtmlEntities } from '../../../utils/htmlUtils';
+import InlineSessionRating from './InlineSessionRating';
+import DropdownChatHistory from './DropdownChatHistory';
+import { saveChatToHistory } from '../../../services/chatHistoryService';
 import './ChatBotWidget.scss';
 
 // Hàm tiện ích để làm sạch và xử lý văn bản tin nhắn
@@ -219,16 +221,280 @@ const ChatBotWidget = () => {
   const [loadingImages, setLoadingImages] = useState(new Set());
   const [showSystemMenu, setShowSystemMenu] = useState(false);
   const [showWelcomePopup, setShowWelcomePopup] = useState(false);
+  const [messageRatings, setMessageRatings] = useState(new Map()); // Lưu trữ ratings cho từng message (legacy)
 
+  // Session rating states
+  const [showSessionRating, setShowSessionRating] = useState(false);
+  const [sessionRatingTrigger, setSessionRatingTrigger] = useState('manual');
+  const [sessionStats, setSessionStats] = useState({
+    totalMessages: 0,
+    userMessages: 0,
+    botMessages: 0,
+    sessionStartTime: null,
+    avgResponseTime: 0,
+    problemSolved: false,
+    tourInfoProvided: false,
+    mainTopics: []
+  });
 
   // Quản lý trạng thái người dùng
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
+  const [isUserLeavingSession, setIsUserLeavingSession] = useState(false);
+  const [lastActivityTime, setLastActivityTime] = useState(Date.now());
+
+  // Quản lý lịch sử cuộc trò chuyện
+  const [showDropdownHistory, setShowDropdownHistory] = useState(false);
+  const [isHistorySaved, setIsHistorySaved] = useState(false);
 
 
   // Refs
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const chatContainerRef = useRef(null);
+
+  // Xử lý rating cho tin nhắn chatbot (legacy)
+  const handleRatingSubmit = useCallback((ratingData) => {
+    const { messageId, rating, feedback, success, error } = ratingData;
+
+    if (success) {
+      // Lưu rating vào state
+      setMessageRatings(prev => new Map(prev.set(messageId, { rating, feedback })));
+
+      // Log để theo dõi
+      console.log(`✅ Rating submitted for message ${messageId}: ${rating}/5`, feedback ? `Feedback: ${feedback}` : '');
+    } else {
+      console.error(`❌ Failed to submit rating for message ${messageId}:`, error);
+    }
+  }, []);
+
+  // Xử lý rating cho phiên hội thoại (NEW)
+  const handleSessionRatingSubmit = useCallback((ratingData) => {
+    const { sessionId: ratedSessionId, messageId, rating, feedback, success, error, isUpdate } = ratingData;
+
+    if (success) {
+      console.log(`✅ Session rating submitted for session ${ratedSessionId}: ${rating}/5`,
+        feedback ? `Feedback: ${feedback}` : '',
+        isUpdate ? '(Updated)' : '(New)'
+      );
+
+      // Cập nhật tin nhắn đánh giá để hiển thị trạng thái đã hoàn thành
+      setMessages(prev => prev.map(msg =>
+        msg.id === messageId && msg.isRating
+          ? { ...msg, ratingCompleted: true, ratingValue: rating, ratingFeedback: feedback }
+          : msg
+      ));
+
+      // Lưu cuộc trò chuyện vào lịch sử khi có đánh giá
+      if (ratedSessionId && messages.length > 0 && !isHistorySaved) {
+        const result = saveChatToHistory(ratedSessionId, messages, rating);
+        if (result.success) {
+          setIsHistorySaved(true);
+        }
+      }
+
+      // Ẩn session rating modal nếu có
+      setShowSessionRating(false);
+    } else {
+      console.error(`❌ Failed to submit session rating for session ${ratedSessionId}:`, error);
+    }
+  }, [messages, isHistorySaved]);
+
+  // Cập nhật session stats
+  const updateSessionStats = useCallback((updates) => {
+    setSessionStats(prev => ({
+      ...prev,
+      ...updates
+    }));
+  }, []);
+
+  // Kiểm tra điều kiện hiển thị session rating
+  const shouldShowSessionRating = useCallback(() => {
+    // Hiển thị sau khi có ít nhất 3 tin nhắn từ bot
+    const botMessageCount = messages.filter(msg => !msg.isUser && !msg.isError).length;
+
+    // Hoặc sau 5 phút tương tác
+    const sessionDuration = sessionStats.sessionStartTime ?
+      (Date.now() - new Date(sessionStats.sessionStartTime).getTime()) / 1000 / 60 : 0;
+
+    return (botMessageCount >= 3 || sessionDuration >= 5) && !showSessionRating;
+  }, [messages, sessionStats.sessionStartTime, showSessionRating]);
+
+  // Trigger hiển thị session rating (legacy - cho modal)
+  const triggerSessionRating = useCallback((trigger = 'manual') => {
+    if (sessionId && shouldShowSessionRating()) {
+      setSessionRatingTrigger(trigger);
+      setShowSessionRating(true);
+    }
+  }, [sessionId, shouldShowSessionRating]);
+
+  // Thêm tin nhắn đánh giá vào cuộc trò chuyện
+  const addRatingMessage = useCallback((trigger = 'auto') => {
+    if (!sessionId) return;
+
+    // Kiểm tra xem đã có tin nhắn đánh giá chưa
+    const hasRatingMessage = messages.some(msg => msg.isRating);
+    if (hasRatingMessage) return;
+
+    const ratingMessage = {
+      id: Date.now() + '_rating',
+      text: '', // Không cần text vì sẽ render component
+      isUser: false,
+      isRating: true, // Flag đặc biệt cho tin nhắn đánh giá
+      timestamp: new Date().toISOString(),
+      ratingTrigger: trigger,
+      sessionStats: { ...sessionStats }
+    };
+
+    setMessages(prev => [...prev, ratingMessage]);
+    setShowSessionRating(false); // Đảm bảo modal không hiển thị
+  }, [sessionId, messages, sessionStats]);
+
+
+
+  // Phát hiện khi người dùng chuẩn bị rời khỏi
+  const detectUserLeaving = useCallback(() => {
+    const timeSinceLastActivity = Date.now() - lastActivityTime;
+    const hasEnoughMessages = messages.filter(msg => !msg.isUser && !msg.isError && !msg.isRating).length >= 2;
+    const hasNoRatingMessage = !messages.some(msg => msg.isRating);
+
+    // Nếu không hoạt động trong 30 giây và có đủ tin nhắn và chưa đánh giá
+    if (timeSinceLastActivity > 30000 && hasEnoughMessages && hasNoRatingMessage && sessionId) {
+      console.log('🔔 User seems to be leaving, showing rating prompt');
+      addRatingMessage('session_end');
+      setIsUserLeavingSession(true);
+    }
+  }, [lastActivityTime, messages, sessionId, addRatingMessage]);
+
+  // Cập nhật thời gian hoạt động khi có tin nhắn mới
+  useEffect(() => {
+    if (messages.length > 0) {
+      setLastActivityTime(Date.now());
+    }
+  }, [messages]);
+
+  // Theo dõi hoạt động của người dùng
+  useEffect(() => {
+    const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+
+    const updateActivity = () => {
+      setLastActivityTime(Date.now());
+      setIsUserLeavingSession(false);
+    };
+
+    activityEvents.forEach(event => {
+      document.addEventListener(event, updateActivity, true);
+    });
+
+    return () => {
+      activityEvents.forEach(event => {
+        document.removeEventListener(event, updateActivity, true);
+      });
+    };
+  }, []);
+
+  // Timer để kiểm tra định kỳ
+  useEffect(() => {
+    const interval = setInterval(detectUserLeaving, 10000); // Kiểm tra mỗi 10 giây
+    return () => clearInterval(interval);
+  }, [detectUserLeaving]);
+
+  // Phát hiện khi người dùng đóng tab/browser
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      const hasEnoughMessages = messages.filter(msg => !msg.isUser && !msg.isError && !msg.isRating).length >= 2;
+      const hasNoRatingMessage = !messages.some(msg => msg.isRating);
+
+      if (hasEnoughMessages && sessionId) {
+        // Lưu lịch sử trước khi rời khỏi (nếu chưa lưu)
+        if (!isHistorySaved) {
+          saveChatToHistory(sessionId, messages, null);
+        }
+
+        if (hasNoRatingMessage) {
+          // Thêm đánh giá ngay lập tức
+          addRatingMessage('page_unload');
+
+          // Hiển thị confirm dialog (optional)
+          e.preventDefault();
+          e.returnValue = 'Bạn có muốn đánh giá cuộc trò chuyện trước khi rời khỏi?';
+          return e.returnValue;
+        }
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Trang bị ẩn, có thể người dùng đang rời khỏi
+        const hasEnoughMessages = messages.filter(msg => !msg.isUser && !msg.isError && !msg.isRating).length >= 2;
+        const hasNoRatingMessage = !messages.some(msg => msg.isRating);
+
+        if (hasEnoughMessages && hasNoRatingMessage && sessionId) {
+          setTimeout(() => {
+            if (document.hidden) { // Vẫn ẩn sau 2 giây
+              addRatingMessage('tab_hidden');
+            }
+          }, 2000);
+        }
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [messages, sessionId, addRatingMessage]);
+
+  // Trích xuất chủ đề từ tin nhắn bot
+  const extractTopics = useCallback((messageText) => {
+    const topics = [];
+    const text = messageText.toLowerCase();
+
+    // Các từ khóa chủ đề
+    const topicKeywords = {
+      'tour': ['tour', 'du lịch', 'chuyến đi', 'hành trình'],
+      'booking': ['đặt', 'booking', 'đặt chỗ', 'đặt tour'],
+      'price': ['giá', 'chi phí', 'tiền', 'cost', 'price'],
+      'location': ['địa điểm', 'nơi', 'chỗ', 'location'],
+      'time': ['thời gian', 'ngày', 'giờ', 'time'],
+      'support': ['hỗ trợ', 'giúp đỡ', 'support', 'help']
+    };
+
+    Object.entries(topicKeywords).forEach(([topic, keywords]) => {
+      if (keywords.some(keyword => text.includes(keyword))) {
+        topics.push(topic);
+      }
+    });
+
+    return topics.slice(0, 3); // Giới hạn 3 chủ đề
+  }, []);
+
+  // Xử lý khi chọn cuộc trò chuyện từ lịch sử
+  const handleSelectChatFromHistory = useCallback((chat) => {
+    try {
+      // Khôi phục cuộc trò chuyện
+      setMessages(chat.messages);
+      setSessionId(chat.sessionId);
+      setIsHistorySaved(true); // Đánh dấu đã lưu
+      setShowChatHistory(false);
+
+      // Cập nhật session stats
+      updateSessionStats({
+        totalMessages: chat.messageCount,
+        userMessages: chat.messages.filter(msg => msg.isUser).length,
+        botMessages: chat.messages.filter(msg => !msg.isUser && !msg.isError && !msg.isRating).length,
+        sessionStartTime: chat.createdAt,
+        problemSolved: chat.rating >= 4,
+        mainTopics: chat.tags.filter(tag => !['morning', 'afternoon', 'evening', 'night', 'general'].includes(tag))
+      });
+
+      console.log('📖 Restored chat from history:', chat.title);
+    } catch (error) {
+      console.error('Error restoring chat from history:', error);
+    }
+  }, [updateSessionStats]);
 
   // Các hàm tiện ích
   const scrollToBottom = useCallback(() => {
@@ -557,11 +823,22 @@ const ChatBotWidget = () => {
     setInputMessage('');
     setIsLoading(true);
 
+    // Cập nhật session stats - user message
+    updateSessionStats({
+      totalMessages: sessionStats.totalMessages + 1,
+      userMessages: sessionStats.userMessages + 1,
+      sessionStartTime: sessionStats.sessionStartTime || new Date().toISOString()
+    });
+
+    const startTime = Date.now();
+
     try {
       // Gửi tin nhắn đến API
       const result = await sendMessage(messageToSend, sessionId);
 
       if (result.success) {
+        const responseTime = Date.now() - startTime;
+
         // Trích xuất dữ liệu tour từ phản hồi
         const tourData = extractTourData(result.data.reply);
 
@@ -579,6 +856,25 @@ const ChatBotWidget = () => {
         }
 
         setMessages(prev => [...prev, botMessage]);
+
+        // Cập nhật session stats - bot message
+        const newBotMessages = sessionStats.botMessages + 1;
+        const newTotalMessages = sessionStats.totalMessages + 1;
+        const newAvgResponseTime = sessionStats.avgResponseTime === 0 ?
+          responseTime :
+          (sessionStats.avgResponseTime * (newBotMessages - 1) + responseTime) / newBotMessages;
+
+        updateSessionStats({
+          totalMessages: newTotalMessages,
+          botMessages: newBotMessages,
+          avgResponseTime: Math.round(newAvgResponseTime),
+          tourInfoProvided: sessionStats.tourInfoProvided || (tourData.images.length > 0),
+          // Phân tích chủ đề từ tin nhắn bot
+          mainTopics: [...new Set([...sessionStats.mainTopics, ...extractTopics(result.data.reply)])]
+        });
+
+        // Không tự động hiển thị đánh giá nữa - chỉ hiển thị khi người dùng chuẩn bị rời khỏi
+        // Logic phát hiện rời khỏi sẽ xử lý việc hiển thị đánh giá
 
         // Cập nhật session ID nếu thay đổi
         if (result.data.sessionId && result.data.sessionId !== sessionId) {
@@ -664,46 +960,22 @@ const ChatBotWidget = () => {
     }
   };
 
-  // Xóa lịch sử chat
-  const handleClearChat = async () => {
-    if (!sessionId) return;
 
-    try {
-      const result = await clearChatHistory(sessionId);
-      if (result.success) {
-        // Xóa tin nhắn
-        setMessages([]);
-
-        // Xóa tất cả dữ liệu local storage
-        ChatStorage.clearLocalHistory(sessionId);
-        ChatStorage.clearSessionId();
-
-        // Xóa hoàn toàn trạng thái người dùng
-        localStorage.removeItem('chatbot_user_state');
-
-        // Reset tất cả states
-        setHasUserInteracted(false);
-        setSessionId(null);
-        setShowSuggestions(true);
-
-        // Thêm tin nhắn chào mừng thân thiện cho khởi đầu mới
-        const welcomeMessage = {
-          id: Date.now(),
-          text: 'Xin chào 👋 Tôi có thể giúp bạn tìm tour nào hôm nay?',
-          isUser: false,
-          timestamp: new Date().toISOString()
-        };
-        setMessages([welcomeMessage]);
-      }
-    } catch (error) {
-      console.error('Lỗi xóa chat:', error);
-      setError('Không thể xóa lịch sử hội thoại');
-    }
-  };
 
   // Bắt đầu cuộc hội thoại mới
   const handleNewConversation = async () => {
     try {
+      // Lưu cuộc trò chuyện hiện tại trước khi tạo mới (nếu có đủ tin nhắn)
+      if (sessionId && messages.length > 0 && !isHistorySaved) {
+        const validMessages = messages.filter(msg =>
+          !msg.isRating && !msg.isError && msg.text && msg.text.trim()
+        );
+
+        if (validMessages.length >= 2) { // Ít nhất 2 tin nhắn hợp lệ
+          const result = saveChatToHistory(sessionId, messages, null);
+        }
+      }
+
       const result = await createNewSession();
       if (result.success) {
         const newSessionId = result.data.sessionId;
@@ -725,6 +997,7 @@ const ChatBotWidget = () => {
         ChatStorage.saveSessionId(newSessionId);
         setMessages([]);
         setShowSuggestions(true); // Hiển thị gợi ý lại
+        setIsHistorySaved(false); // Reset trạng thái lưu lịch sử
 
         // Thêm tin nhắn chào mừng thân thiện cho cuộc hội thoại mới
         const welcomeMessage = {
@@ -776,6 +1049,29 @@ const ChatBotWidget = () => {
   const toggleChat = useCallback(() => {
     setIsOpen(prev => {
       const newIsOpen = !prev;
+
+      // Nếu đang đóng chatbot và có cuộc trò chuyện
+      if (!newIsOpen && prev && sessionId) {
+        const hasEnoughMessages = messages.filter(msg => !msg.isUser && !msg.isError && !msg.isRating).length >= 2;
+        const hasNoRatingMessage = !messages.some(msg => msg.isRating);
+
+        // Lưu lịch sử trước khi đóng (nếu chưa lưu và có đủ tin nhắn)
+        if (hasEnoughMessages && !isHistorySaved) {
+          saveChatToHistory(sessionId, messages, null);
+        }
+
+        if (hasEnoughMessages && hasNoRatingMessage) {
+          // Thêm đánh giá trước khi đóng
+          addRatingMessage('chatbot_close');
+
+          // Delay việc đóng để người dùng có thể thấy đánh giá
+          setTimeout(() => {
+            setIsOpen(false);
+          }, 300);
+          return prev; // Giữ nguyên trạng thái mở
+        }
+      }
+
       if (newIsOpen) {
         setIsMinimized(false);
         // Ẩn popup chào mừng nếu đang mở chat
@@ -800,7 +1096,7 @@ const ChatBotWidget = () => {
       }
       return newIsOpen;
     });
-  }, [getUserState, messages.length]);
+  }, [getUserState, messages.length, sessionId, messages, addRatingMessage]);
 
   // Định dạng timestamp
   const formatTime = (timestamp) => {
@@ -1092,18 +1388,57 @@ const ChatBotWidget = () => {
                         </svg>
                         <span>Cuộc hội thoại mới</span>
                       </button>
+
+
                       <button
                         className="menu-item"
                         onClick={() => {
-                          handleClearChat();
-                          closeSystemMenu();
+                          setShowDropdownHistory(!showDropdownHistory);
                         }}
-                        disabled={messages.length === 0}
                       >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                          <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14zM10 11v6M14 11v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
-                        <span>Xóa lịch sử chat</span>
+                        <span>Lịch sử cuộc trò chuyện</span>
+                        <svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          style={{
+                            marginLeft: 'auto',
+                            transform: showDropdownHistory ? 'rotate(180deg)' : 'rotate(0deg)',
+                            transition: 'transform 0.2s ease'
+                          }}
+                        >
+                          <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </button>
+
+                      {/* Dropdown Chat History */}
+                      {showDropdownHistory && (
+                        <DropdownChatHistory
+                          onSelectChat={handleSelectChatFromHistory}
+                          currentSessionId={sessionId}
+                          onClose={() => {
+                            setShowDropdownHistory(false);
+                            closeSystemMenu();
+                          }}
+                        />
+                      )}
+
+                      <button
+                        className="menu-item"
+                        onClick={() => {
+                          addRatingMessage('manual');
+                          closeSystemMenu();
+                        }}
+                        disabled={!sessionId || messages.length === 0 || messages.some(msg => msg.isRating)}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        <span>Đánh giá cuộc trò chuyện</span>
                       </button>
                     </div>
                   </div>
@@ -1142,24 +1477,39 @@ const ChatBotWidget = () => {
                       </div>
                     )}
                     <div className="message-content">
-                      <div className="message-text">
-                        {parseAndCleanMarkdown(message.text)}
-                      </div>
-                      {message.tourData && message.tourData.images && (
-                        <TourImageGallery
-                          images={message.tourData.images}
+                      {/* Hiển thị InlineSessionRating cho tin nhắn đánh giá */}
+                      {message.isRating ? (
+                        <InlineSessionRating
+                          sessionId={sessionId}
+                          onRatingSubmit={handleSessionRatingSubmit}
+                          trigger={message.ratingTrigger || 'auto'}
+                          sessionStats={message.sessionStats || sessionStats}
                           messageId={message.id}
                         />
+                      ) : (
+                        <>
+                          <div className="message-text">
+                            {parseAndCleanMarkdown(message.text)}
+                          </div>
+                          {message.tourData && message.tourData.images && (
+                            <TourImageGallery
+                              images={message.tourData.images}
+                              messageId={message.id}
+                            />
+                          )}
+                          {message.tourData && !message.isUser && (
+                            <TourActionButtons
+                              tourData={message.tourData}
+                              messageId={message.id}
+                            />
+                          )}
+                          <div className="message-time">
+                            {formatTime(message.timestamp)}
+                          </div>
+                        </>
                       )}
-                      {message.tourData && !message.isUser && (
-                        <TourActionButtons
-                          tourData={message.tourData}
-                          messageId={message.id}
-                        />
-                      )}
-                      <div className="message-time">
-                        {formatTime(message.timestamp)}
-                      </div>
+
+                      {/* Không hiển thị rating cho từng tin nhắn nữa */}
                     </div>
                   </div>
                 ))}
@@ -1211,6 +1561,8 @@ const ChatBotWidget = () => {
                   <button onClick={() => setError(null)}>×</button>
                 </div>
               )} */}
+
+
 
               {/* Khu Vực Nhập Liệu */}
               <div className="chatbot-input">
@@ -1287,6 +1639,9 @@ const ChatBotWidget = () => {
           </div>
         </div>
       )}
+
+      {/* Session Rating Modal - Không cần nữa vì đã chuyển sang inline */}
+      {/* Chat History Modal - Không cần nữa vì đã chuyển sang inline */}
     </div>
   );
 };

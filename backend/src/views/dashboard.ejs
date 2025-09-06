@@ -106,6 +106,46 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- New Stats Cards -->
+                            <div class="stats-card stats-card--csat">
+                                <div class="stats-card__icon">
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                <div class="stats-card__content">
+                                    <h3>CSAT Chatbot</h3>
+                                    <div class="stats-card__numbers">
+                                        <span class="csat-score">⭐ <span id="csatScore">--</span>/5</span>
+                                        <span class="csat-count"><span id="csatCount">--</span> đánh giá</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="stats-card stats-card--payment">
+                                <div class="stats-card__icon">
+                                    <i class="fas fa-credit-card"></i>
+                                </div>
+                                <div class="stats-card__content">
+                                    <h3>Tỉ lệ thanh toán</h3>
+                                    <div class="stats-card__numbers">
+                                        <span class="payment-momo">MoMo: <span id="momoSuccessRate">--</span>%</span>
+                                        <span class="payment-vnpay">VNPay: <span id="vnpaySuccessRate">--</span>%</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="stats-card stats-card--performance">
+                                <div class="stats-card__icon">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div class="stats-card__content">
+                                    <h3>Hiệu năng</h3>
+                                    <div class="stats-card__numbers">
+                                        <span class="response-time">Chatbot: <span id="avgResponseTime">--</span>ms</span>
+                                        <span class="expired-orders">Hết hạn: <span id="expiredOrders">--</span> đơn</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Charts Section -->
@@ -116,6 +156,9 @@
                                     <button class="chart-tab active" data-type="revenue">Doanh thu</button>
                                     <button class="chart-tab" data-type="orders">Tổng đơn hàng</button>
                                     <button class="chart-tab" data-type="cancellations">Tỉ lệ hủy đơn</button>
+                                    <button class="chart-tab" data-type="cancelled-orders">Đơn bị hủy</button>
+                                    <button class="chart-tab" data-type="csat">CSAT</button>
+                                    <button class="chart-tab" data-type="performance">Hiệu năng</button>
                                 </div>
                                 <div class="chart-content">
                                     <canvas id="revenueChart"></canvas>
@@ -133,6 +176,8 @@
                                 </div>
                             </div>
                         </div>
+
+
 
                         <!-- Top Tours Section -->
                         <div class="top-tours">
@@ -188,8 +233,10 @@
                 "monthlyRevenue": <%- JSON.stringify(monthlyRevenue) %>,
                 "pendingOrders": <%= pendingOrders %>,
                 "confirmedOrders": <%= confirmedOrders %>,
+                "completedOrders": <%= completedOrders %>,
                 "cancelledOrders": <%= cancelledOrders %>,
                 "topBookedTours": <%- JSON.stringify(topBookedTours) %>,
+                "topCancelledTours": <%- JSON.stringify(topCancelledTours) %>,
                 "activeTours": <%= activeTours %>,
                 "inactiveTours": <%= inactiveTours %>,
                 "activeCategories": <%= activeCategories %>,
@@ -200,7 +247,10 @@
                 "inactiveDestinations": <%= inactiveDestinations %>,
                 "activeTransportations": <%= activeTransportations %>,
                 "inactiveTransportations": <%= inactiveTransportations %>,
-                "revenueByPaymentMethod": <%- JSON.stringify(revenueByPaymentMethod) %>
+                "revenueByPaymentMethod": <%- JSON.stringify(revenueByPaymentMethod) %>,
+                "csatData": <%- JSON.stringify(csatData) %>,
+                "paymentSuccessRates": <%- JSON.stringify(paymentSuccessRates) %>,
+                "performanceData": <%- JSON.stringify(performanceData) %>
             }
         </script>
 

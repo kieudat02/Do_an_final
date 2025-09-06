@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const chatbotController = require('../controllers/chatBotController');
+const chatRatingController = require('../controllers/chatRatingController');
+const { responseTimeMiddleware, getResponseTimeStats } = require('../middleware/responseTimeMiddleware');
 
 // Middleware để log requests (optional)
 const logRequest = (req, res, next) => {
@@ -55,6 +57,15 @@ const rateLimiter = (req, res, next) => {
 // Apply rate limiting to all routes
 router.use(rateLimiter);
 
+// Apply response time middleware to all chatbot routes
+router.use(responseTimeMiddleware({
+    enableLogging: true,
+    enableDatabase: true,
+    logSlowRequests: true,
+    slowRequestThreshold: 3000, // 3 seconds for chatbot
+    includeMetadata: true
+}));
+
 router.get('/search', chatbotController.searchTours);
 
 router.get('/tours/price-range', chatbotController.getToursByPriceRange);
@@ -79,6 +90,44 @@ router.get('/cache/status', chatbotController.getCacheStatus);
 
 // Health check route
 router.get('/health', chatbotController.healthCheck);
+
+// ========== CHAT RATING ROUTES (LEGACY - PER MESSAGE) ==========
+// Tạo hoặc cập nhật rating cho tin nhắn chatbot
+router.post('/rating', chatRatingController.createOrUpdateRating);
+
+// Lấy thống kê CSAT tổng quan
+router.get('/rating/stats', chatRatingController.getCSATStats);
+
+// Lấy trend đánh giá theo thời gian
+router.get('/rating/trend', chatRatingController.getRatingTrend);
+
+// Lấy danh sách ratings với phân trang
+router.get('/rating/list', chatRatingController.getRatings);
+
+// Xóa rating
+router.delete('/rating/:ratingId', chatRatingController.deleteRating);
+
+// ========== SESSION RATING ROUTES (NEW - PER SESSION) ==========
+const sessionRatingController = require('../controllers/sessionRatingController');
+
+// Tạo hoặc cập nhật rating cho phiên hội thoại
+router.post('/session-rating', sessionRatingController.createOrUpdateSessionRating);
+
+// Kiểm tra xem session đã được đánh giá chưa
+router.get('/session-rating/:sessionId', sessionRatingController.checkSessionRated);
+
+// Lấy thống kê CSAT cho session ratings
+router.get('/session-rating/stats', sessionRatingController.getCSATStats);
+
+// Lấy trend đánh giá session theo thời gian
+router.get('/session-rating/trend', sessionRatingController.getRatingTrend);
+
+// Lấy danh sách session ratings với phân trang
+router.get('/session-rating/list', sessionRatingController.getSessionRatings);
+
+// ========== RESPONSE TIME ROUTES ==========
+// Lấy thống kê response time
+router.get('/response-time/stats', getResponseTimeStats);
 
 // Backward compatibility - giữ lại route cũ
 router.post('/ask', chatbotController.askBot);
