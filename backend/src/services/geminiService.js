@@ -112,14 +112,14 @@ Slogan: "Khám phá thế giới cùng NDTravel"
 
 🗺️ DANH MỤC TOUR:\n`;
 
-    // Tối ưu: chỉ hiển thị top categories và tours nổi bật
+    // Tối ưu: chỉ hiển thị top categories và tours nổi bật với ID thực
     const topCategories = Object.entries(tourData.toursByCategory).slice(0, 5);
     topCategories.forEach(([categoryName, categoryData]) => {
         prompt += `📍 ${categoryName}: `;
         if (categoryData.tours && categoryData.tours.length > 0) {
             const topTours = categoryData.tours.slice(0, 2); // Chỉ lấy 2 tour top
             const tourNames = topTours.map(tour =>
-                `${tour.title} (ID: ${tour._id}, ${formatPrice(tour.price)}${tour.rating > 0 ? `, ${tour.rating}⭐` : ''})`
+                `${tour.title} (${formatPrice(tour.price)}${tour.rating > 0 ? `, ${tour.rating}⭐` : ''}) [ID: ${tour._id}]`
             );
             prompt += tourNames.join(', ') + '\n';
         } else {
@@ -146,6 +146,7 @@ Slogan: "Khám phá thế giới cùng NDTravel"
 5. Khuyến khích đặt tour trên website
 6. Khi khách hàng hỏi về liên hệ, LUÔN trả lời: "Bạn có thể liên hệ với chúng tôi qua website http://localhost:5173 hoặc gọi điện đến số hotline 0972 122 555. Chúng tôi hỗ trợ 24/7!"
 7. Khi giới thiệu tour cụ thể, LUÔN cung cấp link chi tiết với ID thực: "Xem chi tiết và đặt tour tại: http://localhost:5173/tour/[SỬ_DỤNG_ID_THỰC_TỪ_DỮ_LIỆU]"
+8. KHÔNG BAO GIỜ hiển thị ID tour trong câu trả lời cho khách hàng - chỉ sử dụng ID để tạo link
 
 📝 MẪU TRẢ LỜI LIÊN HỆ:
 Khi khách hàng hỏi cách liên hệ, đặt tour, hoặc cần hỗ trợ, hãy trả lời:
@@ -157,15 +158,28 @@ Chúng tôi hỗ trợ 24/7 để tư vấn và đặt tour cho bạn!"
 🔗 TẠO LINK TOUR CỤ THỂ:
 Khi giới thiệu tour cụ thể, hãy tạo link trực tiếp đến trang chi tiết tour:
 - Format: http://localhost:5173/tour/[ID_TOUR_THỰC_TẾ]
-- QUAN TRỌNG: Sử dụng ID thực từ dữ liệu tour (tour._id), KHÔNG dùng placeholder
-- Ví dụ đúng: "Xem chi tiết tour tại: http://localhost:5173/tour/67890abcdef123456"
-- Ví dụ SAI: "http://localhost:5173/tour/[ID_TOUR_MU_CANG_CHAI]"
+- QUAN TRỌNG: Sử dụng ID thực từ dữ liệu tour trong dấu [ID: ...], KHÔNG dùng placeholder
+- Ví dụ đúng: "Xem chi tiết tour tại: http://localhost:5173/tour/68af50ee3c401ee2dbe6c8b0"
+- Ví dụ SAI: "http://localhost:5173/tour/ID_TOUR_PHU_QUOC_LE_2_9_1"
+- Trong dữ liệu tour có format: "Tên tour [ID: 68af50ee3c401ee2dbe6c8b0]" - hãy lấy ID từ đây
 
 📋 VÍ DỤ CÁCH TRẢ LỜI TOUR:
+Nếu trong dữ liệu có: "Tour Mù Cang Chải mùa lúa chín 3 ngày 2 đêm từ Hà Nội 2025 (8.500.000đ, 4.5⭐) [ID: 68a3795194426a6c39b18961]"
+
+Thì trả lời:
 "Tour Mù Cang Chải mùa lúa chín 3 ngày 2 đêm từ Hà Nội 2025
-💰 Giá: 4.000.000đ
+💰 Giá: 8.500.000đ
 ⭐ Đánh giá: 4.5/5
-🔗 Xem chi tiết và đặt tour tại: http://localhost:5173/tour/67890abcdef123456"
+🔗 Xem chi tiết và đặt tour tại: http://localhost:5173/tour/68a3795194426a6c39b18961"
+
+❌ KHÔNG BAO GIỜ viết như thế này:
+"Tour Phú Quốc 4N3Đ (ID: 68b01a29195c0e0a5ba05a34)"
+"Bạn muốn xem chi tiết tour nào? (ID: 68b01b11995e922f7982f4d6)"
+"http://localhost:5173/tour/ID_TOUR_PHU_QUOC_LE_2_9_1"
+
+✅ LUÔN viết như thế này:
+"Tour Phú Quốc 4N3Đ - Đảo Ngọc Thiên Đường"
+"Xem chi tiết tour tại: http://localhost:5173/tour/68b01a29195c0e0a5ba05a34"
 
 Cập nhật: ${new Date(tourData.lastUpdated).toLocaleString('vi-VN')}`;
 
@@ -274,6 +288,8 @@ async function buildConversationContext(sessionId, newMessage) {
 - Sử dụng dữ liệu tour thực từ hệ thống
 - Trả lời ngắn gọn, chính xác
 - Đề xuất tour phù hợp
+- KHÔNG hiển thị ID tour trong câu trả lời
+- Chỉ sử dụng ID để tạo link: http://localhost:5173/tour/[ID]
 - Kết thúc bằng câu hỏi hỗ trợ
 
 🤖:`;

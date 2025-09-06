@@ -51,13 +51,25 @@ export const API_ENDPOINTS = {
   MOMO_CREATE_PAYMENT: "/api/momo/create-payment",
   MOMO_CHECK_STATUS: "/api/momo/status",
   // VNPay payment endpoints
-  VNPAY_CREATE_PAYMENT: "/api/momo/vnpay/create-payment",
-  VNPAY_RETURN: "/api/momo/vnpay/return",
-  VNPAY_CHECK_STATUS: "/api/momo/vnpay/status",
+  VNPAY_CREATE_PAYMENT: "/api/vnpay/create-payment",
+  VNPAY_RETURN: "/api/vnpay/return",
+  VNPAY_CHECK_STATUS: "/api/vnpay/status",
   // Review endpoints (public, token-based)
   REVIEW_CHECK_LINK: "/api/review/check-link",
   REVIEW_SUBMIT: "/api/review/submit",
   REVIEW_ORDER_INFO: "/api/review/order-info",
+  // Chat rating endpoints (legacy - per message)
+  CHAT_RATING_CREATE: "/api/chat/rating",
+  CHAT_RATING_STATS: "/api/chat/rating/stats",
+  CHAT_RATING_TREND: "/api/chat/rating/trend",
+  // Session rating endpoints (new - per session)
+  SESSION_RATING_CREATE: "/api/chat/session-rating",
+  SESSION_RATING_CHECK: (sessionId) => `/api/chat/session-rating/${sessionId}`,
+  SESSION_RATING_STATS: "/api/chat/session-rating/stats",
+  SESSION_RATING_TREND: "/api/chat/session-rating/trend",
+  SESSION_RATING_LIST: "/api/chat/session-rating/list",
+  // Response time endpoints
+  RESPONSE_TIME_STATS: "/api/chat/response-time/stats",
 };
 
 //Chức năng trợ giúp cho chi tiết tour du lịch công cộng

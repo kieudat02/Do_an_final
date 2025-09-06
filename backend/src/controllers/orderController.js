@@ -7,6 +7,7 @@ const { validatePhoneNumber } = require('../utils/otpUtil');
 const bookingNotificationService = require('../services/bookingNotificationService');
 const ReviewTokenService = require('../services/reviewTokenService');
 const { deductStock, restoreStock, validateStock } = require('../utils/stockManager');
+const { createOrderWithTransaction, updateOrderWithTransaction } = require('../services/transactionService');
 
 // Helper function để chuyển đổi paymentMethod từ frontend sang model
 const normalizePaymentMethod = (paymentMethod) => {

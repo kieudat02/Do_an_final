@@ -1,0 +1,322 @@
+/* Dropdown Chat History - Hiển thị trong system menu với nền đen */
+.dropdown-chat-history {
+    width: 100%;
+    max-height: 300px;
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid #374151;
+    background: #1f2937;
+    color: #ffffff;
+}
+
+.dropdown-history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: #111827;
+    border-bottom: 1px solid #374151;
+    font-size: 12px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.history-count {
+    color: #9ca3af;
+    font-weight: 400;
+}
+
+
+
+/* Loading */
+.dropdown-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    gap: 6px;
+    font-size: 11px;
+    color: #9ca3af;
+}
+
+.spinner-small {
+    width: 12px;
+    height: 12px;
+    border: 1px solid #374151;
+    border-top: 1px solid #8b5cf6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Content */
+.dropdown-history-content {
+    flex: 1;
+    overflow-y: auto;
+    max-height: 240px;
+    background: #1f2937;
+}
+
+.dropdown-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    text-align: center;
+    color: #9ca3af;
+    font-size: 11px;
+}
+
+.dropdown-empty-state svg {
+    margin-bottom: 4px;
+    color: #6b7280;
+}
+
+/* History List */
+.dropdown-history-list {
+    padding: 4px;
+}
+
+.dropdown-history-item {
+    padding: 6px 8px;
+    border: 1px solid #374151;
+    border-radius: 4px;
+    margin-bottom: 2px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #111827;
+    color: #ffffff;
+}
+
+.dropdown-history-item:hover {
+    border-color: #8b5cf6;
+    background: #1e293b;
+    transform: translateY(-1px);
+    box-shadow: 0 1px 3px rgba(139, 92, 246, 0.3);
+}
+
+.dropdown-history-item.current {
+    border-color: #8b5cf6;
+    background: #1e293b;
+    box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.5);
+}
+
+.history-item-content {
+    width: 100%;
+}
+
+.history-item-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 3px;
+}
+
+.history-title-small {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 600;
+    color: #ffffff;
+    line-height: 1.2;
+    flex: 1;
+    margin-right: 4px;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.delete-button-small {
+    background: none;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    padding: 2px;
+    border-radius: 3px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+    flex-shrink: 0;
+}
+
+.delete-button-small:hover {
+    background-color: #dc2626;
+    color: #ffffff;
+    transform: scale(1.1);
+}
+
+.history-meta-small {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 3px;
+    font-size: 9px;
+    color: #9ca3af;
+}
+
+.message-count-small {
+    font-weight: 500;
+    color: #d1d5db;
+}
+
+.rating-small {
+    color: #fbbf24;
+    font-weight: 500;
+}
+
+.history-tags-small {
+    display: flex;
+    gap: 2px;
+    flex-wrap: wrap;
+}
+
+.tag-small {
+    padding: 1px 3px;
+    border-radius: 2px;
+    font-size: 8px;
+    color: white;
+    font-weight: 500;
+    text-transform: uppercase;
+    line-height: 1;
+}
+
+.tag-more-small {
+    padding: 1px 3px;
+    border-radius: 2px;
+    font-size: 8px;
+    color: #9ca3af;
+    background: #374151;
+    font-weight: 500;
+    line-height: 1;
+}
+
+/* Confirm Delete Modal */
+.confirm-delete-overlay-small {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    border-radius: 4px;
+}
+
+.confirm-delete-modal-small {
+    background: #111827;
+    border: 1px solid #374151;
+    border-radius: 6px;
+    padding: 12px;
+    max-width: 200px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+.confirm-delete-modal-small h6 {
+    margin: 0 0 4px 0;
+    font-size: 12px;
+    color: #ffffff;
+}
+
+.confirm-delete-modal-small p {
+    margin: 0 0 12px 0;
+    font-size: 10px;
+    color: #9ca3af;
+    line-height: 1.3;
+}
+
+.confirm-actions-small {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+}
+
+.cancel-button-small,
+.confirm-button-small {
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.cancel-button-small {
+    background: #374151;
+    color: #d1d5db;
+    border-color: #4b5563;
+}
+
+.cancel-button-small:hover {
+    background: #4b5563;
+    color: #ffffff;
+}
+
+.confirm-button-small {
+    background: #dc2626;
+    color: white;
+}
+
+.confirm-button-small:hover {
+    background: #b91c1c;
+}
+
+/* Scrollbar styling */
+.dropdown-history-content::-webkit-scrollbar {
+    width: 4px;
+}
+
+.dropdown-history-content::-webkit-scrollbar-track {
+    background: #111827;
+}
+
+.dropdown-history-content::-webkit-scrollbar-thumb {
+    background: #4b5563;
+    border-radius: 2px;
+}
+
+.dropdown-history-content::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
+}
+
+/* Animation */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .dropdown-chat-history {
+        max-height: 250px;
+    }
+    
+    .dropdown-history-content {
+        max-height: 150px;
+    }
+    
+    .dropdown-history-header,
+    .dropdown-history-search {
+        padding: 6px 10px;
+    }
+    
+    .dropdown-history-list {
+        padding: 3px;
+    }
+    
+    .dropdown-history-item {
+        padding: 5px 6px;
+    }
+    
+    .history-meta-small {
+        flex-wrap: wrap;
+        gap: 3px;
+    }
+}

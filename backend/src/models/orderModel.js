@@ -29,7 +29,7 @@ const orderSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'confirmed', 'completed', 'cancelled'],
+        enum: ['pending', 'confirmed', 'completed', 'cancelled', 'expired'],
         default: 'pending'
     },
     totalAmount: {
@@ -140,6 +140,18 @@ const orderSchema = new mongoose.Schema({
     },
     updatedBy: {
         type: String
+    },
+
+    // TTL field - đơn hàng sẽ tự động expire sau 1 giờ nếu vẫn pending
+    expiresAt: {
+        type: Date,
+        default: function() {
+            // Chỉ set expiry cho orders pending, không set cho orders đã completed
+            if (this.status === 'pending' && this.paymentStatus === 'pending') {
+                return new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+            }
+            return null;
+        }
     }
 }, {
     timestamps: true
@@ -149,6 +161,30 @@ const orderSchema = new mongoose.Schema({
 orderSchema.index({ reviewToken: 1 });
 orderSchema.index({ status: 1 });
 orderSchema.index({ reviewed: 1 });
+
+// TTL Index - tự động xóa documents sau khi expire
+orderSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+
+// Compound indexes cho performance
+orderSchema.index({ status: 1, paymentStatus: 1 });
+orderSchema.index({ createdAt: -1 });
+orderSchema.index({ orderId: 1 }, { unique: true });
+
+// Middleware để cập nhật expiresAt khi status thay đổi
+orderSchema.pre('save', function(next) {
+    // Nếu order chuyển từ pending sang completed/confirmed, xóa expiresAt
+    if (this.isModified('status') || this.isModified('paymentStatus')) {
+        if (this.status === 'confirmed' || this.paymentStatus === 'completed') {
+            this.expiresAt = undefined; // Xóa TTL khi order thành công
+        } else if (this.status === 'pending' && this.paymentStatus === 'pending') {
+            // Reset TTL nếu order quay về pending
+            if (!this.expiresAt) {
+                this.expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+            }
+        }
+    }
+    next();
+});
 
 // Middleware to generate order ID before saving
 orderSchema.pre('save', async function(next) {

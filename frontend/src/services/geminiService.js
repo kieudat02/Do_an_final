@@ -1,4 +1,5 @@
 import axiosInstance from "./axiosInstance";
+import responseTimeTracker from "../utils/responseTimeTracker";
 
 // API endpoints cho chatbot - cleaned up unused endpoints
 const CHATBOT_ENDPOINTS = {
@@ -17,6 +18,9 @@ const CHATBOT_ENDPOINTS = {
  * @returns {Promise} Response từ API
  */
 export const sendMessage = async (message, sessionId = null) => {
+  // Tạo unique request ID
+  const requestId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
   try {
     // Validate input
     if (!message || typeof message !== 'string' || message.trim().length === 0) {
@@ -32,19 +36,53 @@ export const sendMessage = async (message, sessionId = null) => {
       ...(sessionId && { sessionId })
     };
 
+    // Bắt đầu tracking response time
+    responseTimeTracker.startTracking(requestId, {
+      endpoint: CHATBOT_ENDPOINTS.SEND_MESSAGE,
+      sessionId: sessionId || 'unknown',
+      messageId: requestId,
+      inputLength: message.trim().length,
+      requestType: 'message'
+    });
+
     const response = await axiosInstance.post(CHATBOT_ENDPOINTS.SEND_MESSAGE, requestData);
 
     if (response.data.success) {
+      // Kết thúc tracking với kết quả thành công
+      responseTimeTracker.endTracking(requestId, {
+        success: true,
+        statusCode: response.status,
+        outputLength: response.data.data?.reply?.length || 0,
+        data: response.data.data
+      });
+
       return {
         success: true,
-        data: response.data.data
+        data: {
+          ...response.data.data,
+          requestId // Thêm requestId để có thể track rating sau này
+        }
       };
     } else {
+      // Kết thúc tracking với kết quả thất bại
+      responseTimeTracker.endTracking(requestId, {
+        success: false,
+        statusCode: response.status,
+        error: response.data.error || 'Có lỗi xảy ra khi gửi tin nhắn'
+      });
+
       throw new Error(response.data.error || 'Có lỗi xảy ra khi gửi tin nhắn');
     }
 
   } catch (error) {
     console.error('Send message error:', error);
+
+    // Kết thúc tracking với lỗi
+    responseTimeTracker.endTracking(requestId, {
+      success: false,
+      statusCode: error.response?.status || 0,
+      error: error.message
+    });
 
     // Xử lý các loại lỗi khác nhau
     let errorMessage = 'Có lỗi xảy ra khi gửi tin nhắn. Vui lòng thử lại sau.';

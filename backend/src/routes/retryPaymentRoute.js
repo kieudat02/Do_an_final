@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Order = require('../models/orderModel');
 const momoController = require('../controllers/momoController');
+const vnpayController = require('../controllers/vnpayController');
 
 /**
  * Route xử lý thanh toán lại cho đơn hàng thất bại
@@ -161,7 +162,7 @@ router.post('/vnpay/:orderId', async (req, res) => {
         req.body = paymentData;
         
         // Gọi controller VNPay
-        return await momoController.createVNPayPayment(req, res);
+        return await vnpayController.createVNPayPayment(req, res);
 
     } catch (error) {
         res.status(500).json({
