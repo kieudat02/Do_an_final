@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createOrUpdateSessionRating, checkSessionRated } from '../../../services/chatRatingService';
-import './InlineSessionRating.css';
+import './InlineSessionRating.scss';
 
 /**
  * Component đánh giá phiên hội thoại hiển thị inline trong cuộc trò chuyện
@@ -61,7 +61,7 @@ const InlineSessionRating = ({
 
             if (result.success) {
                 setHasSubmitted(true);
-                
+
                 // Callback để parent component biết rating đã được submit
                 if (onRatingSubmit) {
                     onRatingSubmit({
@@ -74,14 +74,12 @@ const InlineSessionRating = ({
                     });
                 }
 
-                // Hiển thị feedback form nếu rating thấp
-                if (starRating <= 3) {
-                    setShowFeedback(true);
-                }
+                // Luôn hiển thị feedback form để người dùng có thể để lại ý kiến
+                setShowFeedback(true);
             } else {
                 console.error('Lỗi khi gửi rating:', result.error);
                 setRating(0);
-                
+
                 if (onRatingSubmit) {
                     onRatingSubmit({
                         sessionId,
@@ -171,24 +169,28 @@ const InlineSessionRating = ({
     const getRatingText = () => {
         const currentRating = hoveredRating || rating || 0;
 
-        // Text khác nhau tùy theo trigger
+        // Text hiện đại và thân thiện hơn
         let baseTexts = {
-            0: 'Bạn cảm thấy cuộc trò chuyện như thế nào?',
-            1: 'Rất không hài lòng',
-            2: 'Không hài lòng',
-            3: 'Bình thường',
-            4: 'Hài lòng',
-            5: 'Rất hài lòng'
+            0: 'Bạn hài lòng với cuộc trò chuyện vừa rồi chứ?',
+            1: 'Rất không hài lòng 😞',
+            2: 'Không hài lòng 😕',
+            3: 'Bình thường 😐',
+            4: 'Hài lòng 😊',
+            5: 'Rất hài lòng 🤩'
         };
 
         // Thay đổi message cho các trigger đặc biệt
         if (currentRating === 0) {
-            if (trigger === 'session_end' || trigger === 'tab_hidden' || trigger === 'page_unload') {
-                baseTexts[0] = 'Trước khi kết thúc, bạn có thể đánh giá cuộc trò chuyện này không?';
+            if (trigger === 'user_declined' || trigger === 'no_response_timeout') {
+                return 'Cảm ơn bạn đã trò chuyện với ND Travel! Hãy cho chúng tôi biết trải nghiệm của bạn với Chatbot nhé 😊';
+            } else if (trigger === 'support_completed') {
+                baseTexts[0] = 'Đánh giá trải nghiệm của bạn';
+            } else if (trigger === 'session_end' || trigger === 'tab_hidden' || trigger === 'page_unload') {
+                baseTexts[0] = 'Bạn hài lòng với cuộc trò chuyện vừa rồi chứ?';
             } else if (trigger === 'chatbot_close') {
-                baseTexts[0] = 'Trước khi đóng, hãy để lại đánh giá cho cuộc trò chuyện nhé! 😊';
+                baseTexts[0] = 'Đánh giá trải nghiệm trước khi đóng nhé! 😊';
             } else if (trigger === 'manual') {
-                baseTexts[0] = 'Cảm ơn bạn đã sử dụng dịch vụ! Hãy đánh giá cuộc trò chuyện nhé.';
+                baseTexts[0] = 'Đánh giá trải nghiệm của bạn';
             }
         }
 
@@ -226,19 +228,23 @@ const InlineSessionRating = ({
     return (
         <div className="inline-session-rating">
             <div className="rating-header">
-                <div className="bot-avatar">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor"/>
-                    </svg>
+                <div className="rating-header-text">
+                    <h3 className="rating-title">
+                        {trigger === 'user_declined' || trigger === 'no_response_timeout'
+                            ? 'Đánh giá trải nghiệm của bạn'
+                            : trigger === 'support_completed'
+                            ? 'Đánh giá trải nghiệm của bạn'
+                            : trigger === 'session_end' || trigger === 'tab_hidden' || trigger === 'page_unload'
+                            ? 'Đánh giá trước khi kết thúc'
+                            : trigger === 'chatbot_close'
+                            ? 'Đánh giá trước khi đóng'
+                            : 'Đánh giá trải nghiệm của bạn'
+                        }
+                    </h3>
+                    {/* <p className="rating-subtitle">
+                        {getRatingText()}
+                    </p> */}
                 </div>
-                <span className="rating-title">
-                    {trigger === 'session_end' || trigger === 'tab_hidden' || trigger === 'page_unload'
-                        ? 'Đánh giá trước khi kết thúc'
-                        : trigger === 'chatbot_close'
-                        ? 'Đánh giá trước khi đóng'
-                        : 'Đánh giá cuộc trò chuyện'
-                    }
-                </span>
             </div>
 
             <div className="rating-content">
@@ -246,15 +252,11 @@ const InlineSessionRating = ({
                     <div className="rating-stars">
                         {renderStars()}
                     </div>
-                    
-                    <div className="rating-text">
-                        {getRatingText()}
-                    </div>
 
                     {hasSubmitted && rating && !showFeedback && (
                         <div className="rating-result">
                             <span className="rating-thanks">Cảm ơn bạn đã đánh giá!</span>
-                            <span className="rating-value">{rating}/5</span>
+                            <span className="rating-value">({rating}/5)</span>
                         </div>
                     )}
 
@@ -266,17 +268,20 @@ const InlineSessionRating = ({
                     )}
                 </div>
 
-                {/* Feedback form cho rating thấp */}
+                {/* Feedback form đơn giản */}
                 {showFeedback && (
                     <div className="feedback-container">
                         <div className="feedback-header">
-                            <span>Bạn có thể chia sẻ thêm để chúng tôi cải thiện?</span>
+                            <div className="feedback-header-text">
+                                <h4>Ý kiến đóng góp</h4>
+                                <p>Chia sẻ thêm để chúng tôi cải thiện dịch vụ</p>
+                            </div>
                         </div>
                         <div className="feedback-input">
                             <textarea
                                 value={feedback}
                                 onChange={(e) => setFeedback(e.target.value)}
-                                placeholder="Chia sẻ ý kiến của bạn về cuộc trò chuyện..."
+                                placeholder="Ý kiến đóng góp thêm (không bắt buộc)"
                                 maxLength={1000}
                                 rows={3}
                                 disabled={isSubmitting}
@@ -293,10 +298,17 @@ const InlineSessionRating = ({
                                 <button
                                     className="feedback-submit"
                                     onClick={handleFeedbackSubmit}
-                                    disabled={!feedback.trim() || isSubmitting}
+                                    disabled={isSubmitting}
                                     type="button"
                                 >
-                                    {isSubmitting ? 'Đang gửi...' : 'Gửi'}
+                                    {isSubmitting ? (
+                                        <>
+                                            <div className="button-spinner"></div>
+                                            Đang gửi...
+                                        </>
+                                    ) : (
+                                        'Gửi đánh giá'
+                                    )}
                                 </button>
                             </div>
                         </div>

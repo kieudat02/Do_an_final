@@ -232,7 +232,7 @@ const TourBookingForm = ({ tour, isOpen, onClose, onSubmit }) => {
     if (!formData.startDate) {
       newErrors.startDate = 'Vui lòng chọn ngày khởi hành';
     } else if (availableDates.length === 0) {
-      newErrors.startDate = 'Tour hiện tại không có ngày khởi hành nào khả dụng';
+      newErrors.startDate = 'Tour hiện tại chưa có ngày khởi hành';
     } else if (!isDateAvailable(formData.startDate)) {
       newErrors.startDate = 'Vui lòng chọn ngày khác, đã hết chỗ';
     }
@@ -349,7 +349,7 @@ const TourBookingForm = ({ tour, isOpen, onClose, onSubmit }) => {
                   if (availableDates.length === 0) {
                     return (
                       <div className="no-dates-available">
-                        <p>Tour hiện tại không có ngày khởi hành nào khả dụng</p>
+                        <p>Tour hiện tại chưa có ngày khởi hành</p>
                       </div>
                     );
                   }

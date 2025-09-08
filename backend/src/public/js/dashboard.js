@@ -706,24 +706,30 @@ function updatePerformanceDisplay() {
 // Load CSAT data
 async function loadCSATData() {
     try {
-        const response = await fetch('/api/chat/rating/stats');
+        // Sử dụng session-rating API thay vì rating API
+        const response = await fetch('/api/chat/session-rating/stats');
         const data = await response.json();
 
         if (data.success) {
-            const stats = data.data.stats;
-            document.getElementById('csatScore').textContent = stats.averageRating.toFixed(1);
-            document.getElementById('csatCount').textContent = stats.totalRatings;
+            const stats = data.data;
+            // SessionRating API trả về avgRating thay vì averageRating
+            const avgRating = stats.avgRating || 0;
+            const totalRatings = stats.totalRatings || 0;
+
+            document.getElementById('csatScore').textContent = avgRating.toFixed(1);
+            document.getElementById('csatCount').textContent = totalRatings;
 
             // Update color based on score
             const scoreElement = document.getElementById('csatScore');
-            const score = stats.averageRating;
-            if (score >= 4.5) {
+            if (avgRating >= 4.5) {
                 scoreElement.style.color = '#28a745';
-            } else if (score >= 3.5) {
+            } else if (avgRating >= 3.5) {
                 scoreElement.style.color = '#ffc107';
             } else {
                 scoreElement.style.color = '#dc3545';
             }
+
+            console.log('✅ CSAT data loaded:', { avgRating, totalRatings });
         }
     } catch (error) {
         console.error('Error loading CSAT data:', error);
@@ -839,8 +845,8 @@ async function showCSATChart() {
     const data = [];
 
     try {
-        // Thử lấy từ API CSAT trend
-        const response = await fetch('/api/chat/rating/trend?months=12');
+        // Thử lấy từ API CSAT trend (sử dụng session-rating)
+        const response = await fetch('/api/chat/session-rating/trend?months=12');
         const responseData = await response.json();
 
         if (responseData.success && responseData.data.trend) {

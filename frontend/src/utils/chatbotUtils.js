@@ -48,20 +48,20 @@ export const formatDate = (date) => {
  * @returns {Array} Danh sách suggestions
  */
 export const generateQuickSuggestions = (context) => {
-  // Thứ tự ưu tiên theo UX: phổ biến nhất → cụ thể hơn
+  // Câu hỏi ngắn gọn, tự nhiên như người thật
   const suggestions = [
-    "🏖️ Tour biển đảo",
-    "🏔️ Tour miền núi",
-    "💰 Tour giá rẻ",
-    "⭐ Tour đánh giá cao",
-    "🍜 Tour ẩm thực",
-    "🏛️ Tour văn hóa lịch sử"
+    "🏖️ Đi biển",
+    "🏔️ Leo núi",
+    "💰 Tour rẻ",
+    "⭐ Tour hot",
+    "🍜 Ăn uống",
+    "🏛️ Tham quan"
   ];
 
   // Thêm điểm đến phổ biến (ưu tiên cao)
   if (context?.popularDestinations) {
     context.popularDestinations.slice(0, 2).forEach(dest => {
-      suggestions.push(`✈️ Tour ${dest.name}`);
+      suggestions.push(`✈️ ${dest.name}`);
     });
   }
 
@@ -72,7 +72,7 @@ export const generateQuickSuggestions = (context) => {
       if (typeof category === 'string' && !suggestions.some(s =>
         typeof s === 'string' && s.toLowerCase().includes(category.toLowerCase())
       )) {
-        suggestions.push(`🎯 Tour ${category}`);
+        suggestions.push(`🎯 ${category}`);
       }
     });
   }

@@ -4,8 +4,6 @@ import responseTimeTracker from "../utils/responseTimeTracker";
 // API endpoints cho chatbot - cleaned up unused endpoints
 const CHATBOT_ENDPOINTS = {
   SEND_MESSAGE: "/api/chat/message",
-  GET_HISTORY: (sessionId) => `/api/chat/history/${sessionId}`,
-  CLEAR_HISTORY: (sessionId) => `/api/chat/history/${sessionId}`,
   CREATE_SESSION: "/api/chat/session",
   GET_STATUS: "/api/chat/status",
   GET_CONTEXT: "/api/chat/context"
@@ -116,77 +114,9 @@ export const sendMessage = async (message, sessionId = null) => {
   }
 };
 
-/**
- * Lấy lịch sử hội thoại
- * @param {string} sessionId - ID phiên hội thoại
- * @returns {Promise} Lịch sử hội thoại
- */
-export const getChatHistory = async (sessionId) => {
-  try {
-    if (!sessionId) {
-      throw new Error('Session ID không hợp lệ');
-    }
 
-    const response = await axiosInstance.get(CHATBOT_ENDPOINTS.GET_HISTORY(sessionId));
 
-    if (response.data.success) {
-      return {
-        success: true,
-        data: response.data.data
-      };
-    } else {
-      throw new Error(response.data.error || 'Không thể lấy lịch sử hội thoại');
-    }
 
-  } catch (error) {
-    console.error('Get chat history error:', error);
-
-    let errorMessage = 'Không thể lấy lịch sử hội thoại';
-
-    if (error.response?.status === 404) {
-      errorMessage = 'Không tìm thấy lịch sử hội thoại';
-    } else if (error.message) {
-      errorMessage = error.message;
-    }
-
-    return {
-      success: false,
-      error: errorMessage
-    };
-  }
-};
-
-/**
- * Xóa lịch sử hội thoại
- * @param {string} sessionId - ID phiên hội thoại
- * @returns {Promise} Kết quả xóa
- */
-export const clearChatHistory = async (sessionId) => {
-  try {
-    if (!sessionId) {
-      throw new Error('Session ID không hợp lệ');
-    }
-
-    const response = await axiosInstance.delete(CHATBOT_ENDPOINTS.CLEAR_HISTORY(sessionId));
-
-    if (response.data.success) {
-      return {
-        success: true,
-        message: response.data.message || 'Đã xóa lịch sử hội thoại'
-      };
-    } else {
-      throw new Error(response.data.error || 'Không thể xóa lịch sử hội thoại');
-    }
-
-  } catch (error) {
-    console.error('Clear chat history error:', error);
-
-    return {
-      success: false,
-      error: error.message || 'Không thể xóa lịch sử hội thoại'
-    };
-  }
-};
 
 /**
  * Tạo phiên hội thoại mới
@@ -345,35 +275,7 @@ export const ChatStorage = {
     }
   },
 
-  // Lưu lịch sử hội thoại local (backup)
-  saveLocalHistory: (sessionId, history) => {
-    try {
-      const key = `chatbot_history_${sessionId}`;
-      localStorage.setItem(key, JSON.stringify(history));
-    } catch (error) {
-      console.warn('Cannot save chat history to localStorage:', error);
-    }
-  },
 
-  // Lấy lịch sử hội thoại local
-  getLocalHistory: (sessionId) => {
-    try {
-      const key = `chatbot_history_${sessionId}`;
-      const history = localStorage.getItem(key);
-      return history ? JSON.parse(history) : [];
-    } catch (error) {
-      console.warn('Cannot get chat history from localStorage:', error);
-      return [];
-    }
-  },
 
-  // Xóa lịch sử hội thoại local
-  clearLocalHistory: (sessionId) => {
-    try {
-      const key = `chatbot_history_${sessionId}`;
-      localStorage.removeItem(key);
-    } catch (error) {
-      console.warn('Cannot clear chat history from localStorage:', error);
-    }
-  }
+
 };

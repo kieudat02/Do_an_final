@@ -18,7 +18,8 @@ const sessionSecurityMiddleware = {
             '/api/public',
             '/api/chat',
             '/api/review',
-            '/api/momo'
+            '/api/momo',
+            '/api/vnpay'
         ];
         const isPublicRoute = publicRoutes.some(route => req.path.startsWith(route));
         

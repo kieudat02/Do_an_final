@@ -415,16 +415,23 @@ const postUpdateUser = async (req, res) => {
 // Lấy dữ liệu CSAT
 async function getCSATData() {
     try {
-        // Import ChatRating model nếu có
-        const ChatRating = require('../models/chatRatingModel');
+        // Import SessionRating model (mới) thay vì ChatRating (cũ)
+        const SessionRating = require('../models/sessionRatingModel');
 
         // Lấy stats 30 ngày gần đây
         const dateFrom = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
         const dateTo = new Date();
 
-        const stats = await ChatRating.getCSATStats(dateFrom, dateTo);
+        // Sử dụng SessionRating.getCSATScore thay vì ChatRating.getCSATStats
+        const stats = await SessionRating.getCSATScore({
+            createdAt: {
+                $gte: dateFrom,
+                $lte: dateTo
+            }
+        });
+
         return {
-            averageScore: stats.averageRating || 0,
+            averageScore: stats.avgRating || 0,
             totalRatings: stats.totalRatings || 0,
             trend: [] // Có thể thêm trend data sau
         };

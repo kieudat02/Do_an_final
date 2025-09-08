@@ -330,7 +330,6 @@ const PaymentStatus = () => {
     if (isValidOrderId) {
       checkPaymentStatus();
       
-      // Làm sạch URL ngay lập tức để tránh bị thu thập thông tin nhạy cảm
       // Chỉ giữ lại orderId trong URL, loại bỏ tất cả params
       if (searchParams.size > 0) {
         const cleanUrl = `/payment/success/${orderId}`;

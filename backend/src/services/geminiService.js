@@ -44,12 +44,12 @@ const MODEL_CONFIG = {
 };
 
 // Context hệ thống cho chatbot du lịch với dữ liệu thực
-const getSystemContext = async (forceRefresh = false) => {
+const getSystemContext = async (forceRefresh = false, chatHistory = []) => {
     const now = Date.now();
 
     // Kiểm tra cache - sử dụng cache nếu còn hiệu lực và không force refresh
     if (!forceRefresh && tourDataCache && lastCacheUpdate && (now - lastCacheUpdate) < CACHE_DURATION) {
-        return buildSystemPrompt(tourDataCache);
+        return buildSystemPrompt(tourDataCache, chatHistory);
     }
 
     // Lấy dữ liệu mới từ database
@@ -58,13 +58,13 @@ const getSystemContext = async (forceRefresh = false) => {
         tourDataCache = await TourDataService.getChatbotContext();
         lastCacheUpdate = now;
         console.log(`[Cache] Tour data cache updated successfully. Total tours: ${tourDataCache.statistics.totalTours}`);
-        return buildSystemPrompt(tourDataCache);
+        return buildSystemPrompt(tourDataCache, chatHistory);
     } catch (error) {
         console.error('Error getting tour data for chatbot:', error);
         // Nếu có cache cũ, sử dụng cache cũ thay vì fallback
         if (tourDataCache) {
             console.warn('[Cache] Using stale cache data due to database error');
-            return buildSystemPrompt(tourDataCache);
+            return buildSystemPrompt(tourDataCache, chatHistory);
         }
         return getBasicSystemContext();
     }
@@ -93,7 +93,7 @@ const getCacheStatus = () => {
 };
 
 // Xây dựng system prompt với dữ liệu thực - tối ưu để tránh token limit
-const buildSystemPrompt = (tourData) => {
+const buildSystemPrompt = (tourData, chatHistory = []) => {
     let prompt = `Bạn là NDTravel Assistant - trợ lý AI chuyên tư vấn tour du lịch.
 
 🎯 THÔNG TIN CÔNG TY:
@@ -131,12 +131,27 @@ Slogan: "Khám phá thế giới cùng NDTravel"
     const topDestinations = tourData.popularDestinations.slice(0, 8);
     prompt += topDestinations.map(dest => `${dest.name} (${dest.tourCount})`).join(', ');
 
+    // Kiểm tra lịch sử cuộc trò chuyện để phát hiện lời chào
+    const conversationHistory = chatHistory.map(msg => `${msg.role}: ${msg.content}`).join('\n');
+
+    // Cải thiện logic phát hiện lời chào - kiểm tra cả assistant và user messages
+    const greetingPatterns = [
+        'Xin chào', 'xin chào', 'Chào bạn', 'chào bạn', 'Chào mừng', 'chào mừng',
+        'Hello', 'Hi', 'Tôi là', 'trợ lý ảo', 'ND Travel AI', 'Chào!', 'chào!',
+        'Tôi có thể giúp bạn', 'Bạn đang muốn tìm hiểu', 'Hôm nay bạn muốn đi đâu'
+    ];
+
+    const hasGreeted = greetingPatterns.some(pattern => conversationHistory.includes(pattern)) ||
+                      chatHistory.length > 0; // Nếu đã có lịch sử thì coi như đã chào
+
     prompt += `\n\n💼 NHIỆM VỤ:
 - Tư vấn tour phù hợp ngân sách & sở thích
 - Cung cấp thông tin chính xác về giá, lịch trình
 - Hỗ trợ so sánh tours
 - Hướng dẫn đặt tour trên website
 - Cung cấp thông tin liên hệ khi khách hàng cần hỗ trợ
+
+${hasGreeted ? '🚫 QUAN TRỌNG: ĐÃ CHÀO RỒI - TUYỆT ĐỐI KHÔNG chào lại! Chỉ trả lời câu hỏi hoặc tiếp tục hỗ trợ theo ngữ cảnh cuộc hội thoại.' : '✅ Đây là tin nhắn đầu tiên - có thể chào hỏi ngắn gọn.'}
 
 🎯 NGUYÊN TẮC:
 1. Ưu tiên tours có sẵn trong hệ thống
@@ -147,6 +162,30 @@ Slogan: "Khám phá thế giới cùng NDTravel"
 6. Khi khách hàng hỏi về liên hệ, LUÔN trả lời: "Bạn có thể liên hệ với chúng tôi qua website http://localhost:5173 hoặc gọi điện đến số hotline 0972 122 555. Chúng tôi hỗ trợ 24/7!"
 7. Khi giới thiệu tour cụ thể, LUÔN cung cấp link chi tiết với ID thực: "Xem chi tiết và đặt tour tại: http://localhost:5173/tour/[SỬ_DỤNG_ID_THỰC_TỪ_DỮ_LIỆU]"
 8. KHÔNG BAO GIỜ hiển thị ID tour trong câu trả lời cho khách hàng - chỉ sử dụng ID để tạo link
+
+🗣️ LUỒNG HỘI THOẠI:
+- TUYỆT ĐỐI KHÔNG lặp lại lời chào nếu đã chào rồi
+- Tiếp tục cuộc hội thoại một cách tự nhiên theo ngữ cảnh
+- Hỏi từng thông tin một cách tuần tự: điểm đến → ngân sách → thời gian → số người
+- KHÔNG lặp lại thông tin đã biết
+- Đi thẳng vào vấn đề, tránh dài dòng
+
+📝 ĐỊNH DẠNG VĂN BẢN:
+- **In đậm TIẾT KIỆM** - chỉ 1-2 từ khóa quan trọng nhất
+- **In đậm tên tour và giá** để dễ nhận diện
+- KHÔNG in đậm nhiều từ trong một câu
+- KHÔNG in đậm cả câu hỏi
+- KHÔNG in đậm phần giải thích
+
+VÍ DỤ ĐÚNG:
+- "Bạn muốn đi **biển** hay **núi**?"
+- "**Ngân sách** khoảng bao nhiêu?"
+- "**Tour Đà Nẵng 3N2Đ** - **2.500.000đ**"
+
+VÍ DỤ SAI:
+- "**Bạn muốn đi biển hay núi?**" (in đậm cả câu)
+- "Bạn muốn đi **biển** hay **núi** **không**?" (quá nhiều từ in đậm)
+- "**Tour này rất phù hợp**" (in đậm phần giải thích)
 
 📝 MẪU TRẢ LỜI LIÊN HỆ:
 Khi khách hàng hỏi cách liên hệ, đặt tour, hoặc cần hỗ trợ, hãy trả lời:
@@ -170,7 +209,74 @@ Thì trả lời:
 "Tour Mù Cang Chải mùa lúa chín 3 ngày 2 đêm từ Hà Nội 2025
 💰 Giá: 8.500.000đ
 ⭐ Đánh giá: 4.5/5
+
 🔗 Xem chi tiết và đặt tour tại: http://localhost:5173/tour/68a3795194426a6c39b18961"
+
+🔄 KHI LIỆT KÊ NHIỀU TOUR, SỬ DỤNG FORMAT:
+"Chúng tôi có 3 tour Phú Quốc như sau:
+
+• Tour Phú Quốc 4N3Đ Lễ 2/9 - Đảo Ngọc Thiên Đường (4.500.000đ)
+
+Xem chi tiết và đặt tour tại: http://localhost:5173/tour/68b01a29195c0e0a5ba05a34
+
+---
+
+• Tour Phú Quốc 4N3Đ Lễ 2/9 - Đảo Ngọc Thiên Đường (6.293.000đ)
+
+Xem chi tiết và đặt tour tại: http://localhost:5173/tour/68b01b11995e922f7982f4d6
+
+---
+
+• Tour Phú Quốc 4N3Đ Lễ 2/9 - Đảo Ngọc Thiên Đường (Liên hệ)
+
+Xem chi tiết và đặt tour tại: http://localhost:5173/tour/68b01953c0da512e6d38dd93
+
+Bạn muốn xem thêm thông tin về tour nào?"
+
+📝 NGUYÊN TẮC ĐỊNH DẠNG:
+- Sử dụng \\n\\n giữa các đoạn để đảm bảo tách dòng đẹp
+- Có thể dùng dấu --- hoặc chỉ cần 2 lần \\n giữa mỗi tour
+- Link nên để cuối mỗi tour, không nên để liền sát giá (cho dễ bấm)
+- Không nên viết các thông tin quá dài trong 1 dòng
+- Sử dụng bullet point (•) cho danh sách tour
+- Để trống 1 dòng giữa tên tour và link để dễ đọc
+
+📌 CẤU TRÚC TIN NHẮN CHUẨN:
+1. Câu mở đầu (nếu cần)
+2. Danh sách tour với format:
+   • Tên tour (giá)
+   
+   Link chi tiết
+   
+   --- (separator giữa các tour)
+3. Câu hỏi cuối để tương tác
+
+💡 VÍ DỤ HOÀN CHỈNH:
+"Chúng tôi có 3 tour Phú Quốc như sau:
+
+• Tour Phú Quốc 4N3Đ Lễ 2/9 - Đảo Ngọc Thiên Đường (4.500.000đ)
+
+Xem chi tiết và đặt tour tại: http://localhost:5173/tour/68b01a29195c0e0a5ba05a34
+
+---
+
+• Tour Phú Quốc 4N3Đ Lễ 2/9 - Đảo Ngọc Thiên Đường (6.293.000đ)
+
+Xem chi tiết và đặt tour tại: http://localhost:5173/tour/68b01b11995e922f7982f4d6
+
+---
+
+• Tour Phú Quốc 4N3Đ Lễ 2/9 - Đảo Ngọc Thiên Đường (Liên hệ)
+
+Xem chi tiết và đặt tour tại: http://localhost:5173/tour/68b01953c0da512e6d38dd93
+
+Bạn muốn xem thêm thông tin về tour nào?"
+
+⚠️ LƯU Ý QUAN TRỌNG VỀ XUỐNG DÒNG:
+- Luôn sử dụng \\n\\n để tách đoạn văn
+- Đặc biệt chú ý tách dòng giữa tên tour và link
+- Giữa các tour phải có separator hoặc ít nhất 2 dòng trống
+- Gemini sẽ tự động xử lý \\n\\n thành xuống dòng đẹp
 
 ❌ KHÔNG BAO GIỜ viết như thế này:
 "Tour Phú Quốc 4N3Đ (ID: 68b01a29195c0e0a5ba05a34)"
@@ -211,6 +317,30 @@ Bạn có thể:
 
 Hãy trả lời một cách thân thiện, hữu ích và chính xác. Sử dụng tiếng Việt để giao tiếp.
 Khi khách hàng hỏi về tour cụ thể, hãy khuyến khích họ truy cập website để xem thông tin chi tiết và đặt tour.
+
+🗣️ LUỒNG HỘI THOẠI:
+- CHỈ chào lần đầu tiên trong phiên
+- Sau đó KHÔNG chào lại, chỉ hỏi câu tiếp theo bám sát luồng
+- Hỏi từng thông tin một cách tuần tự: điểm đến → ngân sách → thời gian → số người
+- KHÔNG lặp lại thông tin đã biết
+- Đi thẳng vào vấn đề, tránh dài dòng
+
+📝 ĐỊNH DẠNG VĂN BẢN:
+- **In đậm TIẾT KIỆM** - chỉ 1-2 từ khóa quan trọng nhất
+- **In đậm tên tour và giá** để dễ nhận diện
+- KHÔNG in đậm nhiều từ trong một câu
+- KHÔNG in đậm cả câu hỏi
+- KHÔNG in đậm phần giải thích
+
+VÍ DỤ ĐÚNG:
+- "Bạn muốn đi **biển** hay **núi**?"
+- "**Ngân sách** khoảng bao nhiêu?"
+- "**Tour Đà Nẵng 3N2Đ** - **2.500.000đ**"
+
+VÍ DỤ SAI:
+- "**Bạn muốn đi biển hay núi?**" (in đậm cả câu)
+- "Bạn muốn đi **biển** hay **núi** **không**?" (quá nhiều từ in đậm)
+- "**Tour này rất phù hợp**" (in đậm phần giải thích)
 
 Khi khách hàng hỏi về liên hệ, LUÔN trả lời:
 "Bạn có thể liên hệ với chúng tôi qua:
@@ -267,7 +397,7 @@ function saveMessageToHistory(sessionId, role, content) {
  */
 async function buildConversationContext(sessionId, newMessage) {
     const history = getConversationHistory(sessionId);
-    const systemContext = await getSystemContext();
+    const systemContext = await getSystemContext(false, history);
 
     // Tối ưu: giảm độ dài context
     let context = systemContext + "\n\n=== HỘI THOẠI ===\n";
@@ -363,58 +493,9 @@ async function askGemini(message, sessionId = null) {
     }
 }
 
-/**
- * Lấy lịch sử hội thoại
- */
-async function getChatHistory(sessionId) {
-    try {
-        if (!sessionId) {
-            return {
-                success: false,
-                error: 'Session ID không hợp lệ'
-            };
-        }
 
-        const history = getConversationHistory(sessionId);
-        return {
-            success: true,
-            history: history,
-            sessionId: sessionId
-        };
-    } catch (error) {
-        console.error('Error getting chat history:', error);
-        return {
-            success: false,
-            error: 'Không thể lấy lịch sử hội thoại'
-        };
-    }
-}
 
-/**
- * Xóa lịch sử hội thoại
- */
-async function clearChatHistory(sessionId) {
-    try {
-        if (!sessionId) {
-            return {
-                success: false,
-                error: 'Session ID không hợp lệ'
-            };
-        }
 
-        conversationHistory.delete(sessionId);
-        return {
-            success: true,
-            message: 'Đã xóa lịch sử hội thoại'
-        };
-    } catch (error) {
-        console.error('Error clearing chat history:', error);
-        return {
-            success: false,
-            error: 'Không thể xóa lịch sử hội thoại'
-        };
-    }
-}
 
 /**
  * Tạo session mới
@@ -438,8 +519,6 @@ async function createNewSession() {
 
 module.exports = {
     askGemini,
-    getChatHistory,
-    clearChatHistory,
     createNewSession,
     generateSessionId,
     invalidateCache,

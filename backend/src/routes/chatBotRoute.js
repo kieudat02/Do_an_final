@@ -76,9 +76,9 @@ router.get('/tours/:tourId', chatbotController.getTourDetails);
 
 router.post('/message', chatbotController.sendMessage);
 
-router.get('/history/:sessionId', chatbotController.getHistory);
 
-router.delete('/history/:sessionId', chatbotController.clearHistory);
+
+
 
 router.post('/session', chatbotController.createSession);
 
@@ -113,9 +113,7 @@ const sessionRatingController = require('../controllers/sessionRatingController'
 // Tạo hoặc cập nhật rating cho phiên hội thoại
 router.post('/session-rating', sessionRatingController.createOrUpdateSessionRating);
 
-// Kiểm tra xem session đã được đánh giá chưa
-router.get('/session-rating/:sessionId', sessionRatingController.checkSessionRated);
-
+// ⚠️ IMPORTANT: Specific routes MUST come before parameterized routes
 // Lấy thống kê CSAT cho session ratings
 router.get('/session-rating/stats', sessionRatingController.getCSATStats);
 
@@ -124,6 +122,9 @@ router.get('/session-rating/trend', sessionRatingController.getRatingTrend);
 
 // Lấy danh sách session ratings với phân trang
 router.get('/session-rating/list', sessionRatingController.getSessionRatings);
+
+// Kiểm tra xem session đã được đánh giá chưa (MUST be last due to :sessionId param)
+router.get('/session-rating/:sessionId', sessionRatingController.checkSessionRated);
 
 // ========== RESPONSE TIME ROUTES ==========
 // Lấy thống kê response time

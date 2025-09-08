@@ -1,7 +1,5 @@
 const {
     askGemini,
-    getChatHistory,
-    clearChatHistory,
     createNewSession,
     invalidateCache,
     getCacheStatus
@@ -60,82 +58,9 @@ exports.sendMessage = async (req, res) => {
     }
 };
 
-/**
- * Lấy lịch sử hội thoại
- */
-exports.getHistory = async (req, res) => {
-    try {
-        const { sessionId } = req.params;
 
-        if (!sessionId) {
-            return res.status(400).json({
-                success: false,
-                error: 'Session ID không hợp lệ'
-            });
-        }
 
-        const result = await getChatHistory(sessionId);
 
-        if (result.success) {
-            return res.status(200).json({
-                success: true,
-                data: {
-                    history: result.history,
-                    sessionId: result.sessionId
-                }
-            });
-        } else {
-            return res.status(404).json({
-                success: false,
-                error: result.error
-            });
-        }
-
-    } catch (error) {
-        console.error('Get History Error:', error);
-        return res.status(500).json({
-            success: false,
-            error: 'Không thể lấy lịch sử hội thoại'
-        });
-    }
-};
-
-/**
- * Xóa lịch sử hội thoại
- */
-exports.clearHistory = async (req, res) => {
-    try {
-        const { sessionId } = req.params;
-
-        if (!sessionId) {
-            return res.status(400).json({
-                success: false,
-                error: 'Session ID không hợp lệ'
-            });
-        }
-
-        const result = await clearChatHistory(sessionId);
-
-        if (result.success) {
-            return res.status(200).json({
-                success: true,
-                message: result.message
-            });
-        } else {
-            return res.status(400).json({
-                success: false,
-                error: result.error
-            });
-        }
-
-    } catch (error) {
-        console.error('Clear History Error:', error);
-        return res.status(500).json({
-            success: false,
-            error: 'Không thể xóa lịch sử hội thoại'
-        });
-    }
-};
 
 /**
  * Tạo session hội thoại mới
