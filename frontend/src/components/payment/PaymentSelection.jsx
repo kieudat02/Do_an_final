@@ -60,10 +60,10 @@ const PaymentSelection = ({ orderData, onPaymentSuccess, onCancel }) => {
       const response = await createVNPayPayment(paymentData);
       
       if (response.success && response.data.paymentUrl) {
-        toast.success('Đang chuyển hướng đến VNPay...');
+        toast.success('Đang mở VNPay trong tab mới...');
         
-        // Chuyển hướng đến VNPay
-        window.location.href = response.data.paymentUrl;
+        // Mở VNPay trong tab mới
+        window.open(response.data.paymentUrl, '_blank');
         
         if (onPaymentSuccess) {
           onPaymentSuccess(response.data);
@@ -97,10 +97,10 @@ const PaymentSelection = ({ orderData, onPaymentSuccess, onCancel }) => {
       const response = await createMoMoPayment(paymentData);
       
       if (response.success && response.data.payUrl) {
-        toast.success('Đang chuyển hướng đến MoMo...');
+        toast.success('Đang mở MoMo trong tab mới...');
         
-        // Chuyển hướng đến MoMo
-        window.location.href = response.data.payUrl;
+        // Mở MoMo trong tab mới
+        window.open(response.data.payUrl, '_blank');
         
         if (onPaymentSuccess) {
           onPaymentSuccess(response.data);

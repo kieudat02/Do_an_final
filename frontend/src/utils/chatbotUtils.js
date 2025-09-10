@@ -54,8 +54,8 @@ export const generateQuickSuggestions = (context) => {
     "🏔️ Leo núi",
     "💰 Tour rẻ",
     "⭐ Tour hot",
-    "🍜 Ăn uống",
-    "🏛️ Tham quan"
+    "🔍 Tra cứu đơn hàng",
+    "💳 Thanh toán"
   ];
 
   // Thêm điểm đến phổ biến (ưu tiên cao)

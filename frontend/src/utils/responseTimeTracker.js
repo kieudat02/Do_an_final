@@ -1,8 +1,4 @@
 /**
- * Utility để đo và theo dõi thời gian phản hồi ở frontend
- */
-
-/**
  * Class để track response time
  */
 class ResponseTimeTracker {

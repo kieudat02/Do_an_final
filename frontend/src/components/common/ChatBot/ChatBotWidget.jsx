@@ -3,7 +3,12 @@ import {
   sendMessage,
   createNewSession,
   getChatbotContext,
-  ChatStorage
+  ChatStorage,
+  lookupOrder,
+  lookupOrderWithOTP,
+  sendOTPForOrderLookup,
+  getRetryPaymentLink,
+  checkPaymentStatus
 } from '../../../services/geminiService';
 import {
   generateQuickSuggestions
@@ -26,7 +31,6 @@ const cleanMessageText = (text) => {
   // Cắt khoảng trắng và chuẩn hóa xuống dòng
   cleanedText = cleanedText.trim().replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
-  // Loại bỏ khoảng trắng thừa nhưng giữ nguyên xuống dòng có ý định
   // Đặc biệt bảo vệ các dòng trống có ý định (như giữa các tour)
   cleanedText = cleanedText.replace(/[ \t]+/g, ' ');
   
@@ -44,25 +48,25 @@ const parseAndCleanMarkdown = (text) => {
   // Xử lý text theo từng bước
   let processedText = text;
 
-  // Bước 1: Thay thế dấu * đầu dòng bằng bullet point
+  // Thay thế dấu * đầu dòng bằng bullet point
   processedText = processedText.replace(/^\s*\*\s+/gm, '• ');
 
-  // Bước 2: Xử lý **text** thành bold và loại bỏ dấu **
+  // Xử lý **text** thành bold và loại bỏ dấu **
   processedText = processedText.replace(/\*\*([^*]+)\*\*/g, '|||BOLD_START|||$1|||BOLD_END|||');
 
-  // Bước 3: Xử lý *text* thành italic và loại bỏ dấu *
+  // Xử lý *text* thành italic và loại bỏ dấu *
   processedText = processedText.replace(/\*([^*]+)\*/g, '|||ITALIC_START|||$1|||ITALIC_END|||');
 
-  // Bước 4: Loại bỏ tất cả dấu * còn lại
+  // Loại bỏ tất cả dấu * còn lại
   processedText = processedText.replace(/\*/g, '');
 
-  // Bước 5: Xử lý links - đánh dấu để xử lý sau
+  // Xử lý links - đánh dấu để xử lý sau
   processedText = processedText.replace(/(https?:\/\/[^\s]+)/g, '|||LINK_START|||$1|||LINK_END|||');
 
-  // Bước 6: Xử lý separators (---)
+  // Xử lý separators (---)
   processedText = processedText.replace(/^\s*---\s*$/gm, '|||SEPARATOR|||');
 
-  // Bước 7: Chia thành các dòng và xử lý
+  // Chia thành các dòng và xử lý
   const lines = processedText.split('\n');
   const elements = [];
 
@@ -276,6 +280,19 @@ const ChatBotWidget = () => {
   // State cho xử lý lỗi
   const [error, setError] = useState(null);
 
+  // State cho tính năng tra cứu đơn hàng và thanh toán
+  const [orderLookupMode, setOrderLookupMode] = useState(false);
+  const [orderLookupStep, setOrderLookupStep] = useState('initial'); // 'initial', 'awaiting_orderid', 'awaiting_contact', 'awaiting_otp', 'processing'
+  const [tempOrderData, setTempOrderData] = useState({
+    orderId: '',
+    phone: '',
+    email: '',
+    contact: '', // Unified contact field (email or phone)
+    otpCode: ''
+  });
+  const [lastOrderLookupRequest, setLastOrderLookupRequest] = useState(null);
+  const [otpSent, setOtpSent] = useState(false);
+
 
 
 
@@ -292,8 +309,7 @@ const ChatBotWidget = () => {
       // Lưu rating vào state
       setMessageRatings(prev => new Map(prev.set(messageId, { rating, feedback })));
 
-      // Log để theo dõi
-      console.log(`✅ Rating submitted for message ${messageId}: ${rating}/5`, feedback ? `Feedback: ${feedback}` : '');
+      // Rating submitted successfully
     } else {
       console.error(`❌ Failed to submit rating for message ${messageId}:`, error);
     }
@@ -304,10 +320,7 @@ const ChatBotWidget = () => {
     const { sessionId: ratedSessionId, messageId, rating, feedback, success, error, isUpdate } = ratingData;
 
     if (success) {
-      console.log(`✅ Session rating submitted for session ${ratedSessionId}: ${rating}/5`,
-        feedback ? `Feedback: ${feedback}` : '',
-        isUpdate ? '(Updated)' : '(New)'
-      );
+      // Session rating submitted successfully
 
       // Cập nhật tin nhắn đánh giá để hiển thị trạng thái đã hoàn thành
       setMessages(prev => prev.map(msg =>
@@ -359,21 +372,50 @@ const ChatBotWidget = () => {
 
     const text = botMessage.toLowerCase();
 
-    // Các từ khóa cho thấy hỗ trợ đã hoàn thành
+    // Các từ khóa cho thấy hỗ trợ đã hoàn thành - cải thiện và mở rộng
     const completionKeywords = [
-      'hy vọng thông tin này hữu ích',
+      // Tin nhắn cảm ơn và chào tạm biệt
+      'cảm ơn bạn đã sử dụng dịch vụ',
+      'cảm ơn bạn đã liên hệ',
+      'cảm ơn bạn đã trò chuyện',
       'chúc bạn có chuyến đi vui vẻ',
-      'bạn có thể liên hệ',
-      'xem chi tiết và đặt tour',
+      'chúc bạn có kỳ nghỉ thú vị',
+      'chúc bạn thành công',
+      
+      // Tin nhắn hỗ trợ liên tục
       'chúng tôi hỗ trợ 24/7',
-      'có câu hỏi gì khác',
-      'còn gì khác tôi có thể giúp',
-      'đã trả lời đầy đủ',
-      'thông tin đã cung cấp'
+      'chúng tôi luôn sẵn sàng hỗ trợ',
+      'nếu có thắc mắc, vui lòng liên hệ',
+      'mọi thắc mắc xin liên hệ',
+      
+      // Tin nhắn kết thúc tư vấn
+      'hy vọng thông tin này hữu ích',
+      'hy vọng đã giúp ích cho bạn',
+      'thông tin trên hy vọng hữu ích',
+      'mong rằng thông tin này hữu ích',
+      
+      // Tin nhắn hướng dẫn hành động tiếp theo
+      'bạn có thể liên hệ để đặt tour',
+      'hãy liên hệ để được tư vấn thêm',
+      'xem chi tiết và đặt tour',
+      'để đặt tour, vui lòng liên hệ',
+      'có thể đặt tour qua website',
+      
+      // Tin nhắn xác nhận đã trả lời đầy đủ
+      'đã trả lời đầy đủ câu hỏi',
+      'thông tin đã cung cấp đầy đủ',
+      'hy vọng đã giải đáp đầy đủ',
+      'mong đã trả lời hết thắc mắc',
+      
+      // Tin nhắn mời đánh giá
+      'đánh giá trải nghiệm của mình',
+      'hãy để lại đánh giá',
+      'chia sẻ trải nghiệm với chúng tôi',
     ];
 
-    // Các pattern cho thấy bot đang hỏi có muốn tiếp tục không (trigger cho timeout logic)
+    // Các pattern cho thấy bot đang hỏi có muốn tiếp tục không - mở rộng thêm
     const continuationQuestionPatterns = [
+      // Câu hỏi trực tiếp về việc tiếp tục
       'bạn muốn tìm hiểu thêm',
       'có muốn xem thêm',
       'còn cần hỗ trợ gì',
@@ -382,27 +424,37 @@ const ChatBotWidget = () => {
       'có câu hỏi nào khác',
       'cần hỗ trợ gì thêm',
       'muốn tìm hiểu về tour khác',
-      'có muốn tìm hiểu',
-      'muốn xem thêm',
-      'cần tư vấn thêm',
-      'có gì khác',
-      'còn gì khác',
+      'có muốn tìm hiểu về',
+      'muốn xem thêm tour',
+      'cần tư vấn thêm về',
+      'có gì khác cần hỗ trợ',
+      'còn gì khác muốn biết',
       'muốn biết gì thêm',
-      'có thắc mắc gì',
-      'cần hỗ trợ thêm',
-      'muốn hỏi gì',
-      'có câu hỏi',
-      'cần giúp gì',
-      'muốn tư vấn',
-      'có muốn',
-      'bạn muốn',
-      'còn muốn',
-      'có cần',
-      'cần không',
-      'muốn không',
+      'có thắc mắc gì khác',
+      'cần hỗ trợ thêm về',
+      'muốn hỏi gì khác',
+      'có câu hỏi gì nữa',
+      'cần giúp gì khác',
+      'muốn tư vấn về',
+      
+      // Pattern với các từ khóa ngắn gọn
       'có muốn không',
       'bạn có muốn',
-      'bạn có cần'
+      'bạn có cần',
+      'có cần không',
+      'muốn không',
+      'cần không',
+      'còn muốn',
+      'còn cần',
+      'bạn muốn',
+      'bạn cần',
+      
+      // Pattern với dấu câu hỏi cuối câu (tín hiệu mạnh)
+      'gì khác không?',
+      'gì nữa không?',
+      'thêm không?',
+      'khác không?',
+      'nữa không?',
     ];
 
     // Kiểm tra completion keywords
@@ -413,17 +465,42 @@ const ChatBotWidget = () => {
 
     // Nếu có continuation question, đánh dấu để bắt đầu timeout logic
     if (hasContinuationQuestion) {
-      // Set flag để bắt đầu timeout logic
-      setWaitingForContinuationResponse(true);
-      setLastContinuationQuestionTime(Date.now());
+      // Chỉ set flag nếu chưa có rating và không đang chờ phản hồi
+      if (!hasShownRating && !waitingForContinuationResponse) {
+        setWaitingForContinuationResponse(true);
+        setLastContinuationQuestionTime(Date.now());
+      }
     }
 
-    return hasCompletionKeyword;
-  }, [hasShownRating]);
+    // Logic xác định xem có nên hiển thị rating ngay lập tức không
+    // Chỉ hiển thị ngay lập tức nếu có completion keyword và không phải continuation question
+    const shouldShowRatingImmediately = hasCompletionKeyword && !hasContinuationQuestion;
+
+    return shouldShowRatingImmediately;
+  }, [hasShownRating, waitingForContinuationResponse]);
+
+  // Kiểm tra xem cuộc trò chuyện có đang hoạt động không (để tránh gián đoạn)
+  const isConversationActive = useCallback(() => {
+    const now = Date.now();
+    const timeSinceLastActivity = now - lastActivityTime;
+    const hasRecentUserMessage = messages.length > 0 && messages[messages.length - 1].isUser;
+    const isCurrentlyTyping = isLoading;
+    
+    // Cuộc trò chuyện được coi là đang hoạt động nếu:
+    // - Đang có hoạt động trong 10 giây qua
+    // - Tin nhắn cuối cùng là từ user (chờ phản hồi bot)
+    // - Đang typing/loading
+    return timeSinceLastActivity < 10000 || hasRecentUserMessage || isCurrentlyTyping;
+  }, [lastActivityTime, messages, isLoading]);
 
   // Thêm tin nhắn đánh giá vào cuộc trò chuyện (chỉ một lần)
   const addRatingMessage = useCallback((trigger = 'auto') => {
     if (!sessionId || hasShownRating) return;
+
+    // Kiểm tra xem cuộc trò chuyện có đang hoạt động không (trừ khi user từ chối)
+    if (trigger !== 'user_declined' && trigger !== 'manual' && isConversationActive()) {
+      return;
+    }
 
     // Sử dụng setMessages với callback để kiểm tra state mới nhất
     setMessages(prev => {
@@ -450,13 +527,50 @@ const ChatBotWidget = () => {
     // Đặt reminder nhẹ sau 45 giây nếu chưa đánh giá
     const reminderTimeout = setTimeout(() => {
       if (!messages.some(msg => msg.isRating && msg.ratingCompleted)) {
-        console.log('💡 Gentle reminder: Rating still available');
         // Có thể thêm hiệu ứng nhẹ ở đây
       }
     }, 45000);
 
     setRatingReminderTimeout(reminderTimeout);
-  }, [sessionId, hasShownRating, sessionStats]);
+  }, [sessionId, hasShownRating, sessionStats, isConversationActive]);
+
+  // Phát hiện khi user đang hỏi câu hỏi tiếp theo (để không gián đoạn bằng rating)
+  const detectUserFollowUpQuestion = useCallback((userMessage) => {
+    if (!userMessage) return false;
+
+    const text = userMessage.toLowerCase().trim();
+
+    // Các từ khóa cho thấy user đang hỏi tiếp
+    const questionPatterns = [
+      // Câu hỏi trực tiếp
+      'còn', 'con',
+      'thêm', 'them',
+      'khác', 'khac',
+      'nữa', 'nua',
+      'gì', 'gi',
+      'sao', 'thế nào', 'the nao',
+      'bao nhiêu', 'bao nhieu',
+      'ở đâu', 'o dau',
+      'khi nào', 'khi nao',
+      
+      // Từ khóa tour/du lịch
+      'tour',
+      'địa điểm', 'dia diem',
+      'điểm đến', 'diem den', 
+      'giá', 'gia',
+      'chi phí', 'chi phi',
+      'thời gian', 'thoi gian',
+      'lịch trình', 'lich trinh',
+    ];
+
+    // Dấu hiệu câu hỏi
+    const hasQuestionMark = text.includes('?');
+    const hasQuestionWords = questionPatterns.some(pattern => text.includes(pattern));
+    const isShortResponse = text.length < 50; // Câu trả lời ngắn thường không phải decline
+
+    // Nếu có dấu ? hoặc từ khóa câu hỏi và không phải câu trả lời ngắn về decline
+    return hasQuestionMark || (hasQuestionWords && !isShortResponse);
+  }, []);
 
   // Phát hiện khi user từ chối tiếp tục hoặc kết thúc cuộc trò chuyện
   const detectUserDecline = useCallback((userMessage) => {
@@ -464,44 +578,104 @@ const ChatBotWidget = () => {
 
     const text = userMessage.toLowerCase().trim();
 
-    // Các từ/cụm từ cho thấy user muốn kết thúc
+    // Trước tiên kiểm tra xem có phải câu hỏi tiếp không
+    if (detectUserFollowUpQuestion(userMessage)) {
+      return false; // Không phải decline nếu là câu hỏi tiếp
+    }
+
+    // Các từ/cụm từ cho thấy user muốn kết thúc - cải thiện và mở rộng
     const declinePatterns = [
+      // Từ chối đơn giản
       'không',
       'ko',
       'khong',
+      'k',
+      'no',
+      
+      // Kết thúc lịch sự
       'thôi',
-      'thoi',
-      'cảm ơn',
-      'cam on',
-      'thanks',
-      'thank you',
+      'thoi', 
       'đủ rồi',
       'du roi',
       'hết rồi',
       'het roi',
+      'được rồi',
+      'duoc roi',
+      'ok rồi',
+      'okay rồi',
+      
+      // Cảm ơn và tạm biệt
+      'cảm ơn',
+      'cam on',
+      'cám ơn',
+      'thanks',
+      'thank you',
+      'thank u',
+      'tks',
+      'ty',
+      'tạm biệt',
+      'tam biet',
+      'chào nhé',
+      'chao nhe',
+      'chào',
+      'chao',
+      'bye',
+      'goodbye',
+      'good bye',
+      'see you',
+      'see ya',
+      
+      // Từ chối tiếp tục
       'không cần',
       'khong can',
       'không muốn',
       'khong muon',
+      'không quan tâm',
+      'khong quan tam',
+      'không thích',
+      'khong thich',
       'tạm thế',
       'tam the',
-      'bye',
-      'tạm biệt',
-      'tam biet',
-      'chào',
-      'chao'
+      'tạm thế thôi',
+      'tam the thoi',
+      'tạm đủ',
+      'tam du',
+      
+      // Kết thúc phiên
+      'kết thúc',
+      'ket thuc',
+      'dừng lại',
+      'dung lai',
+      'dừng',
+      'dung',
+      'stop',
+      'end',
+      'quit',
+      'exit',
     ];
 
-    // Kiểm tra exact match hoặc chứa pattern
+    // Kiểm tra exact match, contains, và remove punctuation
     const isDecline = declinePatterns.some(pattern => {
+      const cleanText = text.replace(/[.,!?;:]/g, '').trim();
       return text === pattern ||
              text.includes(pattern) ||
-             // Kiểm tra các pattern với dấu câu
-             text.replace(/[.,!?]/g, '').trim() === pattern;
+             cleanText === pattern ||
+             // Kiểm tra với các variant có dấu câu
+             text === pattern + '.' ||
+             text === pattern + '!' ||
+             text === pattern + '?' ||
+             // Kiểm tra pattern ở đầu câu
+             text.startsWith(pattern + ' ') ||
+             text.startsWith(pattern + ',') ||
+             text.startsWith(pattern + '.') ||
+             // Kiểm tra pattern ở cuối câu  
+             text.endsWith(' ' + pattern) ||
+             text.endsWith(',' + pattern) ||
+             text.endsWith('.' + pattern);
     });
 
     return isDecline;
-  }, [hasShownRating]);
+  }, [hasShownRating, detectUserFollowUpQuestion]);
 
   // Phát hiện khi người dùng chuẩn bị rời khỏi (chỉ nhắc nhẹ nếu chưa đánh giá)
   const detectUserLeaving = useCallback(() => {
@@ -512,7 +686,6 @@ const ChatBotWidget = () => {
 
     // Chỉ nhắc nhẹ nếu đã có rating message nhưng chưa hoàn thành
     if (timeSinceLastActivity > 60000 && hasEnoughMessages && hasRatingMessage && !hasCompletedRating && sessionId) {
-      console.log('💡 Gentle reminder: Rating available');
       // Có thể thêm hiệu ứng nhẹ ở đây thay vì thêm tin nhắn mới
     }
   }, [lastActivityTime, messages, sessionId]);
@@ -546,9 +719,11 @@ const ChatBotWidget = () => {
 
   // Timer để kiểm tra định kỳ
   useEffect(() => {
-    const interval = setInterval(detectUserLeaving, 10000); // Kiểm tra mỗi 10 giây
+    const interval = setInterval(() => {
+      detectUserLeaving();
+    }, 10000); // Kiểm tra mỗi 10 giây
     return () => clearInterval(interval);
-  }, [detectUserLeaving]);
+  }, []); 
 
   // Cleanup timeout khi component unmount
   useEffect(() => {
@@ -570,17 +745,26 @@ const ChatBotWidget = () => {
         clearTimeout(continuationTimeout);
       }
 
-      // Set timeout mới - 20 giây
+      // Set timeout mới - 25 giây (hợp lý hơn cho user suy nghĩ)
       const timeout = setTimeout(() => {
-        console.log('⏰ User không phản hồi continuation question trong 20 giây - hiển thị form đánh giá');
+        // Kiểm tra một lần nữa xem có tin nhắn mới trong khoảng thời gian này không
+        const now = Date.now();
+        const timeSinceLastActivity = now - lastActivityTime;
+        
+        // Chỉ hiển thị rating nếu thực sự không có hoạt động gần đây
+        if (timeSinceLastActivity >= 20000) { // 20 giây không hoạt động
+          // Reset waiting state
+          setWaitingForContinuationResponse(false);
+          setLastContinuationQuestionTime(null);
 
-        // Reset waiting state
-        setWaitingForContinuationResponse(false);
-        setLastContinuationQuestionTime(null);
-
-        // Hiển thị form đánh giá
-        addRatingMessage('no_response_timeout');
-      }, 20000); // 20 giây
+          // Hiển thị form đánh giá
+          addRatingMessage('no_response_timeout');
+        } else {
+          // Nếu có hoạt động gần đây, reset waiting state nhưng không hiển thị rating
+          setWaitingForContinuationResponse(false);
+          setLastContinuationQuestionTime(null);
+        }
+      }, 25000); // 25 giây
 
       setContinuationTimeout(timeout);
     }
@@ -590,14 +774,13 @@ const ChatBotWidget = () => {
         clearTimeout(continuationTimeout);
       }
     };
-  }, [waitingForContinuationResponse, lastContinuationQuestionTime, hasShownRating, continuationTimeout, addRatingMessage]);
+  }, [waitingForContinuationResponse, lastContinuationQuestionTime, hasShownRating, lastActivityTime, addRatingMessage]);
 
   // Reset timeout khi user gửi tin nhắn mới
   useEffect(() => {
     if (messages.length > 0 && waitingForContinuationResponse) {
       const lastMessage = messages[messages.length - 1];
       if (lastMessage.isUser && !lastMessage.isRating) {
-        console.log('✅ User đã phản hồi - reset waiting state');
         // User đã phản hồi, reset waiting state
         setWaitingForContinuationResponse(false);
         setLastContinuationQuestionTime(null);
@@ -608,7 +791,7 @@ const ChatBotWidget = () => {
         }
       }
     }
-  }, [messages, waitingForContinuationResponse, continuationTimeout]);
+  }, [messages, waitingForContinuationResponse]); 
 
   // Trích xuất chủ đề từ tin nhắn bot
   const extractTopics = useCallback((messageText) => {
@@ -633,6 +816,412 @@ const ChatBotWidget = () => {
 
     return topics.slice(0, 3); // Giới hạn 3 chủ đề
   }, []);
+
+  // ===== FUNCTIONS FOR ORDER LOOKUP & PAYMENT =====
+  
+  // Kiểm tra xem tin nhắn có phải yêu cầu tra cứu đơn hàng không
+  const isOrderLookupRequest = useCallback((message) => {
+    const orderKeywords = [
+      'tra cứu đơn hàng', 'tra cuu don hang', 'kiểm tra đơn hàng', 'kiem tra don hang',
+      'xem đơn hàng', 'xem don hang', 'tìm đơn hàng', 'tim don hang',
+      'đơn hàng của tôi', 'don hang cua toi', 'order lookup', 'check order',
+      'my order', 'find order', 'track order', 'order status', 'trạng thái đơn hàng',
+      'trang thai don hang', 'thanh toán', 'thanh toan', 'payment', 'pay',
+      'trả tiền', 'tra tien', 'chưa thanh toán', 'chua thanh toan'
+    ];
+
+    const lowerMessage = message.toLowerCase();
+    return orderKeywords.some(keyword => lowerMessage.includes(keyword));
+  }, []);
+
+  // Kiểm tra yêu cầu thanh toán lại
+  const isRetryPaymentRequest = useCallback((message) => {
+    const retryPaymentKeywords = [
+      'thanh toán lại', 'thanh toan lai', 'retry payment', 'pay again',
+      'thanh toán lại đơn hàng', 'thanh toan lai don hang', 'trả tiền lại',
+      'tra tien lai', 'tạo link thanh toán', 'tao link thanh toan',
+      'link thanh toán', 'link thanh toan', 'payment link',
+      'muốn thanh toán', 'muon thanh toan', 'cần thanh toán', 'can thanh toan',
+      'có', 'co', 'đồng ý', 'dong y', 'ok', 'được', 'duoc', 'yes'
+    ];
+
+    const lowerMessage = message.toLowerCase().trim();
+    return retryPaymentKeywords.some(keyword => lowerMessage.includes(keyword));
+  }, []);
+
+  // Xử lý luồng tra cứu đơn hàng
+  const handleOrderLookupFlow = useCallback(async (message, userMessage) => {
+    setOrderLookupMode(true);
+    setOrderLookupStep('awaiting_orderid');
+
+    // Thêm tin nhắn hướng dẫn
+    const botMessage = {
+      id: Date.now() + 1,
+      text: `Tôi sẽ giúp bạn tra cứu đơn hàng! 🔍
+
+Để tra cứu đơn hàng, bạn vui lòng cung cấp:
+🎫 **Mã đơn hàng** (VD: ORD-20240101-001)
+📱 **Email hoặc số điện thoại** đã đặt tour
+
+Bạn có thể gửi thông tin theo định dạng:
+"Mã: ORD-xxx-xxx,Email: abc@gmail.com"
+"Mã: ORD-xxx-xxx,SĐT: 0123456789"
+
+Hoặc gửi từng thông tin một cách riêng biệt. Hãy bắt đầu bằng **mã đơn hàng** của bạn:`,
+      isUser: false,
+      timestamp: new Date().toISOString()
+    };
+
+    setMessages(prev => [...prev, botMessage]);
+  }, []);
+
+  // Xử lý input trong quá trình tra cứu đơn hàng
+  const handleOrderLookupInput = useCallback(async (message, userMessage) => {
+    try {
+      // Kiểm tra định dạng đầy đủ: "Mã: xxx, SĐT: xxx"
+      const fullFormatMatch = message.match(/(?:mã|ma|order|ord)[:\s]*([A-Za-z0-9\-_]+).*?(?:sdt|số điện thoại|so dien thoai|phone)[:\s]*([0-9+\-\s()]+)/i);
+      
+      if (fullFormatMatch) {
+        const orderId = fullFormatMatch[1].trim();
+        const phone = fullFormatMatch[2].replace(/[\s\-()]+/g, '').trim();
+        
+        await processOrderLookup(orderId, phone);
+        return;
+      }
+
+      // Xử lý từng bước
+      switch (orderLookupStep) {
+        case 'awaiting_orderid':
+          // Kiểm tra định dạng mã đơn hàng
+          const orderIdMatch = message.match(/(?:ORD|ord)[A-Za-z0-9\-_]*/i) || message.match(/[A-Za-z0-9\-_]{10,}/);
+          
+          if (orderIdMatch) {
+            setTempOrderData(prev => ({ ...prev, orderId: orderIdMatch[0] }));
+            setOrderLookupStep('awaiting_contact');
+            
+            const botMessage = {
+              id: Date.now() + 1,
+              text: `Cảm ơn! Tôi đã ghi nhận mã đơn hàng: **${orderIdMatch[0]}**
+
+Bây giờ vui lòng cung cấp **email** hoặc **số điện thoại** đã đặt tour:`,
+              isUser: false,
+              timestamp: new Date().toISOString()
+            };
+            setMessages(prev => [...prev, botMessage]);
+          } else {
+            const botMessage = {
+              id: Date.now() + 1,
+              text: `Mã đơn hàng không đúng định dạng. Vui lòng kiểm tra lại mã đơn hàng của bạn.
+
+Mã đơn hàng thường có dạng: **ORD-20240101-001** hoặc tương tự.`,
+              isUser: false,
+              timestamp: new Date().toISOString(),
+              isError: true
+            };
+            setMessages(prev => [...prev, botMessage]);
+          }
+          break;
+
+        case 'awaiting_contact':
+          // Kiểm tra email hoặc số điện thoại
+          const emailMatch = message.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+          const phoneMatch = message.match(/[0-9+\-\s()]{8,}/);
+          
+          if (emailMatch) {
+            const email = emailMatch[0];
+            setTempOrderData(prev => ({ ...prev, contact: email }));
+            await processSendOTP(tempOrderData.orderId, email);
+          } else if (phoneMatch) {
+            const phone = phoneMatch[0].replace(/[\s\-()]+/g, '').trim();
+            setTempOrderData(prev => ({ ...prev, contact: phone }));
+            await processSendOTP(tempOrderData.orderId, phone);
+          } else {
+            const botMessage = {
+              id: Date.now() + 1,
+              text: `Vui lòng nhập **email** hoặc **số điện thoại** hợp lệ.
+
+📧 **Email:** example@gmail.com
+📱 **Số điện thoại:** 0901234567`,
+              isUser: false,
+              timestamp: new Date().toISOString(),
+              isError: true
+            };
+            setMessages(prev => [...prev, botMessage]);
+          }
+          break;
+
+        case 'awaiting_otp':
+          // Kiểm tra mã OTP (6 số)
+          const otpMatch = message.match(/\b\d{6}\b/);
+          
+          if (otpMatch) {
+            const otpCode = otpMatch[0];
+            setTempOrderData(prev => ({ ...prev, otpCode }));
+            await processOrderLookupWithOTP(tempOrderData.orderId, tempOrderData.contact, otpCode);
+          } else {
+            const botMessage = {
+              id: Date.now() + 1,
+              text: `❌ **Mã OTP không hợp lệ!**
+
+Vui lòng nhập mã OTP **6 số** mà bạn vừa nhận được.
+
+💡 **Ví dụ:** 123456
+
+⏰ Mã OTP có hiệu lực trong **5 phút**. Nếu hết hạn, bạn có thể bắt đầu lại quá trình tra cứu.`,
+              isUser: false,
+              timestamp: new Date().toISOString(),
+              isError: true
+            };
+            setMessages(prev => [...prev, botMessage]);
+          }
+          break;
+      }
+    } catch (error) {
+      console.error('Error in handleOrderLookupInput:', error);
+      resetOrderLookupMode();
+    }
+  }, [orderLookupStep, tempOrderData]);
+
+  // Xử lý gửi OTP cho tra cứu đơn hàng
+  const processSendOTP = useCallback(async (orderId, contact) => {
+    setOrderLookupStep('processing');
+    setIsLoading(true);
+
+    try {
+      const result = await sendOTPForOrderLookup(orderId, contact);
+
+      if (result.success) {
+        // OTP đã được gửi thành công
+        setOtpSent(true);
+        setOrderLookupStep('awaiting_otp');
+        
+        const isEmail = contact.includes('@');
+        const contactType = isEmail ? 'email' : 'số điện thoại';
+        
+        const otpMessage = `📱 **Mã OTP đã được gửi!**
+
+Chúng tôi vừa gửi mã xác thực 6 số đến ${contactType}: **${contact}**
+
+Vui lòng nhập mã OTP để tiếp tục tra cứu đơn hàng.
+
+⏰ Mã OTP có hiệu lực trong **5 phút**.`;
+
+        const botMessage = {
+          id: Date.now(),
+          text: otpMessage,
+          isUser: false,
+          timestamp: new Date().toISOString()
+        };
+
+        setMessages(prev => [...prev, botMessage]);
+      } else {
+        // Xử lý lỗi gửi OTP
+        const errorMessage = {
+          id: Date.now(),
+          text: `❌ **Lỗi gửi OTP:**\n\n${result.error}`,
+          isUser: false,
+          isError: true,
+          timestamp: new Date().toISOString()
+        };
+
+        setMessages(prev => [...prev, errorMessage]);
+        resetOrderLookupMode();
+      }
+    } catch (error) {
+      console.error('Error sending OTP for order lookup:', error);
+      
+      const errorMessage = {
+        id: Date.now(),
+        text: `❌ **Có lỗi xảy ra khi gửi mã OTP:**\n\n${error.message}`,
+        isUser: false,
+        isError: true,
+        timestamp: new Date().toISOString()
+      };
+
+      setMessages(prev => [...prev, errorMessage]);
+      resetOrderLookupMode();
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Xử lý tra cứu đơn hàng với OTP
+  const processOrderLookupWithOTP = useCallback(async (orderId, contact, otpCode) => {
+    setOrderLookupStep('processing');
+    setIsLoading(true);
+
+    try {
+      const result = await lookupOrderWithOTP(orderId, contact, otpCode);
+
+      if (result.success) {
+        const order = result.data;
+        const formatPrice = (price) => new Intl.NumberFormat('vi-VN').format(price) + 'đ';
+        const formatDate = (dateStr) => {
+          if (!dateStr) return 'Chưa cập nhật';
+          return new Date(dateStr).toLocaleDateString('vi-VN');
+        };
+
+        const orderInfo = `✅ **Tìm thấy đơn hàng!**
+
+🎫 **Mã đơn hàng:** ${order.orderId}
+👤 **Khách hàng:** ${order.customerName}
+📧 **Email:** ${order.customerEmail}
+📱 **Điện thoại:** ${order.customerPhone}
+
+🌍 **Tour:** ${order.tourName}
+📅 **Ngày khởi hành:** ${formatDate(order.departureDate)}
+📅 **Ngày về:** ${formatDate(order.returnDate)}
+
+👥 **Số người:** ${order.totalPeople} (${order.adults} người lớn${order.children > 0 ? `, ${order.children} trẻ em` : ''}${order.babies > 0 ? `, ${order.babies} em bé` : ''})
+
+💰 **Tổng tiền:** ${formatPrice(order.totalAmount)}
+💳 **Phương thức TT:** ${order.paymentMethod}
+
+📊 **Trạng thái thanh toán:** ${getPaymentStatusText(order.paymentStatus)}
+📋 **Trạng thái đơn hàng:** ${getOrderStatusText(order.status)}
+
+📅 **Ngày đặt:** ${formatDate(order.createdAt)}`;
+
+        // Thêm thông tin thanh toán và hỗ trợ
+        let additionalInfo = '';
+        
+        if (order.paymentStatus !== 'completed' && ['MoMo', 'VNPay'].includes(order.paymentMethod) && order.status !== 'cancelled') {
+          additionalInfo += `\n\n🔄 **Bạn có thể thanh toán lại đơn hàng này.**
+Hãy cho tôi biết nếu bạn cần hỗ trợ tạo link thanh toán mới!`;
+        } else if (order.paymentStatus === 'completed') {
+          additionalInfo += `\n\n✅ **Đơn hàng đã được thanh toán thành công.**
+Cảm ơn bạn đã sử dụng dịch vụ của NDTravel!`;
+        }
+
+        const botMessage = {
+          id: Date.now() + 1,
+          text: orderInfo + additionalInfo,
+          isUser: false,
+          timestamp: new Date().toISOString()
+        };
+
+        setMessages(prev => [...prev, botMessage]);
+        setLastOrderLookupRequest({ orderId, contact, orderData: order });
+
+      } else {
+        const botMessage = {
+          id: Date.now() + 1,
+          text: `❌ ${result.error}
+
+Vui lòng kiểm tra lại:
+- **Mã đơn hàng** có đúng không?
+- **Email/Số điện thoại** có chính xác không?
+- **Mã OTP** có chính xác không?
+
+Bạn có thể thử lại hoặc liên hệ hotline **0972 122 555** để được hỗ trợ!`,
+          isUser: false,
+          timestamp: new Date().toISOString(),
+          isError: true
+        };
+        setMessages(prev => [...prev, botMessage]);
+      }
+
+    } catch (error) {
+      console.error('Error in processOrderLookupWithOTP:', error);
+      const botMessage = {
+        id: Date.now() + 1,
+        text: `❌ Có lỗi xảy ra khi tra cứu đơn hàng. Vui lòng thử lại sau hoặc liên hệ hotline **0972 122 555** để được hỗ trợ!`,
+        isUser: false,
+        timestamp: new Date().toISOString(),
+        isError: true
+      };
+      setMessages(prev => [...prev, botMessage]);
+    } finally {
+      setIsLoading(false);
+      resetOrderLookupMode();
+    }
+  }, []);
+
+  // Reset chế độ tra cứu đơn hàng
+  const resetOrderLookupMode = useCallback(() => {
+    setOrderLookupMode(false);
+    setOrderLookupStep('initial');
+    setTempOrderData({ orderId: '', phone: '', email: '', contact: '', otpCode: '' });
+    setOtpSent(false);
+  }, []);
+
+  // Xử lý yêu cầu thanh toán lại
+  const handleRetryPayment = useCallback(async (orderId, phone = null, email = null) => {
+    setIsLoading(true);
+
+    try {
+      const result = await getRetryPaymentLink(orderId, phone, email);
+
+      if (result.success) {
+        const data = result.data;
+        const botMessage = {
+          id: Date.now() + 1,
+          text: `✅ **Link thanh toán đã được tạo thành công!**
+
+💳 **Phương thức:** ${data.paymentMethod}
+💰 **Số tiền:** ${new Intl.NumberFormat('vi-VN').format(data.totalAmount)}đ
+
+🔗 **Link thanh toán:**
+${data.retryPaymentLink}
+
+👉 Bạn có thể click vào link trên để thanh toán ngay!
+
+⏰ **Lưu ý:** Link thanh toán có thời hạn sử dụng, vui lòng thanh toán sớm để tránh hết hạn.`,
+          isUser: false,
+          timestamp: new Date().toISOString()
+        };
+        setMessages(prev => [...prev, botMessage]);
+
+      } else {
+        const botMessage = {
+          id: Date.now() + 1,
+          text: `❌ ${result.error}
+
+Vui lòng liên hệ hotline **0972 122 555** để được hỗ trợ thanh toán!`,
+          isUser: false,
+          timestamp: new Date().toISOString(),
+          isError: true
+        };
+        setMessages(prev => [...prev, botMessage]);
+      }
+
+    } catch (error) {
+      console.error('Error in handleRetryPayment:', error);
+      const botMessage = {
+        id: Date.now() + 1,
+        text: `❌ Có lỗi xảy ra khi tạo link thanh toán. Vui lòng thử lại sau hoặc liên hệ hotline **0972 122 555**!`,
+        isUser: false,
+        timestamp: new Date().toISOString(),
+        isError: true
+      };
+      setMessages(prev => [...prev, botMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Helper functions
+  const getPaymentStatusText = (status) => {
+    switch (status) {
+      case 'completed': return '✅ Đã thanh toán';
+      case 'pending': return '⏳ Đang chờ thanh toán';
+      case 'failed': return '❌ Thanh toán thất bại';
+      case 'cancelled': return '🚫 Đã hủy';
+      default: return status;
+    }
+  };
+
+  const getOrderStatusText = (status) => {
+    switch (status) {
+      case 'pending': return '⏳ Chờ xử lý';
+      case 'confirmed': return '✅ Đã xác nhận';
+      case 'completed': return '🎉 Hoàn thành';
+      case 'cancelled': return '🚫 Đã hủy';
+      default: return status;
+    }
+  };
+
+  // ===== END ORDER LOOKUP & PAYMENT FUNCTIONS =====
 
 
 
@@ -732,8 +1321,8 @@ const ChatBotWidget = () => {
   // Thêm tin nhắn chào mừng một cách thông minh
   const addWelcomeMessageIfNeeded = useCallback((forceAdd = false) => {
     // Chỉ thêm tin nhắn chào mừng nếu:
-    // 1. Được yêu cầu force add (từ welcome popup)
-    // 2. Hoặc không có tin nhắn nào và người dùng chưa tương tác
+    // Được yêu cầu force add (từ welcome popup)
+    // Hoặc không có tin nhắn nào và người dùng chưa tương tác
     if (forceAdd || (messages.length === 0 && !hasUserInteracted)) {
       const welcomeMessage = {
         id: Date.now(),
@@ -967,10 +1556,20 @@ const ChatBotWidget = () => {
       timestamp: new Date().toISOString()
     };
 
+    // Kiểm tra nếu user đang hỏi câu hỏi tiếp theo - reset waiting state
+    if (waitingForContinuationResponse && detectUserFollowUpQuestion(messageToSend)) {
+      // Reset waiting state vì user vẫn muốn tiếp tục
+      setWaitingForContinuationResponse(false);
+      setLastContinuationQuestionTime(null);
+
+      if (continuationTimeout) {
+        clearTimeout(continuationTimeout);
+        setContinuationTimeout(null);
+      }
+    }
+
     // Kiểm tra nếu user từ chối tiếp tục và đang chờ phản hồi continuation
     if (waitingForContinuationResponse && detectUserDecline(messageToSend)) {
-      console.log('🚫 User từ chối tiếp tục - hiển thị form đánh giá');
-
       // Reset waiting state
       setWaitingForContinuationResponse(false);
       setLastContinuationQuestionTime(null);
@@ -993,7 +1592,8 @@ const ChatBotWidget = () => {
     }
 
     // Kiểm tra nếu user từ chối ngay cả khi không đang chờ continuation (fallback)
-    if (!waitingForContinuationResponse && detectUserDecline(messageToSend) && !hasShownRating) {
+    // Chỉ áp dụng nếu không phải câu hỏi tiếp theo
+    if (!waitingForContinuationResponse && detectUserDecline(messageToSend) && !detectUserFollowUpQuestion(messageToSend) && !hasShownRating) {
       // Kiểm tra xem có tin nhắn bot gần đây có chứa continuation question không
       const recentBotMessages = messages.filter(msg => !msg.isUser && !msg.isRating).slice(-2);
       const hasRecentContinuationQuestion = recentBotMessages.some(msg => {
@@ -1002,8 +1602,6 @@ const ChatBotWidget = () => {
       });
 
       if (hasRecentContinuationQuestion) {
-        console.log('🚫 User từ chối (fallback detection) - hiển thị form đánh giá');
-
         // Thêm tin nhắn người dùng vào chat
         setMessages(prev => [...prev, userMessage]);
         setInputMessage('');
@@ -1020,6 +1618,32 @@ const ChatBotWidget = () => {
     // Thêm tin nhắn người dùng vào chat
     setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
+
+    // Kiểm tra xem có phải yêu cầu tra cứu đơn hàng không
+    if (isOrderLookupRequest(messageToSend)) {
+      handleOrderLookupFlow(messageToSend, userMessage);
+      return;
+    }
+
+    // Kiểm tra nếu đang trong quá trình tra cứu đơn hàng
+    if (orderLookupMode) {
+      handleOrderLookupInput(messageToSend, userMessage);
+      return;
+    }
+
+    // Kiểm tra yêu cầu thanh toán lại
+    if (isRetryPaymentRequest(messageToSend) && lastOrderLookupRequest) {
+      const { orderId, contact, orderData } = lastOrderLookupRequest;
+      const isEmail = contact && contact.includes('@');
+      
+      handleRetryPayment(
+        orderId, 
+        isEmail ? null : contact, // phone
+        isEmail ? contact : null  // email
+      );
+      return;
+    }
+
     setIsLoading(true);
 
     // Cập nhật session stats - user message
@@ -1074,10 +1698,13 @@ const ChatBotWidget = () => {
 
         // Phát hiện khi kết thúc hỗ trợ chính và hiển thị đánh giá
         if (detectSupportCompletion(result.data.reply)) {
-          // Delay nhẹ để người dùng đọc xong tin nhắn
+          // Delay để người dùng đọc xong tin nhắn và đảm bảo không có hoạt động nào khác
           setTimeout(() => {
-            addRatingMessage('support_completed');
-          }, 2000);
+            // Kiểm tra lại xem cuộc trò chuyện có còn hoạt động không trước khi hiển thị rating
+            if (!isConversationActive()) {
+              addRatingMessage('support_completed');
+            }
+          }, 3000); // Tăng delay lên 3 giây để đảm bảo
         }
 
         // Cập nhật session ID nếu thay đổi
@@ -1280,8 +1907,6 @@ const ChatBotWidget = () => {
       };
       return [welcomeMessage];
     });
-
-    console.log('🗑️ Conversation cleared completely - all data reset');
   }, [sessionId, ratingReminderTimeout, continuationTimeout]);
 
   // Xử lý hành động popup chào mừng

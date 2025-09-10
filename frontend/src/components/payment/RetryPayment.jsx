@@ -15,6 +15,7 @@ const RetryPayment = () => {
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
     const [selectedBank, setSelectedBank] = useState('');
+    const [paymentWindowOpened, setPaymentWindowOpened] = useState(false);
 
     // Danh sách ngân hàng cho VNPay
     const vnpayBanks = [
@@ -59,8 +60,8 @@ const RetryPayment = () => {
             const response = await axiosInstance.post(`/api/public/retry-payment/momo/${orderId}`);
             
             if (response.data.success && response.data.data.payUrl) {
-                toast.success('Đang chuyển hướng đến MoMo...');
-                window.location.href = response.data.data.payUrl;
+                toast.success('Đang mở cổng thanh toán MoMo...');
+                window.open(response.data.data.payUrl, '_blank');
             } else {
                 throw new Error(response.data.message || 'Không thể tạo link thanh toán MoMo');
             }
@@ -69,6 +70,11 @@ const RetryPayment = () => {
         } finally {
             setProcessing(false);
         }
+    };
+
+    const handleCheckPaymentStatus = () => {
+        // Chuyển hướng đến trang kiểm tra trạng thái thanh toán
+        navigate(`/payment/success/${orderId}`, { replace: true });
     };
 
     const handleVNPayPayment = async () => {
@@ -80,8 +86,16 @@ const RetryPayment = () => {
             });
             
             if (response.data.success && response.data.data.paymentUrl) {
-                toast.success('Đang chuyển hướng đến VNPay...');
-                window.location.href = response.data.data.paymentUrl;
+                toast.success('Đang mở cổng thanh toán VNPay trong tab mới...');
+                const paymentWindow = window.open(response.data.data.paymentUrl, '_blank');
+
+                // Kiểm tra nếu popup bị chặn
+                if (!paymentWindow || paymentWindow.closed || typeof paymentWindow.closed == 'undefined') {
+                    toast.warning('Popup bị chặn! Vui lòng cho phép popup và thử lại.');
+                } else {
+                    toast.info('Vui lòng hoàn tất thanh toán trong tab mới và quay lại trang này.');
+                    setPaymentWindowOpened(true);
+                }
             } else {
                 throw new Error(response.data.message || 'Không thể tạo link thanh toán VNPay');
             }

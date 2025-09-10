@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createOrUpdateSessionRating, checkSessionRated } from '../../../services/chatRatingService';
 import './InlineSessionRating.scss';
 
@@ -15,11 +15,11 @@ const InlineSessionRating = ({
 }) => {
     const [rating, setRating] = useState(0);
     const [hoveredRating, setHoveredRating] = useState(0);
-    const [feedback, setFeedback] = useState('');
+    const [displayedRating, setDisplayedRating] = useState(0); // Rating hiển thị với delay
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [hasSubmitted, setHasSubmitted] = useState(false);
-    const [showFeedback, setShowFeedback] = useState(false);
     const [hasExistingRating, setHasExistingRating] = useState(false);
+    const hoverTimeoutRef = useRef(null);
 
     // Kiểm tra xem session đã được đánh giá chưa
     useEffect(() => {
@@ -32,7 +32,6 @@ const InlineSessionRating = ({
                     setHasExistingRating(true);
                     setHasSubmitted(true);
                     setRating(result.data.rating.rating);
-                    setFeedback(result.data.rating.feedback || '');
                 }
             } catch (error) {
                 console.error('Error checking existing rating:', error);
@@ -41,6 +40,33 @@ const InlineSessionRating = ({
 
         checkExistingRating();
     }, [sessionId]);
+
+    // Handle smooth hover effect với delay
+    useEffect(() => {
+        // Clear timeout cũ
+        if (hoverTimeoutRef.current) {
+            clearTimeout(hoverTimeoutRef.current);
+        }
+
+        if (hoveredRating > 0) {
+            // Delay 200ms trước khi hiển thị emotion text
+            hoverTimeoutRef.current = setTimeout(() => {
+                setDisplayedRating(hoveredRating);
+            }, 200);
+        } else if (rating > 0 && !hasSubmitted) {
+            // Hiển thị ngay nếu đã có rating
+            setDisplayedRating(rating);
+        } else {
+            // Clear ngay lập tức khi không hover
+            setDisplayedRating(0);
+        }
+
+        return () => {
+            if (hoverTimeoutRef.current) {
+                clearTimeout(hoverTimeoutRef.current);
+            }
+        };
+    }, [hoveredRating, rating, hasSubmitted]);
 
     // Xử lý submit rating
     const handleRatingSubmit = async (starRating) => {
@@ -53,7 +79,7 @@ const InlineSessionRating = ({
             const result = await createOrUpdateSessionRating({
                 sessionId,
                 rating: starRating,
-                feedback: feedback.trim(),
+                feedback: '',
                 ratingType: trigger === 'auto' ? 'auto_prompt' : 'manual',
                 ratingTrigger: trigger === 'session_end' ? 'session_timeout' : 'user_initiated',
                 sessionStats
@@ -68,14 +94,11 @@ const InlineSessionRating = ({
                         sessionId,
                         messageId,
                         rating: starRating,
-                        feedback: feedback.trim(),
+                        feedback: '',
                         success: true,
                         isUpdate: result.data.isUpdate
                     });
                 }
-
-                // Luôn hiển thị feedback form để người dùng có thể để lại ý kiến
-                setShowFeedback(true);
             } else {
                 console.error('Lỗi khi gửi rating:', result.error);
                 setRating(0);
@@ -98,42 +121,7 @@ const InlineSessionRating = ({
         }
     };
 
-    // Xử lý submit feedback
-    const handleFeedbackSubmit = async () => {
-        if (!feedback.trim() || isSubmitting) return;
 
-        setIsSubmitting(true);
-
-        try {
-            const result = await createOrUpdateSessionRating({
-                sessionId,
-                rating,
-                feedback: feedback.trim(),
-                ratingType: trigger === 'auto' ? 'auto_prompt' : 'manual',
-                ratingTrigger: 'user_initiated',
-                sessionStats
-            });
-
-            if (result.success) {
-                setShowFeedback(false);
-                
-                if (onRatingSubmit) {
-                    onRatingSubmit({
-                        sessionId,
-                        messageId,
-                        rating,
-                        feedback: feedback.trim(),
-                        success: true,
-                        isUpdate: true
-                    });
-                }
-            }
-        } catch (error) {
-            console.error('Lỗi khi gửi feedback:', error);
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
 
     // Render sao
     const renderStars = () => {
@@ -165,36 +153,38 @@ const InlineSessionRating = ({
         return stars;
     };
 
-    // Lấy text mô tả rating
+    // Lấy text mô tả rating chính
     const getRatingText = () => {
-        const currentRating = hoveredRating || rating || 0;
+        // Text chính cho từng trigger
+        if (trigger === 'user_declined' || trigger === 'no_response_timeout') {
+            return 'Cảm ơn bạn đã trò chuyện với ND Travel! Hãy cho chúng tôi biết trải nghiệm của bạn với Chatbot nhé 😊';
+        } else if (trigger === 'support_completed') {
+            return 'Đánh giá trải nghiệm của bạn';
+        } else if (trigger === 'session_end' || trigger === 'tab_hidden' || trigger === 'page_unload') {
+            return 'Bạn hài lòng với cuộc trò chuyện vừa rồi chứ?';
+        } else if (trigger === 'chatbot_close') {
+            return 'Đánh giá trải nghiệm trước khi đóng nhé! 😊';
+        } else if (trigger === 'manual') {
+            return 'Đánh giá trải nghiệm của bạn';
+        }
+        
+        return 'Đánh giá trải nghiệm của bạn';
+    };
 
-        // Text hiện đại và thân thiện hơn
-        let baseTexts = {
-            0: 'Bạn hài lòng với cuộc trò chuyện vừa rồi chứ?',
-            1: 'Rất không hài lòng 😞',
-            2: 'Không hài lòng 😕',
-            3: 'Bình thường 😐',
-            4: 'Hài lòng 😊',
-            5: 'Rất hài lòng 🤩'
+    // Lấy text mô tả cảm xúc tương ứng với số sao
+    const getEmotionText = () => {
+        const currentRating = displayedRating;
+        
+        const emotionData = {
+            0: { text: '', icon: '' },
+            1: { text: 'Rất không hài lòng', icon: '😞' },
+            2: { text: 'Không hài lòng', icon: '😕' }, 
+            3: { text: 'Bình thường', icon: '😐' },
+            4: { text: 'Hài lòng', icon: '😊' },
+            5: { text: 'Rất hài lòng', icon: '🤩' }
         };
 
-        // Thay đổi message cho các trigger đặc biệt
-        if (currentRating === 0) {
-            if (trigger === 'user_declined' || trigger === 'no_response_timeout') {
-                return 'Cảm ơn bạn đã trò chuyện với ND Travel! Hãy cho chúng tôi biết trải nghiệm của bạn với Chatbot nhé 😊';
-            } else if (trigger === 'support_completed') {
-                baseTexts[0] = 'Đánh giá trải nghiệm của bạn';
-            } else if (trigger === 'session_end' || trigger === 'tab_hidden' || trigger === 'page_unload') {
-                baseTexts[0] = 'Bạn hài lòng với cuộc trò chuyện vừa rồi chứ?';
-            } else if (trigger === 'chatbot_close') {
-                baseTexts[0] = 'Đánh giá trải nghiệm trước khi đóng nhé! 😊';
-            } else if (trigger === 'manual') {
-                baseTexts[0] = 'Đánh giá trải nghiệm của bạn';
-            }
-        }
-
-        return baseTexts[currentRating] || baseTexts[0];
+        return emotionData[currentRating] || emotionData[0];
     };
 
     // Không hiển thị nếu đã có rating
@@ -253,7 +243,15 @@ const InlineSessionRating = ({
                         {renderStars()}
                     </div>
 
-                    {hasSubmitted && rating && !showFeedback && (
+                    {/* Hiển thị text mô tả cảm xúc với delay để mượt hơn */}
+                    {displayedRating > 0 && (
+                        <div className="emotion-text" key={displayedRating}>
+                            <span className="emotion-icon">{getEmotionText().icon}</span>
+                            <span className="emotion-description">{getEmotionText().text}</span>
+                        </div>
+                    )}
+
+                    {hasSubmitted && rating && (
                         <div className="rating-result">
                             <span className="rating-thanks">Cảm ơn bạn đã đánh giá!</span>
                             <span className="rating-value">({rating}/5)</span>
@@ -268,54 +266,7 @@ const InlineSessionRating = ({
                     )}
                 </div>
 
-                {/* Feedback form đơn giản */}
-                {showFeedback && (
-                    <div className="feedback-container">
-                        <div className="feedback-header">
-                            <div className="feedback-header-text">
-                                <h4>Ý kiến đóng góp</h4>
-                                <p>Chia sẻ thêm để chúng tôi cải thiện dịch vụ</p>
-                            </div>
-                        </div>
-                        <div className="feedback-input">
-                            <textarea
-                                value={feedback}
-                                onChange={(e) => setFeedback(e.target.value)}
-                                placeholder="Ý kiến đóng góp thêm (không bắt buộc)"
-                                maxLength={1000}
-                                rows={3}
-                                disabled={isSubmitting}
-                            />
-                            <div className="feedback-actions">
-                                <button
-                                    className="feedback-skip"
-                                    onClick={() => setShowFeedback(false)}
-                                    disabled={isSubmitting}
-                                    type="button"
-                                >
-                                    Bỏ qua
-                                </button>
-                                <button
-                                    className="feedback-submit"
-                                    onClick={handleFeedbackSubmit}
-                                    disabled={isSubmitting}
-                                    type="button"
-                                >
-                                    {isSubmitting ? (
-                                        <>
-                                            <div className="button-spinner"></div>
-                                            Đang gửi...
-                                        </>
-                                    ) : (
-                                        'Gửi đánh giá'
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {!hasSubmitted && !showFeedback && (
+                {!hasSubmitted && (
                     <div className="rating-footer">
                         <small>Đánh giá này sẽ giúp chúng tôi cải thiện chất lượng hỗ trợ</small>
                     </div>

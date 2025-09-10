@@ -76,9 +76,21 @@ router.get('/tours/:tourId', chatbotController.getTourDetails);
 
 router.post('/message', chatbotController.sendMessage);
 
+// ========== ORDER LOOKUP & PAYMENT FEATURES ==========
+// Gửi OTP cho tra cứu đơn hàng
+router.post('/order/send-otp', chatbotController.sendOTPForOrderLookup);
 
+// Tra cứu đơn hàng với xác thực OTP
+router.post('/order/lookup-with-otp', chatbotController.lookupOrderWithOTP);
 
+// Tra cứu đơn hàng thông qua chatbot (chỉ kiểm tra tồn tại)
+router.post('/order/lookup', chatbotController.lookupOrder);
 
+// Lấy link thanh toán lại cho đơn hàng thất bại
+router.post('/order/retry-payment', chatbotController.getRetryPaymentLink);
+
+// Kiểm tra trạng thái thanh toán đơn hàng
+router.post('/order/payment-status', chatbotController.checkPaymentStatus);
 
 router.post('/session', chatbotController.createSession);
 

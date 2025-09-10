@@ -1025,6 +1025,7 @@ exports.sendOTPForOrderLookup = async (req, res) => {
                     orderId: !orderId ? 'Mã đơn hàng không được để trống' : null,
                     email: !email ? 'Email không được để trống' : null
                 }
+
             });
         }
 
@@ -1198,3 +1199,4 @@ exports.lookupOrderPublic = async (req, res) => {
         });
     }
 };
+

@@ -159,9 +159,9 @@ const TourDetail = ({ tourData, isLoading = false, isError = false, error = null
             const paymentResult = await createMoMoPayment(paymentData);
             
             if (paymentResult.success) {
-              // Chuyển hướng trực tiếp đến trang thanh toán MoMo
-              window.location.href = paymentResult.data.payUrl;
-              return; // Dừng thực thi để chuyển hướng
+              // Mở trang thanh toán MoMo trong tab mới
+              window.open(paymentResult.data.payUrl, '_blank');
+              return; // Dừng thực thi sau khi mở tab mới
             } else {
               // Kiểm tra nếu là lỗi orderId trùng và còn retry
               if (paymentResult.resultCode === 41 && retryCount < maxRetries) {
@@ -215,9 +215,9 @@ const TourDetail = ({ tourData, isLoading = false, isError = false, error = null
           const paymentResult = await createVNPayPayment(paymentData);
           
           if (paymentResult.success && paymentResult.data.paymentUrl) {
-            // Chuyển hướng trực tiếp đến trang thanh toán VNPay
-            window.location.href = paymentResult.data.paymentUrl;
-            return; // Dừng thực thi để chuyển hướng
+            // Mở trang thanh toán VNPay trong tab mới
+            window.open(paymentResult.data.paymentUrl, '_blank');
+            return; // Dừng thực thi sau khi mở tab mới
           } else {
             throw new Error(paymentResult.message || 'Không thể tạo thanh toán VNPay');
           }

@@ -4,6 +4,33 @@ import { checkMoMoPaymentStatus, checkVNPayPaymentStatus, handleVNPayReturn } fr
 import { toast } from 'react-toastify';
 import './PaymentStatus.scss';
 
+// Helper function để lấy trạng thái thanh toán thực tế
+const getActualPaymentStatus = (paymentData) => {
+  if (!paymentData || !paymentData.paymentStatus) return 'pending';
+
+  // Chuyển đổi 'refund' thành 'refunded' cho CSS class
+  return paymentData.paymentStatus === 'refund' ? 'refunded' : paymentData.paymentStatus;
+};
+
+// Helper function để hiển thị trạng thái thanh toán
+const getPaymentStatusText = (paymentStatus) => {
+  switch (paymentStatus) {
+    case 'completed':
+      return 'Đã thanh toán';
+    case 'failed':
+      return 'Thanh toán thất bại';
+    case 'pending':
+      return 'Chờ thanh toán';
+    case 'refund':
+    case 'refunded':
+      return 'Đã hoàn tiền';
+    case 'cancelled':
+      return 'Đã hủy thanh toán';
+    default:
+      return 'Chờ thanh toán';
+  }
+};
+
 // Helper function để chuyển đổi mã lỗi VNPay thành thông điệp dễ hiểu
 const getVNPayErrorMessage = (responseCode) => {
   const errorMessages = {
@@ -93,11 +120,8 @@ const PaymentSuccessBlock = ({ paymentData, countdown, onNavigateToOrders, onNav
               </div>
                 <div className="payment-detail-item">
                     <span className="detail-label">Trạng thái:</span>
-                    <span className="detail-value status-completed">
-                    {paymentData.paymentStatus === 'completed' ? 'Đã thanh toán' : 
-                        paymentData.paymentStatus === 'failed' ? 'Thanh toán thất bại' :
-                        paymentData.paymentStatus === 'refund' ? 'Hoàn tiền' :
-                        paymentData.status === 'confirmed' ? 'Đã xác nhận' : 'Đang xử lý'}
+                    <span className={`detail-value status-${getActualPaymentStatus(paymentData)}`}>
+                        {getPaymentStatusText(getActualPaymentStatus(paymentData))}
                     </span>
                 </div>
                 <div className="payment-detail-item">
@@ -496,8 +520,7 @@ const PaymentStatus = () => {
           setPaymentMethod(response.data.paymentMethod);
         }
         
-        if (response.data.paymentStatus === 'completed' || 
-            response.data.momoStatus === 'completed') {
+        if (response.data.paymentStatus === 'completed') {
           setPaymentStatus('completed');
           if (!momoResultCode && !vnpayResponseCode) {
             toast.success(`Thanh toán ${response.data.paymentMethod} thành công!`);
@@ -510,17 +533,20 @@ const PaymentStatus = () => {
           if (!momoResultCode && !vnpayResponseCode) {
             toast.error(`Thanh toán ${response.data.paymentMethod} thất bại!`);
           }
-        } else if (response.data.paymentStatus === 'refund') {
+        } else if (response.data.paymentStatus === 'refund' || response.data.paymentStatus === 'refunded') {
           setPaymentStatus('refunded');
           if (!momoResultCode && !vnpayResponseCode) {
             toast.info('Đơn hàng đã được hoàn tiền!');
           }
         } else {
           setPaymentStatus('pending');
-          // Có thể thêm logic kiểm tra lại sau 5 giây
-          setTimeout(() => {
-            checkPaymentStatus();
-          }, 5000);
+
+          // Tự động kiểm tra lại trạng thái MoMo sau 5 giây
+          if (response.data.paymentMethod === 'MoMo' && !momoResultCode) {
+            setTimeout(() => {
+              checkPaymentStatus();
+            }, 5000);
+          }
         }
       } else {
         setPaymentStatus('error');

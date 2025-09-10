@@ -291,7 +291,7 @@ exports.handleMoMoCallback = async (req, res) => {
             // Thanh toán thành công
             const updatedOrder = await Order.findOneAndUpdate(
                 { orderId: orderId },
-                { 
+                {
                     paymentStatus: 'completed',
                     status: 'confirmed',
                     momoTransId: transId,
@@ -299,7 +299,7 @@ exports.handleMoMoCallback = async (req, res) => {
                     paidAt: new Date(),
                     updatedBy: 'MoMo System'
                 },
-                { new: true } 
+                { new: true }
             );
 
             // Trừ stock cho các tour detail khi thanh toán thành công (chỉ nếu chưa trừ)
@@ -317,9 +317,8 @@ exports.handleMoMoCallback = async (req, res) => {
             // Gửi email thanh toán thành công
             try {
                 await paymentEmailService.sendOnlinePaymentSuccess(updatedOrder);
-                console.log(`✅ Đã gửi email thanh toán thành công cho đơn ${orderId}`);
             } catch (emailError) {
-                console.error(`❌ Lỗi gửi email thanh toán thành công cho đơn ${orderId}:`, emailError.message);
+                console.error(`❌ Lỗi gửi email thanh toán MoMo thành công cho đơn ${orderId}:`, emailError.message);
             }
             
         } else {
@@ -340,9 +339,8 @@ exports.handleMoMoCallback = async (req, res) => {
             try {
                 const retryPaymentUrl = `${process.env.FRONTEND_URL}/payment/retry/${orderId}`;
                 await paymentEmailService.sendOnlinePaymentFailed(failedOrder, message, retryPaymentUrl);
-                console.log(`✅ Đã gửi email thanh toán thất bại cho đơn ${orderId}`);
             } catch (emailError) {
-                console.error(`❌ Lỗi gửi email thanh toán thất bại cho đơn ${orderId}:`, emailError.message);
+                console.error(`❌ Lỗi gửi email thanh toán MoMo thất bại cho đơn ${orderId}:`, emailError.message);
             }
         }
 
@@ -409,10 +407,11 @@ exports.checkMoMoPaymentStatus = async (req, res) => {
             });
 
             // Cập nhật trạng thái nếu cần
+            let finalOrder = order;
             if (momoResponse.data.resultCode === 0 && order.paymentStatus !== 'completed') {
                 const updatedOrder = await Order.findOneAndUpdate(
                     { orderId: orderId },
-                    { 
+                    {
                         paymentStatus: 'completed',
                         status: 'confirmed',
                         momoTransId: momoResponse.data.transId,
@@ -421,6 +420,8 @@ exports.checkMoMoPaymentStatus = async (req, res) => {
                     },
                     { new: true } // Trả về document sau khi update
                 );
+
+                finalOrder = updatedOrder;
 
                 // Trừ stock cho các tour detail khi thanh toán thành công (nếu chưa trừ)
                 if (updatedOrder && updatedOrder.items && updatedOrder.items.length > 0 && !updatedOrder.stockDeducted) {
@@ -433,35 +434,42 @@ exports.checkMoMoPaymentStatus = async (req, res) => {
                         );
                     }
                 }
+
+                // Gửi email thanh toán thành công
+                try {
+                    await paymentEmailService.sendOnlinePaymentSuccess(updatedOrder);
+                } catch (emailError) {
+                    console.error(`❌ Lỗi gửi email thanh toán MoMo thành công qua query cho đơn ${orderId}:`, emailError.message);
+                }
             }
 
             return res.status(200).json({
                 success: true,
                 data: {
                     orderId: orderId,
-                    paymentStatus: order.paymentStatus,
+                    paymentStatus: finalOrder.paymentStatus,
                     momoStatus: momoResponse.data.resultCode === 0 ? 'completed' : 'pending',
                     momoResultCode: momoResponse.data.resultCode,
                     momoMessage: momoResponse.data.message,
-                    momoTransId: momoResponse.data.transId || order.momoTransId,
+                    momoTransId: momoResponse.data.transId || finalOrder.momoTransId,
                     // Thông tin đơn hàng chi tiết
-                    customer: order.customer,
-                    email: order.email,
-                    phone: order.phone,
-                    totalAmount: order.totalAmount,
-                    status: order.status,
-                    createdAt: order.createdAt,
-                    paidAt: order.paidAt,
-                    paymentMethod: order.paymentMethod,
-                    tourName: order.tourName,
-                    departure: order.departure,
-                    destination: order.destination,
-                    startDate: order.startDate,
-                    endDate: order.endDate,
-                    adults: order.adults,
-                    children: order.children,
-                    infants: order.infants,
-                    items: order.items // Thêm thông tin items chứa tourId
+                    customer: finalOrder.customer,
+                    email: finalOrder.email,
+                    phone: finalOrder.phone,
+                    totalAmount: finalOrder.totalAmount,
+                    status: finalOrder.status,
+                    createdAt: finalOrder.createdAt,
+                    paidAt: finalOrder.paidAt,
+                    paymentMethod: finalOrder.paymentMethod,
+                    tourName: finalOrder.tourName,
+                    departure: finalOrder.departure,
+                    destination: finalOrder.destination,
+                    startDate: finalOrder.startDate,
+                    endDate: finalOrder.endDate,
+                    adults: finalOrder.adults,
+                    children: finalOrder.children,
+                    infants: finalOrder.infants,
+                    items: finalOrder.items // Thêm thông tin items chứa tourId
                 }
             });
         }
