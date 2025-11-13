@@ -1,0 +1,118 @@
+.newsletter {
+    padding: 3rem 0;
+  
+    &__container {
+      position: relative;
+      color: #ffffff;
+      background-color: #1F50EA;
+      background-image: url('/images/backgrounds/bg-3.png');
+      background-position: right bottom;
+      background-repeat: no-repeat;
+      padding: 2.5rem 1.25rem;
+      margin: 0 auto;
+      
+      @media (min-width: 1024px) {
+        max-width: 85%;
+        padding: 0;
+        border-radius: 1rem;
+        padding: 4rem;
+        height: 290px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      
+      @media (min-width: 1536px) {
+        max-width: 1280px;
+        margin-top: 4.8rem;
+      }
+    }
+  
+    &__title {
+      font-weight: 700;
+      font-size: 2.6rem;
+      margin-bottom: 0.5rem;
+      
+      @media (max-width: 1023px) {
+        font-size: 1.875rem;
+      }
+    }
+  
+    &__description {
+      margin-bottom: 1rem;
+      font-size: 1.6rem;
+      line-height: 1.6;
+    }
+  
+    &__form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      
+      @media (min-width: 1024px) {
+        flex-direction: row;
+        width: fit-content;
+      }
+    }
+  
+    &__input {
+      width: 100%;
+      background-color: #ffffff;
+      border-radius: 0.75rem;
+      padding: 1.4rem 2rem;
+      color: #374151;
+      font-size: 1.125rem;
+      border: none;
+      outline: none;
+      
+      &:focus {
+        ring: 0;
+        outline: none;
+      }
+      
+      &::placeholder {
+        color: #9CA3AF;
+      }
+      
+      @media (min-width: 1024px) {
+        width: 350px;
+      }
+    }
+  
+    &__button {
+      background-color: #F97316;
+      border-radius: 0.75rem;
+      padding: 0.875rem 1.25rem;
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: #ffffff;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.2s ease-in-out;
+      
+      &:hover {
+        background-color: #EA580C;
+      }
+      
+      @media (min-width: 1024px) {
+        padding: 1.4rem 4rem;
+      }
+    }
+  
+    &__person {
+      position: absolute;
+      bottom: 0;
+      right: 10rem;
+      display: none;
+      
+      @media (min-width: 1024px) {
+        display: block;
+      }
+    }
+  
+    &__person-image {
+      width: 356px;
+      height: 323px;
+      object-fit: contain;
+    }
+  }

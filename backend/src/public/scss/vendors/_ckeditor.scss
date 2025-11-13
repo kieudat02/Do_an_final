@@ -1,0 +1,633 @@
+// CKEditor 5 Custom Styles for ND Travel Tour Form
+// Variables
+$ck-border-radius: 0.375rem;
+$ck-border-color: #dee2e6;
+$ck-focus-color: #86b7fe;
+$ck-focus-shadow: rgba(13, 110, 253, 0.25);
+$ck-primary-color: #0d6efd;
+$ck-primary-hover: #0a58ca;
+$ck-background-light: #f8f9fa;
+$ck-background-hover: #e9ecef;
+$ck-text-color: #212529;
+$ck-text-muted: #6c757d;
+$ck-danger-color: #dc3545;
+$ck-danger-shadow: rgba(220, 53, 69, 0.25);
+$ck-table-border: #bfbfbf;
+$ck-font-family: 'Inter', sans-serif;
+
+// Mixins
+@mixin ck-transition($properties: all, $duration: 0.15s, $timing: ease-in-out) {
+  transition: $properties $duration $timing;
+}
+
+@mixin ck-focus-state {
+  border-color: $ck-focus-color;
+  box-shadow: 0 0 0 0.25rem $ck-focus-shadow;
+  outline: none;
+}
+
+@mixin ck-button-hover {
+  background: $ck-background-hover;
+}
+
+@mixin ck-button-active {
+  background: $ck-primary-color;
+  color: white;
+}
+
+// Main editor container
+.ck-editor {
+  margin-bottom: 1rem;
+  @include ck-transition();
+
+  // Editor content area
+  &__editable {
+    min-height: 150px;
+    border-radius: $ck-border-radius;
+    font-family: $ck-font-family;
+    font-size: 14px;
+    line-height: 1.6;
+
+    &_inline {
+      border: 1px solid $ck-border-color;
+      padding: 0.75rem;
+      @include ck-transition(border-color, box-shadow);
+    }
+
+    &:focus {
+      @include ck-focus-state;
+    }
+
+    // Italic text styling
+    em,
+    i {
+      font-style: italic !important;
+      font-family: inherit;
+    }
+
+    // Accessibility
+    &:focus {
+      outline: 2px solid transparent;
+      outline-offset: 2px;
+    }
+
+    // Placeholder styling
+    &.ck-placeholder::before {
+      color: $ck-text-muted;
+      font-style: italic;
+    }
+  }
+
+  &__main > &__editable {
+    border-radius: 0 0 $ck-border-radius $ck-border-radius;
+  }
+
+  // Loading state
+  &.ck-editor--loading {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+}
+
+// Toolbar styling
+.ck-toolbar {
+  border-radius: $ck-border-radius $ck-border-radius 0 0;
+  border: 1px solid $ck-border-color;
+  border-bottom: none;
+  background: $ck-background-light;
+  padding: 0.5rem;
+
+  &__items {
+    // Will be handled by responsive design
+  }
+
+  .ck-button {
+    border-radius: 0.25rem;
+    margin: 0 2px;
+    @include ck-transition(background-color);
+
+    &:hover {
+      @include ck-button-hover;
+    }
+
+    &.ck-on {
+      @include ck-button-active;
+    }
+
+    // Italic button specific styling
+    &[data-cke-tooltip-text*="italic" i],
+    &[data-cke-tooltip-text*="nghiêng" i] {
+      font-style: italic;
+    }
+
+    &:focus {
+      outline: 2px solid currentColor;
+      outline-offset: 2px;
+    }
+  }
+}
+
+// Dropdown styling
+.ck-dropdown {
+  &__panel {
+    border-radius: $ck-border-radius;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  }
+}
+
+// Content styling within editor
+.ck-content {
+  // Table styling
+  table {
+    border-collapse: collapse;
+    border-spacing: 0;
+    width: 100%;
+    height: 100%;
+    border: 1px solid $ck-table-border;
+
+    td,
+    th {
+      min-width: 2em;
+      padding: 0.4em;
+      border: 1px solid $ck-table-border;
+    }
+
+    th {
+      font-weight: bold;
+      background: rgba(0, 0, 0, 0.05);
+    }
+  }
+
+  // List styling
+  ul,
+  ol {
+    padding-left: 1.5rem;
+  }
+
+  li {
+    margin-bottom: 0.25rem;
+  }
+
+  ul li {
+    list-style-type: disc;
+  }
+
+  ol li {
+    list-style-type: decimal;
+  }
+
+  // Blockquote styling
+  blockquote {
+    border-left: 4px solid $ck-primary-color;
+    padding-left: 1rem;
+    margin: 1rem 0;
+    font-style: italic;
+    background: $ck-background-light;
+    padding: 1rem;
+    border-radius: $ck-border-radius;
+  }
+
+  // Link styling
+  a {
+    color: $ck-primary-color;
+    text-decoration: underline;
+
+    &:hover {
+      color: $ck-primary-hover;
+    }
+  }
+
+  // Text formatting
+  strong,
+  b {
+    font-weight: 600 !important;
+  }
+
+  em,
+  i {
+    font-style: italic !important;
+  }
+
+  // Resizable image wrapper
+  .resizable-image-wrapper {
+    position: relative;
+    display: inline-block;
+    margin: 10px auto;
+    max-width: 100%;
+    text-align: center;
+    user-select: none;
+
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      display: block;
+      margin: 0 auto;
+      @include ck-transition(all);
+
+      &:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+    }
+
+    // Resize handles
+    .resize-handles {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      opacity: 0;
+      @include ck-transition(opacity);
+      pointer-events: none;
+    }
+
+    &.show-handles .resize-handles {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    &.resizing {
+      .resize-handles {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      img {
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+      }
+    }
+
+    .resize-handle {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      background: $ck-primary-color;
+      border: 2px solid white;
+      border-radius: 50%;
+      cursor: nw-resize;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      @include ck-transition(all);
+
+      &:hover {
+        background: $ck-primary-hover;
+        transform: scale(1.2);
+      }
+
+      &.resize-handle-nw {
+        top: -6px;
+        left: -6px;
+        cursor: nw-resize;
+      }
+
+      &.resize-handle-ne {
+        top: -6px;
+        right: -6px;
+        cursor: ne-resize;
+      }
+
+      &.resize-handle-sw {
+        bottom: -6px;
+        left: -6px;
+        cursor: sw-resize;
+      }
+
+      &.resize-handle-se {
+        bottom: -6px;
+        right: -6px;
+        cursor: se-resize;
+      }
+    }
+  }
+
+  // Legacy image styling for compatibility
+  img:not(.resizable-image-wrapper img) {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin: 10px auto;
+    display: block;
+    @include ck-transition(all);
+
+    &:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+  }
+
+  // Paragraph containing images
+  p img {
+    margin: 10px auto;
+    display: block;
+  }
+
+  // Image size classes
+  .image-small {
+    text-align: center;
+
+    img {
+      max-width: 50%;
+      margin: 10px auto;
+    }
+  }
+
+  .image-medium {
+    text-align: center;
+
+    img {
+      max-width: 75%;
+      margin: 10px auto;
+    }
+  }
+
+  .image-large {
+    text-align: center;
+
+    img {
+      max-width: 100%;
+      margin: 15px auto;
+    }
+  }
+
+  // Image variations
+  .image {
+    max-width: 100%;
+    height: auto;
+
+    &.image_resized {
+      max-width: 100%;
+      height: auto;
+    }
+
+    &.image-style-side {
+      float: right;
+      margin-left: 1rem;
+      margin-bottom: 1rem;
+      max-width: 50%;
+    }
+
+    &.image-style-align-left {
+      float: left;
+      margin-right: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    &.image-style-align-center {
+      display: block;
+      margin: 1rem auto;
+    }
+
+    &.image-style-align-right {
+      float: right;
+      margin-left: 1rem;
+      margin-bottom: 1rem;
+    }
+  }
+
+  // Image caption
+  .image > figcaption {
+    background: $ck-background-light;
+    padding: 0.5rem;
+    font-size: 0.875rem;
+    color: $ck-text-muted;
+    text-align: center;
+    border-radius: 0 0 $ck-border-radius $ck-border-radius;
+  }
+
+  // Figure styling
+  figure {
+    margin: 1rem 0;
+
+    &.image {
+      display: table;
+      clear: both;
+    }
+  }
+
+  // Heading styles
+  h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 1rem 0 0.5rem 0;
+    color: $ck-text-color;
+  }
+
+  h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 1rem 0 0.5rem 0;
+    color: $ck-text-color;
+  }
+
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 1rem 0 0.5rem 0;
+    color: $ck-text-color;
+  }
+}
+
+// Specific styling for different editor types
+.ckeditor-itinerary .ck-editor__editable {
+  min-height: 180px;
+}
+
+.ckeditor-overview .ck-editor__editable {
+  min-height: 200px;
+}
+
+.ckeditor-includes .ck-editor__editable {
+  min-height: 150px;
+}
+
+.ckeditor-highlights .ck-editor__editable {
+  min-height: 150px;
+}
+
+// Error state styling
+.is-invalid + .ck-editor .ck-editor__editable {
+  border-color: $ck-danger-color;
+
+  &:focus {
+    border-color: $ck-danger-color;
+    box-shadow: 0 0 0 0.25rem $ck-danger-shadow;
+  }
+}
+
+// Custom image insert button styling
+.btn-outline-primary,
+.btn-outline-success {
+  font-size: 0.875rem;
+  padding: 0.25rem 0.5rem;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  i {
+    margin-right: 0.25rem;
+  }
+}
+
+.btn-outline-primary {
+  &:hover {
+    background-color: $ck-primary-color;
+    border-color: $ck-primary-color;
+    color: white;
+  }
+}
+
+.btn-outline-success {
+  &:hover {
+    background-color: #198754;
+    border-color: #198754;
+    color: white;
+  }
+}
+
+// Image size selection modal
+.modal {
+  .size-btn {
+    @include ck-transition(all);
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+
+  .modal-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: $ck-text-color;
+  }
+
+  .modal-content {
+    border-radius: $ck-border-radius;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  }
+}
+
+// Size indicator
+.size-indicator {
+  position: fixed;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  z-index: 10000;
+  pointer-events: none;
+  display: none;
+  @include ck-transition(all);
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 4px solid transparent;
+    border-top-color: rgba(0, 0, 0, 0.8);
+  }
+}
+
+// Balloon toolbar for mobile
+.ck-balloon-panel {
+  z-index: 1060; // Above Bootstrap modals
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .ck-toolbar {
+    flex-wrap: wrap;
+    padding: 0.25rem;
+
+    &__items {
+      flex-wrap: wrap;
+    }
+
+    .ck-button {
+      margin: 1px;
+      padding: 0.25rem;
+    }
+  }
+
+  .ck-editor__editable {
+    min-height: 120px;
+    font-size: 16px; // Prevent zoom on iOS
+
+    &_inline {
+      padding: 0.5rem;
+    }
+  }
+
+  .ck-balloon-panel {
+    z-index: 1060;
+  }
+}
+
+@media (max-width: 576px) {
+  .ck-toolbar {
+    padding: 0.125rem;
+
+    .ck-button {
+      padding: 0.125rem;
+      font-size: 12px;
+    }
+  }
+
+  .ck-editor__editable {
+    min-height: 100px;
+  }
+}
+
+// Print styles
+@media print {
+  .ck-toolbar {
+    display: none;
+  }
+
+  .ck-editor__editable {
+    border: none;
+    box-shadow: none;
+  }
+}
+
+// Dark mode support
+@media (prefers-color-scheme: dark) {
+  .ck-toolbar {
+    background: #343a40;
+    border-color: #495057;
+  }
+
+  .ck-editor__editable_inline {
+    background: #212529;
+    color: #fff;
+    border-color: #495057;
+  }
+
+  .ck-content blockquote {
+    background: #343a40;
+    border-left-color: $ck-primary-color;
+  }
+}
+
+// High contrast mode support
+@media (prefers-contrast: high) {
+  .ck-editor__editable {
+    border-width: 2px;
+  }
+
+  .ck-toolbar .ck-button:focus {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+}

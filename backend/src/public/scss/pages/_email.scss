@@ -1,0 +1,406 @@
+// Container chính cho email
+.email-container {
+  font-family: Arial, sans-serif;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  background-color: #ffffff;
+}
+
+// Header cho email khách hàng
+.customer-email-header {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  border-radius: 10px;
+  text-align: center;
+  padding: 20px;
+  margin-bottom: 30px;
+
+  h1 {
+    color: #ffffff;
+    margin: 0;
+    font-size: 28px;
+  }
+
+  p {
+    color: #ffffff;
+    margin: 10px 0 0 0;
+    font-size: 16px;
+  }
+}
+
+// Header cho email nhân viên
+.staff-email-header {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+  border-radius: 10px;
+  text-align: center;
+  padding: 20px;
+  margin-bottom: 30px;
+
+  h1 {
+    color: #ffffff;
+    margin: 0;
+    font-size: 24px;
+  }
+
+  p {
+    color: #ffffff;
+    margin: 10px 0 0 0;
+    font-size: 14px;
+  }
+}
+
+// Section lời chào
+.greeting-section {
+  margin-bottom: 25px;
+
+  h2 {
+    color: #2c3e50;
+    margin-bottom: 15px;
+  }
+
+  p {
+    color: #34495e;
+    line-height: 1.6;
+    margin: 0;
+  }
+}
+
+// Section thông tin booking
+.booking-details-section {
+  background-color: #f8f9fa;
+  padding: 25px;
+  border-radius: 8px;
+  margin-bottom: 25px;
+
+  h3 {
+    color: #2c3e50;
+    margin-top: 0;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 10px;
+  }
+
+  .booking-table {
+    width: 100%;
+    border-collapse: collapse;
+
+    tr {
+      td:first-child {
+        padding: 8px 0;
+        color: #7f8c8d;
+        font-weight: bold;
+        width: 40%;
+      }
+
+      td:last-child {
+        padding: 8px 0;
+        color: #2c3e50;
+      }
+    }
+
+    .total-row {
+      border-top: 2px solid #3498db;
+
+      td:first-child {
+        padding: 15px 0 8px 0;
+        font-size: 16px;
+      }
+
+      td:last-child {
+        padding: 15px 0 8px 0;
+        color: #e74c3c;
+        font-weight: bold;
+        font-size: 18px;
+      }
+    }
+  }
+
+  .notes {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #bdc3c7;
+
+    .notes-label {
+      color: #7f8c8d;
+      font-weight: bold;
+      margin: 0 0 8px 0;
+    }
+
+    .notes-content {
+      color: #2c3e50;
+      margin: 0;
+      font-style: italic;
+    }
+  }
+}
+
+// Section thông tin khách hàng (cho email nhân viên)
+.customer-info-section {
+  background-color: #f8f9fa;
+  padding: 25px;
+  border-radius: 8px;
+  margin-bottom: 25px;
+  border-left: 4px solid #e74c3c;
+
+  h3 {
+    color: #2c3e50;
+    margin-top: 0;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #e74c3c;
+    padding-bottom: 10px;
+  }
+
+  .customer-table {
+    width: 100%;
+    border-collapse: collapse;
+
+    tr td:first-child {
+      padding: 8px 0;
+      color: #7f8c8d;
+      font-weight: bold;
+      width: 35%;
+    }
+
+    tr td:last-child {
+      padding: 8px 0;
+      color: #2c3e50;
+    }
+  }
+}
+
+// Section chi tiết booking (cho email nhân viên)
+.booking-details-staff-section {
+  background-color: #fff3cd;
+  padding: 25px;
+  border-radius: 8px;
+  margin-bottom: 25px;
+  border-left: 4px solid #f39c12;
+
+  h3 {
+    color: #856404;
+    margin-top: 0;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #f39c12;
+    padding-bottom: 10px;
+  }
+
+  .booking-table {
+    width: 100%;
+    border-collapse: collapse;
+
+    tr td:first-child {
+      padding: 8px 0;
+      color: #856404;
+      font-weight: bold;
+      width: 35%;
+    }
+
+    tr td:last-child {
+      padding: 8px 0;
+      color: #2c3e50;
+    }
+
+    .total-row td:first-child {
+      color: #856404;
+      border-top: 2px solid #3498db;
+      padding: 15px 0 8px 0;
+      font-size: 16px;
+    }
+
+    .total-row td:last-child {
+      border-top: 2px solid #3498db;
+      padding: 15px 0 8px 0;
+      color: #e74c3c;
+      font-weight: bold;
+      font-size: 18px;
+    }
+  }
+
+  .notes {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #f39c12;
+
+    .notes-label {
+      color: #856404;
+      font-weight: bold;
+      margin: 0 0 8px 0;
+    }
+
+    .notes-content {
+      color: #2c3e50;
+      margin: 0;
+      font-style: italic;
+      background-color: #ffffff;
+      padding: 10px;
+      border-radius: 4px;
+    }
+  }
+}
+
+// Section các bước tiếp theo
+.next-steps-section {
+  background-color: #e8f6f3;
+  padding: 25px;
+  border-radius: 8px;
+  margin-bottom: 25px;
+  border-left: 4px solid #27ae60;
+
+  h3 {
+    color: #27ae60;
+    margin-top: 0;
+    margin-bottom: 15px;
+  }
+
+  ul {
+    color: #2c3e50;
+    line-height: 1.6;
+    margin: 0;
+    padding-left: 20px;
+
+    li {
+      margin-bottom: 5px;
+
+      strong {
+        color: inherit;
+      }
+    }
+  }
+}
+
+// Section thông tin liên hệ
+.contact-info-section {
+  background-color: #fff3cd;
+  padding: 25px;
+  border-radius: 8px;
+  margin-bottom: 25px;
+  border-left: 4px solid #f39c12;
+
+  h3 {
+    color: #856404;
+    margin-top: 0;
+    margin-bottom: 15px;
+  }
+
+  p {
+    color: #856404;
+    margin: 0;
+    line-height: 1.6;
+  }
+}
+
+// Section cần thực hiện (cho email nhân viên)
+.action-required-section {
+  background-color: #d4edda;
+  padding: 25px;
+  border-radius: 8px;
+  margin-bottom: 25px;
+  border-left: 4px solid #28a745;
+
+  h3 {
+    color: #155724;
+    margin-top: 0;
+    margin-bottom: 15px;
+  }
+
+  ul {
+    color: #155724;
+    line-height: 1.6;
+    margin: 0;
+    padding-left: 20px;
+
+    li {
+      margin-bottom: 5px;
+
+      strong {
+        color: inherit;
+      }
+    }
+  }
+}
+
+// Footer
+.email-footer {
+  border-top: 1px solid #e0e0e0;
+  padding-top: 15px;
+  text-align: center;
+  color: #7f8c8d;
+  font-size: 12px;
+
+  p {
+    margin: 0 0 8px 0;
+
+    &:last-child {
+      margin: 0;
+    }
+  }
+}
+// ===== RESPONSIVE STYLES =====
+@media only screen and (max-width: 600px) {
+  .email-container {
+    padding: 15px;
+    border-radius: 5px;
+  }
+
+  .customer-email-header,
+  .staff-email-header {
+    padding: 15px;
+
+    h1 {
+      font-size: 24px;
+    }
+  }
+
+  .booking-details-section,
+  .customer-info-section,
+  .booking-details-staff-section,
+  .next-steps-section,
+  .contact-info-section,
+  .action-required-section {
+    padding: 15px;
+  }
+
+  .booking-table,
+  .customer-table {
+    tr td:first-child {
+      width: 45%;
+      font-size: 13px;
+    }
+
+    tr td:last-child {
+      font-size: 13px;
+    }
+  }
+}
+
+// ===== UTILITY CLASSES =====
+.email-text-center { text-align: center; }
+.email-text-left { text-align: left; }
+.email-text-right { text-align: right; }
+
+.email-font-bold { font-weight: bold; }
+.email-font-italic { font-style: italic; }
+
+.email-color-primary { color: #3498db; }
+.email-color-secondary { color: #e74c3c; }
+.email-color-success { color: #27ae60; }
+.email-color-warning { color: #f39c12; }
+.email-color-muted { color: #7f8c8d; }
+
+.email-bg-light { background-color: #f8f9fa; }
+.email-bg-white { background-color: #ffffff; }
+
+.email-border-radius { border-radius: 8px; }
+.email-border-radius-lg { border-radius: 10px; }
+
+.email-margin-0 { margin: 0; }
+.email-margin-sm { margin: 10px; }
+.email-margin-md { margin: 15px; }
+.email-margin-lg { margin: 20px; }
+
+.email-padding-0 { padding: 0; }
+.email-padding-sm { padding: 10px; }
+.email-padding-md { padding: 15px; }
+.email-padding-lg { padding: 20px; }

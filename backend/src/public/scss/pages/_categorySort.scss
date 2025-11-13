@@ -1,0 +1,56 @@
+@use "../abstracts" as *;
+
+// Sort Order Styles
+.category {
+    &__sort-order {
+        font-weight: 600;
+        color: #495057;
+        background: #f8f9fa;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.9rem;
+    }
+
+    &__btn--sort {
+        background: #17a2b8;
+        border: 1px solid #17a2b8;
+        color: white;
+        margin-right: 0.5rem;
+
+        &:hover {
+            background: #138496;
+            border-color: #117a8b;
+            color: white;
+        }
+    }
+}
+
+// Sortable Modal Styles
+.sortable-item {
+    cursor: move;
+    transition: all 0.3s ease;
+    border: 1px solid #dee2e6;
+    margin-bottom: 0.5rem;
+    border-radius: 8px;
+
+    &:hover {
+        background-color: #f8f9fa;
+        border-color: #007bff;
+    }
+}
+
+.sortable-ghost {
+    opacity: 0.4;
+    background: #e3f2fd;
+}
+
+.sortable-chosen {
+    background: #e3f2fd;
+    border-color: #2196f3;
+}
+
+.sortable-drag {
+    background: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: rotate(2deg);
+}

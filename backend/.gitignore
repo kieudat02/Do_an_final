@@ -1,0 +1,7 @@
+node_modules
+.env
+logs
+.env.example
+src/config/viewEngine.js
+src/seeder/
+src/views/

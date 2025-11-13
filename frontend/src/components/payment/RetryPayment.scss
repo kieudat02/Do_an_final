@@ -1,0 +1,488 @@
+.retry-payment-container {
+    min-height: 100vh;
+    background: #f8f9fa;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .loading, .error {
+        background: white;
+        padding: 40px;
+        border-radius: 10px;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    }
+
+    .spinner-small {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top: 2px solid white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-right: 8px;
+    }
+
+    .retry-payment-wrapper {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        max-width: 800px;
+        width: 100%;
+        margin: 20px;
+        border: 1px solid #e9ecef;
+
+        .payment-header {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            padding: 30px;
+            text-align: center;
+
+            h1 {
+                margin: 0 0 10px 0;
+                font-size: 2rem;
+                font-weight: 600;
+            }
+
+            p {
+                margin: 0;
+                opacity: 0.9;
+                font-size: 1.1rem;
+            }
+        }
+
+        .order-info {
+            padding: 25px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+
+            h3 {
+                margin: 0 0 20px 0;
+                color: #495057;
+                font-size: 1.3rem;
+                font-weight: 600;
+            }
+
+            .order-main-info {
+                background: white;
+                border-radius: 8px;
+                border: 1px solid #e9ecef;
+                overflow: hidden;
+
+                .order-header {
+                    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+                    padding: 20px;
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 20px;
+                    border-bottom: 1px solid #e9ecef;
+
+                    .order-id, .order-amount {
+                        text-align: center;
+
+                        .label {
+                            display: block;
+                            font-size: 0.85rem;
+                            color: #6c757d;
+                            font-weight: 500;
+                            margin-bottom: 5px;
+                            text-transform: uppercase;
+                            letter-spacing: 0.5px;
+                        }
+
+                        .value {
+                            display: block;
+                            font-size: 1.1rem;
+                            color: #495057;
+                            font-weight: 600;
+                        }
+
+                        .amount {
+                            display: block;
+                            font-size: 1.4rem;
+                            color: #28a745;
+                            font-weight: 700;
+                        }
+                    }
+                }
+
+                .order-details {
+                    padding: 20px;
+
+                    .detail-item {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        padding: 10px 0;
+                        border-bottom: 1px solid #f8f9fa;
+
+                        &:last-child {
+                            border-bottom: none;
+                        }
+
+                        .label {
+                            font-weight: 500;
+                            color: #6c757d;
+                            min-width: 120px;
+                        }
+
+                        .value {
+                            color: #495057;
+                            font-weight: 500;
+                            text-align: right;
+                            flex: 1;
+                        }
+                    }
+                }
+            }
+
+            .failure-info {
+                margin-top: 15px;
+                background: #fff5f5;
+                border: 1px solid #fed7d7;
+                border-radius: 8px;
+                overflow: hidden;
+
+                .failure-header {
+                    background: #fed7d7;
+                    padding: 12px 15px;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+
+                    .failure-icon {
+                        font-size: 1.1rem;
+                    }
+
+                    .failure-title {
+                        font-weight: 600;
+                        color: #c53030;
+                        font-size: 0.9rem;
+                    }
+                }
+
+                .failure-reason {
+                    padding: 15px;
+                    color: #c53030;
+                    font-weight: 500;
+                    line-height: 1.5;
+                }
+            }
+        }
+
+        .payment-methods {
+            padding: 25px 30px;
+
+            h3 {
+                margin: 0 0 25px 0;
+                color: #495057;
+                font-size: 1.3rem;
+            }
+
+            .payment-method {
+                border: 1px solid #e9ecef;
+                border-radius: 8px;
+                padding: 20px;
+                margin-bottom: 15px;
+                transition: all 0.3s ease;
+                background: #fff;
+
+                &:hover {
+                    border-color: #007bff;
+                    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.15);
+                    transform: translateY(-1px);
+                }
+
+                .method-header {
+                    display: flex;
+                    align-items: center;
+                    margin-bottom: 15px;
+
+                    .payment-logo {
+                        width: 60px;
+                        height: 60px;
+                        margin-right: 15px;
+                        border-radius: 8px;
+                        border: 1px solid #e9ecef;
+                        padding: 8px;
+                        background: white;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+
+                        .logo-svg {
+                            width: 100%;
+                            height: 100%;
+                        }
+
+                        &.momo-logo {
+                            background: linear-gradient(135deg, #d82d8b, #b91372);
+                            border-color: #d82d8b;
+                        }
+
+                        &.vnpay-logo {
+                            background: linear-gradient(135deg, #1e88e5, #1565c0);
+                            border-color: #1e88e5;
+                        }
+                    }
+
+                    .method-info {
+                        h4 {
+                            margin: 0 0 5px 0;
+                            color: #495057;
+                            font-size: 1.2rem;
+                        }
+
+                        p {
+                            margin: 0;
+                            color: #6c757d;
+                            font-size: 0.9rem;
+                        }
+                    }
+                }
+
+                .bank-selection {
+                    margin-bottom: 15px;
+
+                    label {
+                        display: block;
+                        margin-bottom: 8px;
+                        font-weight: 600;
+                        color: #495057;
+                    }
+
+                    select {
+                        width: 100%;
+                        padding: 10px 15px;
+                        border: 2px solid #e9ecef;
+                        border-radius: 8px;
+                        font-size: 1rem;
+                        background: white;
+                        transition: border-color 0.3s ease;
+
+                        &:focus {
+                            outline: none;
+                            border-color: #007bff;
+                        }
+                    }
+                }
+
+                .btn-payment {
+                    width: 100%;
+                    padding: 15px;
+                    border: none;
+                    border-radius: 8px;
+                    font-size: 1.1rem;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+
+                    &:disabled {
+                        opacity: 0.6;
+                        cursor: not-allowed;
+                    }
+
+                    &:focus {
+                        outline: none;
+                        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+                    }
+
+                    &.momo {
+                        background: linear-gradient(135deg, #e91e63, #c2185b);
+                        color: white;
+
+                        &:hover:not(:disabled) {
+                            transform: translateY(-2px);
+                            box-shadow: 0 5px 15px rgba(233, 30, 99, 0.3);
+                        }
+                    }
+
+                    &.vnpay {
+                        background: linear-gradient(135deg, #0d6efd, #0056b3);
+                        color: white;
+
+                        &:hover:not(:disabled) {
+                            transform: translateY(-2px);
+                            box-shadow: 0 5px 15px rgba(13, 110, 253, 0.3);
+                        }
+                    }
+                }
+            }
+        }
+
+        .payment-note {
+            padding: 25px 30px;
+            background: #e3f2fd;
+            border-top: 1px solid #bbdefb;
+
+            h4 {
+                margin: 0 0 15px 0;
+                color: #1565c0;
+                font-size: 1.1rem;
+            }
+
+            ul {
+                margin: 0;
+                padding-left: 20px;
+                color: #1565c0;
+
+                li {
+                    margin-bottom: 8px;
+                    line-height: 1.5;
+                }
+            }
+        }
+
+        .form-actions {
+            padding: 25px 30px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+            background: #f8f9fa;
+
+            .btn-secondary {
+                padding: 12px 30px;
+                border: none;
+                border-radius: 8px;
+                font-size: 1rem;
+                font-weight: 600;
+                cursor: pointer;
+                background: #6c757d;
+                color: white;
+                transition: all 0.3s ease;
+
+                &:hover {
+                    background: #5a6268;
+                    transform: translateY(-2px);
+                    box-shadow: 0 3px 10px rgba(108, 117, 125, 0.3);
+                }
+
+                &:focus {
+                    outline: none;
+                    box-shadow: 0 0 0 3px rgba(108, 117, 125, 0.25);
+                }
+            }
+        }
+    }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+    .retry-payment-container {
+        padding: 15px;
+
+        .retry-payment-wrapper {
+            margin: 0;
+            border-radius: 8px;
+
+            .payment-header {
+                padding: 20px 15px;
+
+                h1 {
+                    font-size: 1.5rem;
+                }
+
+                p {
+                    font-size: 0.95rem;
+                }
+            }
+
+            .order-info, .payment-methods, .payment-note, .form-actions {
+                padding: 20px 15px;
+            }
+
+            .order-info .order-main-info .order-header {
+                grid-template-columns: 1fr;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .payment-methods .payment-method {
+                padding: 15px;
+
+                .method-header {
+                    flex-direction: column;
+                    text-align: center;
+
+                    .payment-logo {
+                        margin-right: 0;
+                        margin-bottom: 10px;
+                        width: 50px;
+                        height: 50px;
+                    }
+                }
+
+                .btn-payment {
+                    font-size: 1rem;
+                    padding: 12px;
+                }
+            }
+        }
+    }
+}
+
+@media (max-width: 480px) {
+    .retry-payment-container {
+        padding: 10px;
+
+        .retry-payment-wrapper {
+            .payment-header {
+                padding: 15px;
+
+                h1 {
+                    font-size: 1.3rem;
+                }
+            }
+
+            .order-info, .payment-methods, .payment-note, .form-actions {
+                padding: 15px;
+            }
+
+            .order-info .order-main-info {
+                .order-header {
+                    padding: 15px;
+                    grid-template-columns: 1fr;
+                    gap: 10px;
+                }
+
+                .order-details {
+                    padding: 15px;
+
+                    .detail-item {
+                        flex-direction: column;
+                        align-items: flex-start;
+                        gap: 5px;
+                        padding: 8px 0;
+
+                        .label {
+                            min-width: auto;
+                            font-size: 0.85rem;
+                        }
+
+                        .value {
+                            text-align: left;
+                            font-size: 0.9rem;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
